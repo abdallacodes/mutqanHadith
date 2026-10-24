@@ -303,7 +303,7 @@ private fun ResultCard(result: BuilderResult) {
             Text(stringResource(titleRes), style = MaterialTheme.typography.titleLarge)
             if (result.misplacedNames.isNotEmpty()) {
                 Text(
-                    stringResource(R.string.builder_misplaced, result.misplacedNames.joinToString("، ")),
+                    stringResource(R.string.builder_misplaced, result.misplacedNames.joinToString(stringResource(R.string.list_separator))),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

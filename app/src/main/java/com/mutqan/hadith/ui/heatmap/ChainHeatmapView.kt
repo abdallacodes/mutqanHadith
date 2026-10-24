@@ -32,12 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mutqan.hadith.R
@@ -46,6 +48,7 @@ import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.domain.usecase.NarratorHeat
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.StatTile
+import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
 import kotlin.math.roundToInt
@@ -190,7 +193,7 @@ private fun HeatNodeCard(position: Int, node: NarratorHeat, onClick: () -> Unit)
                     if (node.isWeakestLink) WeakestBadge()
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    InfoChip(node.tier, container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
+                    InfoChip(tierLabel(node.tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                     InfoChip(health.label(), container = accent.copy(alpha = 0.18f), content = scheme.onSurface)
                     Text(
                         if (node.attempts == 0) {
@@ -245,8 +248,9 @@ private fun CompactChain(heatmap: ChainHeatmap, onNodeClick: (NarratorHeat) -> U
     ) {
         heatmap.nodes.forEachIndexed { i, node ->
             if (i > 0) {
+                // The arrow points the way the chain reads: leftwards in right-to-left, rightwards in left-to-right.
                 Text(
-                    "${node.transmissionTerm} ←",
+                    "${node.transmissionTerm} ${if (LocalLayoutDirection.current == LayoutDirection.Rtl) "←" else "→"}",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -314,7 +318,7 @@ internal fun NarratorHeatBody(node: NarratorHeat, chainLength: Int) {
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                InfoChip(node.tier, container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
+                InfoChip(tierLabel(node.tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                 InfoChip(stringResource(R.string.heatmap_node_position, node.orderIndex + 1, chainLength))
                 InfoChip(health.label(), container = accent.copy(alpha = 0.18f), content = scheme.onSurface)
             }

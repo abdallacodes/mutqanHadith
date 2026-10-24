@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mutqan - Hadith</string>
+
+    <!-- Common -->
+    <string name="action_back">Back</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_back_home">Back to Home</string>
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Couldn\'t load the data</string>
+    <string name="hadith_number">Hadith no. %1$d</string>
+    <string name="sahabi_label">Companion: %1$s</string>
+    <string name="badge_matn">Matn</string>
+    <string name="badge_sanad">Sanad</string>
+    <string name="badge_new">New</string>
+    <string name="badge_due">Due</string>
+    <string name="mastery_percent">%1$d%%</string>
+    <string name="mastery_none">—</string>
+    <string name="chain_first">Collector\'s teacher</string>
+    <string name="chain_last">Companion</string>
+    <string name="term_label">%1$s</string>
+    <string name="list_separator">", "</string>
+
+    <!-- Narrator generations: the dataset stores them in Arabic, these are how each one is shown -->
+    <string name="tier_companion">Companion</string>
+    <string name="tier_successor">Successor</string>
+    <string name="tier_successor_followers">Successors\' followers</string>
+    <string name="tier_collector_teacher">Collector\'s teacher</string>
+
+    <!-- Home -->
+    <string name="home_title">Mutqan</string>
+    <string name="home_today">Today\'s portion</string>
+    <string name="home_due">Due for review</string>
+    <string name="home_new">New to memorize</string>
+    <string name="home_mastery">Overall mastery</string>
+    <string name="action_start_review_count">Start Review (%1$d)</string>
+    <string name="action_learn_new_count">Learn New (%1$d)</string>
+    <string name="home_nothing_due">Nothing due for review right now</string>
+    <string name="home_nothing_new">You\'ve finished all the new hadiths</string>
+    <string name="home_drills">Sanad Drills</string>
+    <string name="drill_sanad_builder">Sanad Builder</string>
+    <string name="drill_missing_link">Missing Link</string>
+    <string name="home_library">Hadiths</string>
+    <string name="sheet_review_this">Review this hadith</string>
+
+    <!-- Review -->
+    <string name="review_title_due">Review Session</string>
+    <string name="review_title_new">Learn New</string>
+    <string name="review_title_single">Review Hadith</string>
+    <string name="review_title_narrator">Narrator\'s Hadiths</string>
+    <string name="review_progress">%1$d / %2$d</string>
+    <string name="review_recall_prompt">Recall the matn from memory, then tap to reveal it</string>
+    <string name="review_reveal_sanad">Tap to reveal the sanad</string>
+    <string name="review_sanad_title">Sanad</string>
+    <string name="review_sanad_hint">Tap the narrator you forgot or misplaced</string>
+    <string name="review_missed">Missed</string>
+    <string name="rate_matn">Rate the matn</string>
+    <string name="rate_sanad">Rate the sanad</string>
+    <string name="rating_again">Again</string>
+    <string name="rating_hard">Hard</string>
+    <string name="rating_good">Good</string>
+    <string name="rating_easy">Easy</string>
+    <string name="action_next">Next</string>
+    <string name="action_finish">Finish</string>
+    <string name="review_done_title">Well done!</string>
+    <string name="review_done_body">Reviews completed: %1$d</string>
+    <string name="review_empty_due">No hadiths are due for review right now. Come back later, God willing.</string>
+    <string name="review_empty_new">There are no new hadiths to memorize.</string>
+    <string name="review_empty_narrator">No hadiths pass through this narrator.</string>
+    <string name="review_submit_error">Couldn\'t save the rating, please try again</string>
+
+    <!-- Sanad builder -->
+    <string name="builder_title">Sanad Builder</string>
+    <string name="builder_matn_anchor">Matn</string>
+    <string name="builder_instruction">Order the narrators from the collector\'s teacher to the Companion. Tap a narrator to place them in the first empty slot, or tap a slot first and then choose its narrator.</string>
+    <string name="builder_slot_empty">Tap to select this slot</string>
+    <string name="builder_slot_selected">The next narrator goes here</string>
+    <string name="builder_slot_wrong">Wrong position — tap to return it</string>
+    <string name="builder_tray_title">Narrators</string>
+    <string name="builder_tray_empty">All narrators placed</string>
+    <string name="builder_submit">Submit chain</string>
+    <string name="builder_reveal">Show the answer</string>
+    <string name="builder_result_good">Chain mastered!</string>
+    <string name="builder_result_hard">Mostly right, but some positions need review</string>
+    <string name="builder_result_again">The chain needs more review</string>
+    <string name="builder_misplaced">Misplaced: %1$s</string>
+    <string name="builder_retry">Try again</string>
+    <string name="builder_correct_desc">Correct</string>
+    <string name="builder_wrong_desc">Wrong</string>
+
+    <!-- Missing link -->
+    <string name="missing_title">Missing Link</string>
+    <string name="missing_instruction">Who is the hidden narrator in this chain?</string>
+    <string name="missing_masked">[ ??? ]</string>
+    <string name="missing_correct">Correct, well done</string>
+    <string name="missing_wrong">The answer: %1$s</string>
+    <string name="missing_link_stability">Stability of this link: %1$d%% (%2$d of %3$d correct)</string>
+    <string name="missing_score">Correct answers: %1$d of %2$d</string>
+    <string name="missing_next">Next question</string>
+    <!-- Chain heatmap -->
+    <string name="heatmap_title">Chain Health</string>
+    <string name="heatmap_hint">Tap any narrator to see their record</string>
+    <string name="heatmap_legend_strong">Strong (over %1$d%%)</string>
+    <string name="heatmap_legend_fair">Fair (%1$d–%2$d%%)</string>
+    <string name="heatmap_legend_fragile">Fragile (under %1$d%%)</string>
+    <string name="health_strong">Strong</string>
+    <string name="health_fair">Fair</string>
+    <string name="health_fragile">Fragile</string>
+    <string name="health_untested">Untested</string>
+    <string name="heatmap_weakest">Weakest Link</string>
+    <string name="heatmap_weakest_note">This is the weakest link in this chain</string>
+    <string name="heatmap_collector">Collector: %1$s</string>
+    <string name="heatmap_record">Missed %1$d of %2$d</string>
+    <string name="heatmap_untested_record">Not tested yet</string>
+    <string name="heatmap_node_position">Link %1$d of %2$d</string>
+    <string name="heat_sheet_errors">Errors</string>
+    <string name="heat_sheet_appearances">Times tested</string>
+    <string name="heat_sheet_retention">Retention</string>
+    <string name="heat_node_cd">%1$s, %2$s</string>
+
+    <!-- Narrator graph -->
+    <string name="graph_title">Isnad Network</string>
+    <string name="graph_open">Isnad Network</string>
+    <string name="graph_filter_all">All hadiths</string>
+    <string name="graph_filter_studied">Memorized only</string>
+    <string name="graph_legend_pivot">Pivot</string>
+    <string name="graph_legend_normal">Narrator</string>
+    <string name="graph_legend_edge">Thicker line: more hadiths</string>
+    <string name="graph_reset_view">Fit to view</string>
+    <string name="graph_empty">No chains to show</string>
+    <string name="graph_empty_studied">You haven\'t memorized any hadith yet</string>
+    <string name="graph_node_cd">%1$s, %2$s</string>
+    <string name="graph_node_pivot_cd">%1$s, %2$s, pivot narrator</string>
+
+    <!-- Narrator profile -->
+    <string name="narrator_pivot_badge">Pivot</string>
+    <string name="narrator_stat_hadiths">Hadiths</string>
+    <string name="narrator_stat_attempts">Times tested</string>
+    <string name="narrator_stat_errors">Errors</string>
+    <string name="narrator_stat_error_rate">Error rate</string>
+    <string name="narrator_hadiths_title">Your hadiths through this narrator</string>
+    <string name="narrator_hadiths_loading">Loading hadiths…</string>
+    <string name="narrator_hadiths_empty">No hadiths pass through this narrator</string>
+    <string name="narrator_review_pivot">Review this pivot narrator\'s hadiths</string>
+    <string name="narrator_review_normal">Review this narrator\'s hadiths</string>
+    <string name="narrator_not_tested">Not tested yet</string>
+
+    <!-- Hadith details -->
+    <string name="details_title">Hadith Details</string>
+    <string name="details_close">Close</string>
+    <string name="sheet_details">Hadith details and sanad health</string>
+    <!-- Analytics -->
+    <string name="analytics_open">Statistics</string>
+    <string name="analytics_title">Mastery Statistics</string>
+    <string name="analytics_empty_banner">Complete your first review and your statistics will appear here</string>
+    <string name="analytics_streak_title">Review Streak</string>
+    <string name="analytics_streak_unit">consecutive days</string>
+    <string name="analytics_streak_start">Start your streak today</string>
+    <string name="analytics_streak_today_done">You reviewed today, well done</string>
+    <string name="analytics_streak_today_pending">Review today to keep your streak going</string>
+    <string name="analytics_streak_best">Longest streak: %1$d</string>
+    <string name="analytics_streak_total">Review days: %1$d</string>
+    <string name="analytics_week_title">Last 7 days</string>
+    <string name="analytics_day_studied">Reviewed</string>
+    <string name="analytics_day_missed">Not reviewed</string>
+    <string name="analytics_dual_title">Dual Mastery Index</string>
+    <string name="analytics_dual_hint">Your average chance of recalling each part right now</string>
+    <string name="analytics_dual_stability">Average stability: %1$s days</string>
+    <string name="analytics_dual_unstudied">Not reviewed yet</string>
+    <string name="analytics_dual_cd">%1$s: %2$s</string>
+    <string name="analytics_insight_sanad">Your sanad is weaker than your matn, so set aside time for sanad drills</string>
+    <string name="analytics_insight_matn">Your matn is weaker than your sanad, so practise recalling the matns</string>
+    <string name="analytics_insight_balanced">Your matn and sanad are about equally stable</string>
+    <string name="analytics_status_title">Memorization Status</string>
+    <string name="analytics_status_summary">%1$d of %2$d mastered</string>
+    <string name="analytics_status_mastered">Mastered</string>
+    <string name="analytics_status_learning">Consolidating</string>
+    <string name="analytics_status_unseen">New</string>
+    <string name="analytics_weak_title">Most Slippery Narrators</string>
+    <string name="analytics_weak_hint">The narrators with the highest error rate in your reviews; tap one to drill their hadiths</string>
+    <string name="analytics_weak_empty">No narrator has tripped you up repeatedly yet. The names slipping most from your memory will appear here after a few reviews.</string>
+    <string name="analytics_weak_drill">Drill</string>
+    <string name="analytics_weak_cd">%1$s, error rate %2$d%%, tap to drill their hadiths</string>
+
+    <!-- Settings -->
+    <string name="settings_open">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_busy">Working…</string>
+    <string name="settings_section_general">General</string>
+    <string name="settings_language">Language / اللغة</string>
+    <string name="settings_language_title">Choose language</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_export">Export a backup</string>
+    <string name="settings_export_hint">Save your progress to a JSON file on your device</string>
+    <string name="settings_import">Restore a backup</string>
+    <string name="settings_import_hint">Replace your current progress with the contents of an earlier backup file</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_reset">Reset progress</string>
+    <string name="settings_reset_hint">Erase all reviews and make every hadith new again</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_about">About Mutqan - Hadith</string>
+    <string name="settings_about_hint">Version %1$s</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_reset_title">Reset progress?</string>
+    <string name="settings_reset_body">Your review history and memorization status for every hadith will be erased, and all hadiths will become new again. This can\'t be undone.\n\nExporting a backup first is recommended.</string>
+    <string name="settings_reset_confirm">Reset</string>
+    <string name="settings_import_title">Restore this backup?</string>
+    <string name="settings_import_body">Backup contents:\n• Hadiths started: %1$d\n• Narrator records: %2$d\n• Backup date: %3$s\n\nThis will replace all of your current progress.</string>
+    <string name="settings_import_confirm">Restore</string>
+    <string name="settings_msg_exported">Backup saved</string>
+    <string name="settings_msg_export_failed">Couldn\'t save the file, try another location</string>
+    <string name="settings_msg_imported">Your progress was restored</string>
+    <string name="settings_msg_reset">Progress was reset</string>
+    <string name="settings_msg_reset_failed">Couldn\'t reset your progress</string>
+    <string name="settings_err_not_backup">This file isn\'t a Mutqan - Hadith backup</string>
+    <string name="settings_err_corrupt">The backup file is damaged or has been modified, and can\'t be read</string>
+    <string name="settings_err_newer">This backup was created by a newer version of the app (format %1$d). Update the app and try again</string>
+    <string name="settings_err_unknown">The backup refers to hadiths or narrators that don\'t exist in this version. Update the app to the latest version</string>
+    <string name="settings_err_too_large">The file is too large to be a backup</string>
+    <string name="settings_err_unreadable">Couldn\'t read the file</string>
+    <string name="settings_err_restore_failed">The restore failed, and none of your data was changed</string>
+
+    <!-- About -->
+    <string name="about_suite">Part of the Mutqan Suite</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_vision_title">The Suite\'s Vision</string>
+    <string name="about_vision_body">“Mutqan” is a suite of apps that help you master knowledge by the method scholars used to secure what they memorized: break the material into its layers, verify it through mutual recall, and review it at spaced intervals. This app serves the memorization of the Prophetic hadith, both matn and sanad.</string>
+    <string name="about_method_title">The Method</string>
+    <string name="about_method_layers">• Layers of memorization: the matn first, then the sanad as a relationship between teacher and student rather than a recited list.</string>
+    <string name="about_method_recall">• Active recall: retrieve from memory before you see the answer; it works better than re-reading.</string>
+    <string name="about_method_decay">• Spaced repetition on two curves: forgetting is modelled separately for the matn and the sanad, the sanad fades faster, and a mistake on a single narrator weakens the whole sanad.</string>
+    <string name="about_method_pivots">• Pivots and narrators: the isnad network and the list of most slippery narrators point your review at your weak spots.</string>
+    <string name="about_method_privacy">• Your data is yours: everything works offline, and your backups are JSON files you hold yourself.</string>
+    <string name="about_ok">OK</string>
+</resources>

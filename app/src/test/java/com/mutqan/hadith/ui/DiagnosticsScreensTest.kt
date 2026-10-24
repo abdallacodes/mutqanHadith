@@ -60,7 +60,7 @@ import org.robolectric.annotation.Config
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 // A tall screen keeps every node on screen: taps outside the window are dropped.
-@Config(sdk = [34], qualifiers = "w411dp-h1600dp-xxhdpi")
+@Config(sdk = [34], qualifiers = "+w411dp-h1600dp-xxhdpi")
 class DiagnosticsScreensTest {
 
     @get:Rule

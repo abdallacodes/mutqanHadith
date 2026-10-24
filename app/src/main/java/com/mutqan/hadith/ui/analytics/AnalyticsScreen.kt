@@ -61,6 +61,7 @@ import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.masteryColor
+import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.heatmap.color
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
@@ -257,9 +258,10 @@ private fun RetentionRing(label: String, component: ComponentRetention?) {
     val none = stringResource(R.string.mastery_none)
     val percent = component?.let { stringResource(R.string.mastery_percent, (it.retention * 100).roundToInt()) } ?: none
     val color = if (component == null) MaterialTheme.colorScheme.outline else masteryColor(component.retention)
+    val description = stringResource(R.string.analytics_dual_cd, label, percent)
     Column(
         Modifier.semantics(mergeDescendants = true) {
-            contentDescription = "$label: ${component?.let { percent } ?: none}"
+            contentDescription = description
         },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -376,7 +378,7 @@ private fun WeakNarratorRow(rank: Int, narrator: WeakNarrator, onClick: () -> Un
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    InfoChip(narrator.tier, container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
+                    InfoChip(tierLabel(narrator.tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                     Text(
                         stringResource(R.string.heatmap_record, narrator.errorCount, narrator.attempts),
                         style = MaterialTheme.typography.bodySmall,

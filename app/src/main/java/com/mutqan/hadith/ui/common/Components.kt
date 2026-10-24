@@ -253,7 +253,7 @@ fun ChainNode(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (!tier.isNullOrBlank()) InfoChip(tier, container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
+                    if (!tier.isNullOrBlank()) InfoChip(tierLabel(tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                     if (!term.isNullOrBlank()) InfoChip(term)
                     if (state == ChainNodeState.Missed) {
                         Spacer(Modifier.weight(1f))

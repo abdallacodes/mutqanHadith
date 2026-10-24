@@ -179,31 +179,32 @@ private fun SummaryCard(dashboard: StudyDashboard) {
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(stringResource(R.string.home_today), style = MaterialTheme.typography.headlineSmall)
+            // Equal thirds, so a longer label wraps under its own number instead of running into the next one.
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Stat(dashboard.dueCount.toString(), stringResource(R.string.home_due))
-                Stat(dashboard.newCount.toString(), stringResource(R.string.home_new))
-                MasteryStat(dashboard.overallMastery)
+                Stat(dashboard.dueCount.toString(), stringResource(R.string.home_due), Modifier.weight(1f))
+                Stat(dashboard.newCount.toString(), stringResource(R.string.home_new), Modifier.weight(1f))
+                MasteryStat(dashboard.overallMastery, Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-private fun Stat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(value, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
-        Text(label, style = MaterialTheme.typography.labelLarge)
+        Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
 @Composable
-private fun MasteryStat(mastery: Float) {
+private fun MasteryStat(mastery: Float, modifier: Modifier = Modifier) {
     val percent = (mastery * 100).roundToInt()
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
             MasteryRing(progress = mastery, color = masteryColor(mastery), size = 64.dp, strokeWidth = 6.dp)
             Text(
@@ -212,7 +213,7 @@ private fun MasteryStat(mastery: Float) {
                 fontWeight = FontWeight.Bold,
             )
         }
-        Text(stringResource(R.string.home_mastery), style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.home_mastery), style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center)
     }
 }
 
@@ -224,12 +225,12 @@ private fun QuickActions(dashboard: StudyDashboard, actions: HomeActions) {
                 onClick = actions.onStartDueReview,
                 enabled = dashboard.dueCount > 0,
                 modifier = Modifier.weight(1f),
-            ) { Text(stringResource(R.string.action_start_review) + " (${dashboard.dueCount})") }
+            ) { Text(stringResource(R.string.action_start_review_count, dashboard.dueCount)) }
             FilledTonalButton(
                 onClick = actions.onLearnNew,
                 enabled = dashboard.newCount > 0,
                 modifier = Modifier.weight(1f),
-            ) { Text(stringResource(R.string.action_learn_new) + " (${dashboard.newCount})") }
+            ) { Text(stringResource(R.string.action_learn_new_count, dashboard.newCount)) }
         }
         val hint = when {
             dashboard.dueCount == 0 && dashboard.newCount == 0 -> R.string.home_nothing_new

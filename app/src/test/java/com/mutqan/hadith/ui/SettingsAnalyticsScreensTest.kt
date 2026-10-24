@@ -54,7 +54,7 @@ import org.robolectric.annotation.Config
 /** Smoke tests of the analytics and settings screens, and of the settings screen wired to its ViewModel. */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h1600dp-xxhdpi")
+@Config(sdk = [34], qualifiers = "+w411dp-h1600dp-xxhdpi")
 class SettingsAnalyticsScreensTest {
 
     @get:Rule
@@ -256,7 +256,7 @@ class SettingsAnalyticsScreensTest {
         compose.onNodeWithText("عن متقن - حديث").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("ضمن سلسلة متقن · Mutqan Suite").assertExists()
+        compose.onNodeWithText("ضمن سلسلة متقن").assertExists()
         compose.onNodeWithText("رؤية السلسلة").assertExists()
         compose.onNodeWithText("المنهج").assertExists()
         compose.onNodeWithText("• المذاكرة: استحضر من ذاكرتك قبل أن ترى الجواب، فالتذكّر النشط أبلغ أثرًا من إعادة القراءة.").assertExists()

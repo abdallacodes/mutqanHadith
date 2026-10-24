@@ -31,6 +31,7 @@ import com.mutqan.hadith.domain.usecase.ChainHealth
 import com.mutqan.hadith.domain.usecase.NarratorHadith
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.StatTile
+import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.heatmap.color
 import com.mutqan.hadith.ui.theme.MatnCompactTextStyle
 import kotlin.math.roundToInt
@@ -77,7 +78,7 @@ internal fun NarratorDetailBody(
                             Text(node.fullName, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            InfoChip(node.tier, container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
+                            InfoChip(tierLabel(node.tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                             if (node.isPivot) InfoChip(stringResource(R.string.narrator_pivot_badge))
                         }
                     }

@@ -66,6 +66,7 @@ import com.mutqan.hadith.domain.graph.NarratorNode
 import com.mutqan.hadith.domain.graph.NodePlacement
 import com.mutqan.hadith.domain.usecase.ChainHealth
 import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.heatmap.color
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
 import kotlin.math.min
@@ -178,7 +179,7 @@ fun NarratorGraphCanvas(
             // readable however far the graph is panned or zoomed.
             layout.bands.forEach { band ->
                 InfoChip(
-                    band.tier,
+                    tierLabel(band.tier),
                     modifier = Modifier.align(Alignment.TopEnd).offset {
                         val bandTop = offset.y + band.top * density * scale
                         val bandBottom = offset.y + band.bottom * density * scale
@@ -256,7 +257,7 @@ private fun NodePill(node: NarratorNode, placement: NodePlacement, emphasis: Emp
     val scheme = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(if (node.isPivot) 20.dp else 16.dp)
     val health = ChainHealth.of(node.errorCount, node.successCount)
-    val description = stringResource(if (node.isPivot) R.string.graph_node_pivot_cd else R.string.graph_node_cd, node.name, node.tier)
+    val description = stringResource(if (node.isPivot) R.string.graph_node_pivot_cd else R.string.graph_node_cd, node.name, tierLabel(node.tier))
 
     val container = when {
         node.isPivot -> scheme.secondaryContainer
