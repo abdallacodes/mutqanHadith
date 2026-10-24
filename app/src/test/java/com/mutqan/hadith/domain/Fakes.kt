@@ -88,6 +88,8 @@ class FakeReviewRepository : ReviewRepository {
                 NarratorOutcomeCount(id, errorCount = list.count { !it.succeeded }, successCount = list.count { it.succeeded })
             }
 
+    override suspend fun getReviewTimestamps(): List<Long> = events.map { it.reviewedAt }.distinct()
+
     override suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount> =
         events.filter { it.narratorId == narratorId }
             .groupBy { it.hadithId }

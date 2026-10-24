@@ -28,6 +28,9 @@ interface HadithDao {
     @Query("SELECT COUNT(*) FROM hadith")
     suspend fun count(): Int
 
+    @Query("SELECT id FROM hadith")
+    suspend fun getAllIds(): List<Long>
+
     @Transaction
     @Query("SELECT * FROM hadith WHERE id = :id")
     suspend fun getHadithWithSanad(id: Long): HadithWithFullSanad?

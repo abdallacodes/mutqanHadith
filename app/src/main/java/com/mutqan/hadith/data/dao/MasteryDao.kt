@@ -29,4 +29,10 @@ interface MasteryDao {
 
     @Query("DELETE FROM mastery_record WHERE hadithId = :hadithId")
     suspend fun delete(hadithId: Long)
+
+    @Upsert
+    suspend fun upsertAll(records: List<MasteryRecordEntity>)
+
+    @Query("DELETE FROM mastery_record")
+    suspend fun deleteAll()
 }

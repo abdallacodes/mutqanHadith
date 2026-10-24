@@ -12,6 +12,16 @@ interface ReviewHistoryDao {
     @Insert
     suspend fun insertAll(events: List<NarratorReviewEventEntity>)
 
+    @Query("SELECT * FROM narrator_review_event ORDER BY id")
+    suspend fun getAll(): List<NarratorReviewEventEntity>
+
+    @Query("DELETE FROM narrator_review_event")
+    suspend fun deleteAll()
+
+    /** When reviews happened: one timestamp per review (its events share it), for the study streak. */
+    @Query("SELECT DISTINCT reviewedAt FROM narrator_review_event")
+    suspend fun getReviewTimestamps(): List<Long>
+
     @Query(
         "SELECT narratorId, " +
             "SUM(CASE WHEN succeeded = 0 THEN 1 ELSE 0 END) AS errorCount, " +

@@ -51,4 +51,7 @@ interface ReviewRepository {
 
     /** One narrator's tally in each Hadith they appear in. */
     suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount>
+
+    /** The moments reviews were recorded, in epoch millis; each review is listed once. */
+    suspend fun getReviewTimestamps(): List<Long>
 }

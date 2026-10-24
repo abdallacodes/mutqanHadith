@@ -64,4 +64,6 @@ class RoomReviewRepository(private val db: MutqanDatabase) : ReviewRepository {
 
     override suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount> =
         db.reviewHistoryDao().getOutcomeCountsByHadith(narratorId)
+
+    override suspend fun getReviewTimestamps(): List<Long> = db.reviewHistoryDao().getReviewTimestamps()
 }

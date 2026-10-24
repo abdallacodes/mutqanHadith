@@ -1,10 +1,17 @@
 package com.mutqan.hadith.di
 
 import android.content.Context
+import com.mutqan.hadith.data.backup.ContentResolverBackupFileStore
 import com.mutqan.hadith.data.db.MutqanDatabase
+import com.mutqan.hadith.data.repository.RoomBackupRepository
 import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomNarratorRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
+import com.mutqan.hadith.domain.backup.BackupFileStore
+import com.mutqan.hadith.domain.backup.BackupRepository
+import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
+import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
+import com.mutqan.hadith.domain.backup.ResetProgressUseCase
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -12,6 +19,7 @@ import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import com.mutqan.hadith.domain.usecase.GetMasteryAnalyticsUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
@@ -28,6 +36,8 @@ class AppContainer(context: Context) {
     val hadithRepository: HadithRepository by lazy { RoomHadithRepository(database) }
     val reviewRepository: ReviewRepository by lazy { RoomReviewRepository(database) }
     val narratorRepository: NarratorRepository by lazy { RoomNarratorRepository(database) }
+    val backupRepository: BackupRepository by lazy { RoomBackupRepository(database) }
+    val backupFiles: BackupFileStore by lazy { ContentResolverBackupFileStore(appContext.contentResolver) }
     val scheduler: SpacedRepetitionScheduler = DualDecayScheduler()
 
     val observeStudyDashboard by lazy { ObserveStudyDashboardUseCase(hadithRepository, reviewRepository, scheduler) }
@@ -38,4 +48,8 @@ class AppContainer(context: Context) {
     val getNarratorChainHeatmap by lazy { GetNarratorChainHeatmapUseCase(hadithRepository, reviewRepository) }
     val getNarratorGraph by lazy { GetNarratorGraphUseCase(hadithRepository, reviewRepository) }
     val getHadithsByNarrator by lazy { GetHadithsByNarratorUseCase(hadithRepository, reviewRepository) }
+    val getMasteryAnalytics by lazy { GetMasteryAnalyticsUseCase(hadithRepository, narratorRepository, reviewRepository, scheduler) }
+    val exportUserData by lazy { ExportUserDataUseCase(backupRepository) }
+    val importUserData by lazy { ImportUserDataUseCase(backupRepository) }
+    val resetProgress by lazy { ResetProgressUseCase(backupRepository) }
 }

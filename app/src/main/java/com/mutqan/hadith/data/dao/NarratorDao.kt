@@ -29,6 +29,9 @@ interface NarratorDao {
     @Query("SELECT * FROM narrator ORDER BY id")
     suspend fun getAll(): List<NarratorEntity>
 
+    @Query("SELECT id FROM narrator")
+    suspend fun getAllIds(): List<Long>
+
     @Query("SELECT * FROM narrator ORDER BY id")
     fun observeAll(): Flow<List<NarratorEntity>>
 
