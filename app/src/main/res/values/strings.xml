@@ -1,3 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">MutqanHadith</string>
+    <string name="app_name">متقن حديث</string>
+
+    <!-- Common -->
+    <string name="action_back">رجوع</string>
+    <string name="action_retry">إعادة المحاولة</string>
+    <string name="action_back_home">العودة إلى الرئيسية</string>
+    <string name="loading">جارٍ التحميل…</string>
+    <string name="error_generic">تعذّر تحميل البيانات</string>
+    <string name="hadith_number">حديث رقم %1$d</string>
+    <string name="sahabi_label">الصحابي: %1$s</string>
+    <string name="badge_matn">المتن</string>
+    <string name="badge_sanad">السند</string>
+    <string name="badge_new">جديد</string>
+    <string name="badge_due">مستحق</string>
+    <string name="mastery_percent">%1$d٪</string>
+    <string name="mastery_none">—</string>
+    <string name="chain_first">شيخ المصنّف</string>
+    <string name="chain_last">الصحابي</string>
+    <string name="term_label">%1$s</string>
+
+    <!-- Home -->
+    <string name="home_title">متقن</string>
+    <string name="home_today">ورد اليوم</string>
+    <string name="home_due">مستحق للمراجعة</string>
+    <string name="home_new">جديد للحفظ</string>
+    <string name="home_mastery">إتقان المحفوظ</string>
+    <string name="action_start_review">ورد المراجعة</string>
+    <string name="action_learn_new">حفظ جديد</string>
+    <string name="home_nothing_due">لا مراجعات مستحقة الآن</string>
+    <string name="home_nothing_new">أنهيت كل الأحاديث الجديدة</string>
+    <string name="home_drills">تدريبات السند</string>
+    <string name="drill_sanad_builder">بناء السند</string>
+    <string name="drill_missing_link">الراوي المفقود</string>
+    <string name="home_library">الأحاديث</string>
+    <string name="sheet_review_this">مراجعة هذا الحديث</string>
+
+    <!-- Review -->
+    <string name="review_title_due">ورد المراجعة</string>
+    <string name="review_title_new">حفظ جديد</string>
+    <string name="review_title_single">مراجعة حديث</string>
+    <string name="review_progress">%1$d / %2$d</string>
+    <string name="review_recall_prompt">استحضر المتن من ذاكرتك، ثم اضغط لكشفه</string>
+    <string name="review_reveal_sanad">اضغط لكشف السند</string>
+    <string name="review_sanad_title">السند</string>
+    <string name="review_sanad_hint">اضغط على الراوي الذي نسيته أو أخطأت في موضعه</string>
+    <string name="review_missed">نسيته</string>
+    <string name="rate_matn">تقييم المتن</string>
+    <string name="rate_sanad">تقييم السند</string>
+    <string name="rating_again">لم أذكر</string>
+    <string name="rating_hard">بصعوبة</string>
+    <string name="rating_good">جيد</string>
+    <string name="rating_easy">سهل</string>
+    <string name="action_next">التالي</string>
+    <string name="action_finish">إنهاء</string>
+    <string name="review_done_title">أحسنت!</string>
+    <string name="review_done_body">أنهيت %1$d من المراجعات</string>
+    <string name="review_empty_due">لا توجد أحاديث مستحقة للمراجعة الآن. عُد لاحقًا بإذن الله.</string>
+    <string name="review_empty_new">لا توجد أحاديث جديدة للحفظ.</string>
+    <string name="review_submit_error">تعذّر حفظ التقييم، حاول مرة أخرى</string>
+
+    <!-- Sanad builder -->
+    <string name="builder_title">بناء السند</string>
+    <string name="builder_matn_anchor">المتن</string>
+    <string name="builder_instruction">رتّب الرواة من شيخ المصنّف إلى الصحابي. اضغط على الراوي لوضعه في أول خانة فارغة، أو اضغط خانة أولًا ثم اختر راويها.</string>
+    <string name="builder_slot_empty">اضغط لاختيار هذه الخانة</string>
+    <string name="builder_slot_selected">الراوي التالي هنا</string>
+    <string name="builder_slot_wrong">موضع خاطئ — اضغط لإعادته</string>
+    <string name="builder_tray_title">الرواة</string>
+    <string name="builder_tray_empty">وُضع كل الرواة</string>
+    <string name="builder_submit">تسليم السلسلة</string>
+    <string name="builder_reveal">أظهر الإجابة</string>
+    <string name="builder_result_good">سلسلة متقنة!</string>
+    <string name="builder_result_hard">أصبت في الجملة، وبقيت مواضع تحتاج مراجعة</string>
+    <string name="builder_result_again">السلسلة تحتاج إلى مزيد من المراجعة</string>
+    <string name="builder_misplaced">أخطأت في موضع: %1$s</string>
+    <string name="builder_retry">إعادة المحاولة</string>
+    <string name="builder_correct_desc">صحيح</string>
+    <string name="builder_wrong_desc">خطأ</string>
+
+    <!-- Missing link -->
+    <string name="missing_title">الراوي المفقود</string>
+    <string name="missing_instruction">من الراوي المحجوب في هذه السلسلة؟</string>
+    <string name="missing_masked">[ ؟؟؟ ]</string>
+    <string name="missing_correct">إجابة صحيحة، أحسنت</string>
+    <string name="missing_wrong">الصحيح: %1$s</string>
+    <string name="missing_link_stability">ثبات هذه الحلقة: %1$d٪ (%2$d من %3$d)</string>
+    <string name="missing_score">الإجابات الصحيحة: %1$d من %2$d</string>
+    <string name="missing_next">السؤال التالي</string>
 </resources>
