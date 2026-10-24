@@ -67,7 +67,7 @@ object BackupCodec {
     fun decode(text: String): ParsedBackup {
         if (text.isBlank()) throw BackupException.NotABackup("empty file")
         val root = try {
-            JSONObject(text.removePrefix("﻿"))
+            JSONObject(text.removePrefix("\uFEFF"))
         } catch (e: JSONException) {
             throw BackupException.NotABackup("not a JSON object")
         }
