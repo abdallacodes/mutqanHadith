@@ -15,6 +15,7 @@ import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.ObserveStudyDashboardUseCase
@@ -78,6 +79,7 @@ class ViewModelsTest {
     private val getDue = GetDueHadithsUseCase(hadiths, reviews, scheduler) { clock }
     private val getUnseen = GetUnseenHadithsUseCase(hadiths)
     private val getHeatmap = GetNarratorChainHeatmapUseCase(hadiths, reviews)
+    private val getLayers = GetLayerStatusesUseCase(reviews, scheduler)
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -91,7 +93,7 @@ class ViewModelsTest {
     }
 
     private fun reviewVm(mode: ReviewMode, hadithId: Long? = null, repo: HadithRepository = hadiths) =
-        ReviewViewModel(mode, hadithId, getDue, getUnseen, repo, submitReview, getHeatmap)
+        ReviewViewModel(mode, hadithId, getDue, getUnseen, repo, submitReview, getHeatmap, getLayers)
 
     private fun ReviewViewModel.session(): ReviewSession = (state.value as UiState.Success).data
 
@@ -231,6 +233,7 @@ class ViewModelsTest {
             ReviewMode.DUE, null, getDue, getUnseen, hadiths,
             SubmitReviewUseCase(throwing, reviews, scheduler) { clock },
             getHeatmap,
+            getLayers,
         )
         vm.onEvent(ReviewEvent.RateMatn(GOOD))
         vm.onEvent(ReviewEvent.RateSanad(GOOD))

@@ -3,6 +3,7 @@ package com.mutqan.hadith.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.data.db.MutqanDatabase
+import com.mutqan.hadith.data.seed.SeedLoader
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -15,19 +16,22 @@ import org.robolectric.annotation.Config
 class DatabaseSeedingTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val seed = SeedLoader.load(context)
+    private val hadiths = seed.hadiths.size
+    private val narrators = seed.narrators.size
 
     private fun open(name: String) = MutqanDatabase.builder(context, name).allowMainThreadQueries().build()
 
     @Test
     fun freshDatabase_isSeededOnce_andReopeningDoesNotDuplicate() = runBlocking {
         val first = open("fresh.db")
-        assertEquals(10, first.hadithDao().count())
-        assertEquals(39, first.narratorDao().getAll().size)
+        assertEquals(hadiths, first.hadithDao().count())
+        assertEquals(narrators, first.narratorDao().getAll().size)
         first.close()
 
         val second = open("fresh.db")
-        assertEquals(10, second.hadithDao().count())
-        assertEquals(39, second.narratorDao().getAll().size)
+        assertEquals(hadiths, second.hadithDao().count())
+        assertEquals(narrators, second.narratorDao().getAll().size)
         assertEquals(10, second.hadithDao().getAllWithSanad().count { it.sanad.size >= 4 })
         second.close()
     }
@@ -44,9 +48,9 @@ class DatabaseSeedingTest {
 
         val db = open("legacy.db")
 
-        assertEquals(10, db.hadithDao().count())
-        assertEquals(10, db.hadithDao().getAllWithSanad().size)
-        assertEquals(10, db.hadithDao().getUnseenWithSanad().size)
+        assertEquals(hadiths, db.hadithDao().count())
+        assertEquals(hadiths, db.hadithDao().getAllWithSanad().size)
+        assertEquals(hadiths, db.hadithDao().getUnseenWithSanad().size)
         assertEquals("صحيح البخاري", db.hadithDao().getHadithWithSanad(1)!!.hadith.sourceBook)
         db.close()
     }
@@ -54,12 +58,12 @@ class DatabaseSeedingTest {
     @Test
     fun interruptedSeed_isRepairedOnNextOpen() = runBlocking {
         val db = open("interrupted.db")
-        assertEquals(10, db.hadithDao().count())
+        assertEquals(hadiths, db.hadithDao().count())
         db.openHelper.writableDatabase.execSQL("DELETE FROM hadith") // as if the first seed never landed
         db.close()
 
         val reopened = open("interrupted.db")
-        assertEquals(10, reopened.hadithDao().count())
+        assertEquals(hadiths, reopened.hadithDao().count())
         reopened.close()
     }
 }

@@ -179,11 +179,15 @@ class UseCasesTest {
     }
 
     @Test
-    fun unseen_aHadithStudiedOnlyByMatnIsNoLongerNewButStaysDue() = runBlocking {
-        submit(1, GOOD, null)
+    fun unseen_aHadithStudiedOnlyByMatnIsNoLongerNew_andFallsDueWithItsMatnClock() = runBlocking {
+        val outcome = submit(1, GOOD, null)
 
         assertEquals(listOf(2L, 3L), getUnseen().map { it.hadith.id })
-        assertEquals(listOf(1L), getDue().map { it.hadith.hadith.id }) // the Sanad was never learned
+        // Layer 1: the Sanad was never learned, but it is not being asked for yet either.
+        assertTrue(getDue().isEmpty())
+
+        clock = outcome.nextReviewDue
+        assertEquals(listOf(1L), getDue().map { it.hadith.hadith.id })
     }
 
     // -- GetNarratorChainHeatmapUseCase ----------------------------------------------------

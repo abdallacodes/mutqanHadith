@@ -131,7 +131,9 @@ fun HadithDetailsContent(
                                 container = MaterialTheme.colorScheme.primaryContainer,
                                 content = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
-                            InfoChip(ui.grade, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (ui.grade.isNotBlank()) {
+                                InfoChip(ui.grade, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                         Card(
                             modifier = Modifier.fillMaxWidth(),

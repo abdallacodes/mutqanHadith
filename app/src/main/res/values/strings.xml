@@ -26,22 +26,63 @@
     <string name="tier_successor">تابعي</string>
     <string name="tier_successor_followers">تابع التابعين</string>
     <string name="tier_collector_teacher">شيخ المصنف</string>
+    <string name="tier_narrator">راوٍ</string>
 
     <!-- Home -->
     <string name="home_title">متقن</string>
-    <string name="home_today">ورد اليوم</string>
-    <string name="home_due">مستحق للمراجعة</string>
-    <string name="home_new">جديد للحفظ</string>
-    <string name="home_mastery">إتقان المحفوظ</string>
-    <string name="action_start_review_count">ورد المراجعة (%1$d)</string>
-    <string name="action_learn_new_count">حفظ جديد (%1$d)</string>
-    <string name="home_nothing_due">لا مراجعات مستحقة الآن</string>
     <string name="home_nothing_new">أنهيت كل الأحاديث الجديدة</string>
     <string name="home_drills">تدريبات السند</string>
     <string name="drill_sanad_builder">بناء السند</string>
     <string name="drill_missing_link">الراوي المفقود</string>
-    <string name="home_library">الأحاديث</string>
     <string name="sheet_review_this">مراجعة هذا الحديث</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_daily">الورد اليومي</string>
+    <string name="tab_library">المكتبة</string>
+    <string name="tab_insights">الشبكة والتحليلات</string>
+
+    <!-- Daily study -->
+    <plurals name="home_streak_days">
+        <item quantity="zero">سلسلة الحفظ: لا أيام</item>
+        <item quantity="one">سلسلة الحفظ: يوم واحد</item>
+        <item quantity="two">سلسلة الحفظ: يومان</item>
+        <item quantity="few">سلسلة الحفظ: %1$d أيام</item>
+        <item quantity="many">سلسلة الحفظ: %1$d يومًا</item>
+        <item quantity="other">سلسلة الحفظ: %1$d يوم</item>
+    </plurals>
+    <string name="home_streak_none">ابدأ سلسلة الحفظ اليوم</string>
+    <string name="home_review_title">ورد المراجعة</string>
+    <plurals name="home_review_due">
+        <item quantity="zero">لا أحاديث مستحقة للمراجعة</item>
+        <item quantity="one">لديك حديث واحد مستحق للمراجعة</item>
+        <item quantity="two">لديك حديثان مستحقان للمراجعة</item>
+        <item quantity="few">لديك %1$d أحاديث مستحقة للمراجعة</item>
+        <item quantity="many">لديك %1$d حديثًا مستحقًا للمراجعة</item>
+        <item quantity="other">لديك %1$d حديث مستحق للمراجعة</item>
+    </plurals>
+    <string name="home_review_start">ابدأ ورد اليوم</string>
+    <string name="home_review_done">أتممت ورد اليوم بنجاح</string>
+    <string name="home_review_done_hint">عُد غدًا بإذن الله، أو تقدّم إلى حديث جديد</string>
+    <string name="home_review_empty">لا مراجعات بعد؛ تبدأ مراجعاتك حين تحفظ أول حديث</string>
+    <string name="home_next_title">المحطة التالية في الحفظ</string>
+    <string name="home_next_number">الحديث رقم %1$d</string>
+    <string name="home_next_start">ابدأ حفظ هذا الحديث</string>
+    <string name="home_stats_learning">قيد الحفظ</string>
+    <string name="home_stats_mastered">متقن</string>
+    <string name="home_stats_retention">نسبة التذكّر</string>
+
+    <!-- Network and insights -->
+    <string name="insights_title">الشبكة والتحليلات</string>
+    <string name="insights_graph_title">شبكة الرواة</string>
+    <string name="insights_graph_hint">استكشف الرواة المشتركين بين الأسانيد، وموضع كل راوٍ منها في أحاديثك</string>
+    <string name="insights_analytics_title">تحليلات الإتقان</string>
+    <string name="insights_analytics_hint">مدى ثبات المتن والسند في ذاكرتك الآن</string>
+    <string name="insights_memory_title">سجل الذاكرة</string>
+    <string name="insights_memory_hint">سلسلة أيامك، وكم تصمد ذاكرتك قبل أن تحتاج إلى مراجعة</string>
+    <string name="insights_clock_matn">ساعة المتن: %1$s</string>
+    <string name="insights_clock_sanad">ساعة السند: %1$s</string>
+    <string name="insights_clock_value">%1$s يوم</string>
+    <string name="insights_settings_hint">اللغة والنسخ الاحتياطي وإعادة ضبط التقدّم</string>
 
     <!-- Review -->
     <string name="review_title_due">ورد المراجعة</string>
@@ -120,7 +161,6 @@
 
     <!-- Narrator graph -->
     <string name="graph_title">شبكة الأسانيد</string>
-    <string name="graph_open">شبكة الأسانيد</string>
     <string name="graph_filter_all">كل الأحاديث</string>
     <string name="graph_filter_studied">المحفوظة فقط</string>
     <string name="graph_legend_pivot">مدار</string>
@@ -148,9 +188,7 @@
     <!-- Hadith details -->
     <string name="details_title">تفاصيل الحديث</string>
     <string name="details_close">إغلاق</string>
-    <string name="sheet_details">تفاصيل الحديث وصحة السند</string>
     <!-- Analytics -->
-    <string name="analytics_open">الإحصائيات</string>
     <string name="analytics_title">إحصائيات الإتقان</string>
     <string name="analytics_empty_banner">ابدأ أول مراجعة لتظهر هنا إحصائياتك</string>
     <string name="analytics_streak_title">سلسلة المراجعة</string>
@@ -181,6 +219,50 @@
     <string name="analytics_weak_empty">لا يوجد بعد راوٍ تكرّر خطؤك فيه. ستظهر هنا أكثر الأسماء تفلّتًا من ذاكرتك بعد بضع مراجعات.</string>
     <string name="analytics_weak_drill">تدرّب</string>
     <string name="analytics_weak_cd">%1$s، نسبة الخطأ %2$d٪، اضغط للتدرّب على أحاديثه</string>
+
+    <!-- Library -->
+    <string name="library_title">المكتبة</string>
+    <string name="library_search_hint">ابحث في نص الحديث…</string>
+    <string name="library_search_clear">مسح البحث</string>
+    <string name="level_1_title">المستوى الأول: الأصول والأسس</string>
+    <string name="level_2_title">المستوى الثاني: أحاديث الأحكام</string>
+    <string name="level_3_title">المستوى الثالث: دواوين السنّة</string>
+    <string name="level_1_desc">الأربعون النووية: متون جامعة، مع راويها من الصحابة وتخريجها</string>
+    <string name="level_2_desc">عمدة الأحكام: أحاديث الأحكام الفقهية</string>
+    <string name="level_3_desc">دواوين السنّة المسندة، تُدرس بأسانيدها الكاملة</string>
+    <string name="level_badge">المستوى %1$d</string>
+    <string name="library_status_count">%1$s: %2$d</string>
+    <string name="progress_new">جديد</string>
+    <string name="progress_learning">قيد الحفظ</string>
+    <string name="progress_mastered">متقن</string>
+    <string name="library_level_empty_title">قريبًا بإذن الله</string>
+    <string name="library_level_empty_body">لم تُضف أحاديث هذا المستوى بعد، وستظهر هنا عند توفّرها.</string>
+    <string name="library_no_results">لا نتائج لـ «%1$s» في هذا المستوى</string>
+    <string name="library_no_results_hint">جرّب كلمة أخرى، أو انظر في المستويات الأخرى؛ فالتبويبات تعرض عدد النتائج في كل مستوى.</string>
+
+    <!-- Hadith study -->
+    <string name="study_title">قراءة الحديث</string>
+    <string name="study_matn_title">المتن</string>
+    <string name="study_sanad_title">سلسلة الإسناد</string>
+    <string name="study_sanad_hint">من المصنّف إلى الصحابي، والمدار مُبرَز</string>
+    <string name="study_sanad_compiler">المصنّف</string>
+    <string name="study_sanad_short_note">يُذكر الحديث هنا دون سلسلته الطويلة، فالحلقة الوحيدة هي الصحابي راوي الحديث.</string>
+    <string name="study_takhrij">التخريج: %1$s</string>
+    <string name="study_grade">الدرجة: %1$s</string>
+    <string name="study_chapter">الباب: %1$s</string>
+    <string name="study_text_smaller">تصغير الخط</string>
+    <string name="study_text_larger">تكبير الخط</string>
+    <string name="study_text_size">%1$d٪</string>
+    <string name="study_copy">نسخ</string>
+    <string name="study_copied">تم النسخ</string>
+    <string name="study_copy_citation">— %1$s، حديث رقم %2$d</string>
+    <string name="study_start">أضف إلى وِرد الحفظ</string>
+    <string name="study_start_hint">ستحفظ متنه ثم سنده، ويدخل في جدول مراجعاتك.</string>
+    <string name="study_starting">جارٍ الإضافة…</string>
+    <string name="study_start_error">تعذّرت الإضافة، حاول مرة أخرى</string>
+    <string name="study_retention_title">نسبة التذكّر الآن</string>
+    <string name="study_retention_detail">المتن %1$d٪ · السند %2$d٪</string>
+    <string name="study_review_now">مراجعة الآن</string>
 
     <!-- Settings -->
     <string name="settings_open">الإعدادات</string>
@@ -242,4 +324,40 @@
     <string name="about_method_pivots">• المدارات والرواة: شبكة الأسانيد وقائمة أكثر الرواة تفلّتًا توجّه مراجعتك إلى مواضع الضعف.</string>
     <string name="about_method_privacy">• بياناتك لك: كل شيء يعمل دون إنترنت، ونسخك الاحتياطية ملف JSON بيدك.</string>
     <string name="about_ok">حسنًا</string>
+
+    <!-- Layers: the staged memorization of a hadith (core, Sanad tree, transmission terms) -->
+    <string name="layer_1_name">لبّ الحديث</string>
+    <string name="layer_2_name">شجرة السند</string>
+    <string name="layer_3_name">صيغ الأداء والضبط</string>
+    <string name="layer_1_badge">الطبقة الأولى: المتن والصحابي</string>
+    <string name="layer_2_badge">الطبقة الثانية: شجرة السند</string>
+    <string name="layer_3_badge">الطبقة الثالثة: صيغ الأداء والضبط</string>
+    <string name="layer_1_desc">تحفظ متن الحديث وصحابيَّه وتخريجه أولًا، فيثبت الأصل قبل السلسلة.</string>
+    <string name="layer_2_desc">تحفظ سلسلة الرواة وترتيبهم، وتتدرّب عليها ببناء السند والراوي المفقود.</string>
+    <string name="layer_3_desc">تضبط صيغ الأداء (حدّثنا، أخبرنا، عن) وتتعرّف على أضعف حلقات السند.</string>
+    <string name="layer_progress_to_2">التقدّم نحو فتح شجرة السند: %1$d٪</string>
+    <string name="layer_progress_to_3">التقدّم نحو فتح صيغ الأداء: %1$d٪</string>
+    <string name="layer_all_open">فُتحت جميع الطبقات</string>
+    <string name="layer_sanad_locked_hint">أتقن لبّ الحديث لفتح شجرة السند</string>
+    <string name="layer_terms_locked_hint">ثبّت السند لفتح صيغ الأداء والضبط</string>
+    <string name="layer_unlock_title_2">تم فتح شجرة السند</string>
+    <string name="layer_unlock_title_3">تم فتح صيغ الأداء والضبط</string>
+    <string name="layer_unlock_body_2">أتقنت لبّ الحديث رقم %1$d؛ صار سنده وتدريباته متاحة لك.</string>
+    <string name="layer_unlock_body_3">ثبت سند الحديث رقم %1$d؛ ستُسأل الآن عن صيغ أدائه وتُبرَز لك أضعف حلقاته.</string>
+    <string name="layer_unlock_dismiss">حسنًا</string>
+    <string name="layer_unlock_summary_title">طبقات فُتحت في هذه الجلسة</string>
+    <string name="layer_unlock_summary_item">الحديث رقم %1$d: %2$s</string>
+    <string name="review_tashkeel_hide">إخفاء التشكيل</string>
+    <string name="review_tashkeel_show">إظهار التشكيل</string>
+    <string name="review_tashkeel_hint">استحضر ضبط الكلمات أيضًا، ثم أظهر التشكيل لتتحقق</string>
+    <string name="review_drills_hint">درّب سند هذا الحديث بعد المراجعة</string>
+    <string name="review_terms_title">صيغ الأداء والضبط</string>
+    <string name="review_terms_hint">استحضر صيغة الأداء عند كل راوٍ (حدّثنا، أخبرنا، عن) ثم أظهرها لتتحقق</string>
+    <string name="review_terms_reveal">إظهار صيغ الأداء</string>
+    <string name="review_terms_masked">؟</string>
+    <string name="review_empty_narrator_locked">أحاديث هذا الراوي ما زالت في الطبقة الأولى؛ أتقن لبّ كل حديث لتفتح سنده وتراجعه من هنا.</string>
+    <string name="study_layer_title">مرحلة الحفظ</string>
+    <string name="study_drills_locked">تُفتح تدريبات هذا الحديث بعد أن تُتقن لبّه</string>
+    <string name="study_retention_detail_matn">المتن %1$d٪</string>
+    <string name="home_drills_locked">تُفتح تدريبات السند حين تُتقن لبّ أول حديث لك</string>
 </resources>

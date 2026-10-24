@@ -9,6 +9,7 @@ import com.mutqan.hadith.data.dao.HadithDao
 import com.mutqan.hadith.data.dao.MasteryDao
 import com.mutqan.hadith.data.dao.NarratorDao
 import com.mutqan.hadith.data.dao.ReviewHistoryDao
+import com.mutqan.hadith.data.entity.CatalogStateEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
@@ -23,8 +24,9 @@ import com.mutqan.hadith.data.seed.SeedLoader
         SanadEdgeEntity::class,
         NarratorReviewEventEntity::class,
         MasteryRecordEntity::class,
+        CatalogStateEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {
@@ -52,23 +54,30 @@ abstract class MutqanDatabase : RoomDatabase() {
                 Room.databaseBuilder(context, MutqanDatabase::class.java, name)
             }
             return builder
-                // Dev only: replace with real migrations once the schema ships.
-                .fallbackToDestructiveMigration(dropAllTables = true)
+                .addMigrations(*Migrations.ALL)
+                // Versions 1-3 only ever existed on development builds: rebuild and reseed them. From
+                // version 4 (v1.0.0) on, a schema change needs a real migration so progress survives.
+                .fallbackToDestructiveMigrationFrom(true, 1, 2, 3)
                 .addCallback(PrepopulateCallback(context))
         }
     }
 
     /**
-     * Seeds whenever an opened database has no Hadiths: on first creation, after a destructive
-     * migration recreated the tables, or if an earlier seed was interrupted. Runs on every open
-     * but costs one `COUNT(*)` once seeded.
+     * Keeps the catalog current. A database with no Hadiths is seeded: on first creation, after a
+     * destructive migration recreated the tables, or if an earlier seed was interrupted. One that holds
+     * an older catalog than the app bundles is synced, adding and refreshing hadiths without touching
+     * the user's progress. Runs on every open but costs two cheap queries once the catalog is current.
      */
     private class PrepopulateCallback(private val context: Context) : Callback() {
         override fun onOpen(db: SupportSQLiteDatabase) {
-            if (db.isReadOnly || !SeedLoader.isEmpty(db)) return
+            if (db.isReadOnly) return
+            val empty = SeedLoader.isEmpty(db)
+            if (!empty && SeedLoader.appliedVersion(db) >= SeedLoader.CATALOG_VERSION) return
             db.beginTransaction()
             try {
-                SeedLoader.write(db, SeedLoader.load(context))
+                val catalog = SeedLoader.load(context)
+                if (empty) SeedLoader.write(db, catalog) else SeedLoader.sync(db, catalog)
+                SeedLoader.markApplied(db, SeedLoader.CATALOG_VERSION)
                 db.setTransactionSuccessful()
             } finally {
                 db.endTransaction()

@@ -1,5 +1,6 @@
 package com.mutqan.hadith.domain.repository
 
+import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
@@ -22,6 +23,14 @@ interface HadithRepository {
 
     /** Every Hadith whose chain passes through [narratorId], at any position, in curriculum order. */
     suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad>
+
+    /** The hadiths of one curriculum [level] in curriculum order; emits again when the library changes. */
+    fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>>
+
+    fun countHadithsByLevel(level: Int): Flow<Int>
+
+    /** The hadiths of [level] whose text contains [query], with or without tashkeel; a query with nothing searchable in it finds none. */
+    fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>>
 }
 
 interface NarratorRepository {

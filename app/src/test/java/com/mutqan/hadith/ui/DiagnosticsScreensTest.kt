@@ -15,18 +15,16 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
-import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
-import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
-import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.details.HadithDetailsContent
@@ -34,8 +32,6 @@ import com.mutqan.hadith.ui.details.HadithDetailsUi
 import com.mutqan.hadith.ui.graph.NarratorGraphScreen
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
-import com.mutqan.hadith.ui.home.HomeActions
-import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewRoute
 import com.mutqan.hadith.ui.review.ReviewViewModel
@@ -90,6 +86,9 @@ class DiagnosticsScreensTest {
     }
 
     private fun studied(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 1f, 1f, 1L, 1L, 2L, 1) }
+
+    /** Hadiths well into the last layer: the Sanad tree and the transmission terms are open. */
+    private fun mastered(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 60f, 60f, 1L, 1L, 2L, 5) }
 
     private fun heatmap(hadithId: Long): ChainHeatmap = runBlocking { GetNarratorChainHeatmapUseCase(hadiths, reviews)(hadithId) }
 
@@ -320,37 +319,6 @@ class DiagnosticsScreensTest {
         assertEquals(false, reviewed)
     }
 
-    // -- Home entry points -----------------------------------------------------------------
-
-    @Test
-    fun home_graphIconAndDetailsActionReachTheirDestinations() {
-        val calls = mutableListOf<String>()
-        val actions = HomeActions(
-            onStartDueReview = {}, onLearnNew = {}, onReviewHadith = {}, onSanadBuilder = {}, onMissingLink = {},
-            onOpenDetails = { calls += "details$it" },
-            onOpenGraph = { calls += "graph" },
-            onOpenAnalytics = { calls += "analytics" },
-            onOpenSettings = { calls += "settings" },
-        )
-        val dashboard = StudyDashboard(
-            dueCount = 1,
-            newCount = 0,
-            overallMastery = 0.5f,
-            items = listOf(DashboardItem(1, 1, "صحيح البخاري", "أبو هريرة", StabilityMetrics(3f, 2f, 0.72f, 0.72f, 0.4f), isDue = true)),
-            drillSuggestionId = 1,
-        )
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
-
-        compose.onNodeWithContentDescription("شبكة الأسانيد").performClick()
-        compose.onNodeWithContentDescription("الإحصائيات").performClick()
-        compose.onNodeWithContentDescription("الإعدادات").performClick()
-        assertEquals(listOf("graph", "analytics", "settings"), calls)
-
-        compose.onNodeWithText("الصحابي: أبو هريرة").performClick()
-        compose.onNodeWithText("تفاصيل الحديث وصحة السند").performClick()
-        assertEquals(listOf("graph", "analytics", "settings", "details1"), calls)
-    }
-
     // -- Review of a narrator's hadiths ----------------------------------------------------
 
     private fun narratorReviewVm(narratorId: Long) = ReviewViewModel(
@@ -360,10 +328,12 @@ class DiagnosticsScreensTest {
         hadiths,
         SubmitReviewUseCase(hadiths, reviews, scheduler),
         GetNarratorChainHeatmapUseCase(hadiths, reviews),
+        GetLayerStatusesUseCase(reviews, scheduler),
     )
 
     @Test
     fun narratorReview_hasItsOwnTitleAndStartsFromRecall() {
+        studied(1, 2)
         compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
 
         compose.onNodeWithText("أحاديث الراوي").assertExists()
@@ -372,6 +342,7 @@ class DiagnosticsScreensTest {
 
     @Test
     fun narratorReview_showsTheChainHealthOnceTheSanadIsRevealed() {
+        mastered(1, 2)
         record(1, 3, errors = 1, successes = 1)
         compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
 
@@ -382,6 +353,15 @@ class DiagnosticsScreensTest {
 
         compose.onNodeWithText("صحة السلسلة").assertExists()
         compose.onNodeWithText("أضعف حلقة").assertExists() // the Zuhri, the only link with a miss on record
+    }
+
+    @Test
+    fun narratorReview_saysSoWhenTheHadithsSanadTreesAreStillClosed() {
+        // Nothing studied yet: every hadith through the narrator is still on layer 1, which has no chain to review.
+        compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
+
+        compose.onNodeWithText("أحاديث هذا الراوي ما زالت في الطبقة الأولى؛ أتقن لبّ كل حديث لتفتح سنده وتراجعه من هنا.").assertExists()
+        compose.onNodeWithText("لا توجد أحاديث تمر بهذا الراوي.").assertDoesNotExist()
     }
 
     @Test

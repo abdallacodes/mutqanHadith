@@ -26,22 +26,55 @@
     <string name="tier_successor">Successor</string>
     <string name="tier_successor_followers">Successors\' followers</string>
     <string name="tier_collector_teacher">Collector\'s teacher</string>
+    <string name="tier_narrator">Narrator</string>
 
     <!-- Home -->
     <string name="home_title">Mutqan</string>
-    <string name="home_today">Today\'s portion</string>
-    <string name="home_due">Due for review</string>
-    <string name="home_new">New to memorize</string>
-    <string name="home_mastery">Overall mastery</string>
-    <string name="action_start_review_count">Start Review (%1$d)</string>
-    <string name="action_learn_new_count">Learn New (%1$d)</string>
-    <string name="home_nothing_due">Nothing due for review right now</string>
     <string name="home_nothing_new">You\'ve finished all the new hadiths</string>
     <string name="home_drills">Sanad Drills</string>
     <string name="drill_sanad_builder">Sanad Builder</string>
     <string name="drill_missing_link">Missing Link</string>
-    <string name="home_library">Hadiths</string>
     <string name="sheet_review_this">Review this hadith</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_daily">Daily Study</string>
+    <string name="tab_library">Library</string>
+    <string name="tab_insights">Network &amp; Insights</string>
+
+    <!-- Daily study -->
+    <plurals name="home_streak_days">
+        <item quantity="one">Memorization streak: %1$d day</item>
+        <item quantity="other">Memorization streak: %1$d days</item>
+    </plurals>
+    <string name="home_streak_none">Start your memorization streak today</string>
+    <string name="home_review_title">Daily Review</string>
+    <plurals name="home_review_due">
+        <item quantity="one">%1$d hadith is due for review</item>
+        <item quantity="other">%1$d hadiths are due for review</item>
+    </plurals>
+    <string name="home_review_start">Start Daily Review</string>
+    <string name="home_review_done">You completed today\'s review</string>
+    <string name="home_review_done_hint">Come back tomorrow, or move on to a new hadith</string>
+    <string name="home_review_empty">No reviews yet; they begin once you memorize your first hadith</string>
+    <string name="home_next_title">Next Step in Memorization</string>
+    <string name="home_next_number">Hadith no. %1$d</string>
+    <string name="home_next_start">Learn This Hadith</string>
+    <string name="home_stats_learning">Learning</string>
+    <string name="home_stats_mastered">Mastered</string>
+    <string name="home_stats_retention">Retention</string>
+
+    <!-- Network and insights -->
+    <string name="insights_title">Network &amp; Insights</string>
+    <string name="insights_graph_title">Narrator Network</string>
+    <string name="insights_graph_hint">Explore the narrators your chains share, and where each one stands in your hadiths</string>
+    <string name="insights_analytics_title">Mastery Analytics</string>
+    <string name="insights_analytics_hint">How well the matn and the sanad hold in your memory right now</string>
+    <string name="insights_memory_title">Memory Clocks</string>
+    <string name="insights_memory_hint">Your streak, and how long your memory holds before it needs a review</string>
+    <string name="insights_clock_matn">Matn clock: %1$s</string>
+    <string name="insights_clock_sanad">Sanad clock: %1$s</string>
+    <string name="insights_clock_value">%1$s days</string>
+    <string name="insights_settings_hint">Language, backup, and resetting your progress</string>
 
     <!-- Review -->
     <string name="review_title_due">Review Session</string>
@@ -120,7 +153,6 @@
 
     <!-- Narrator graph -->
     <string name="graph_title">Isnad Network</string>
-    <string name="graph_open">Isnad Network</string>
     <string name="graph_filter_all">All hadiths</string>
     <string name="graph_filter_studied">Memorized only</string>
     <string name="graph_legend_pivot">Pivot</string>
@@ -148,9 +180,7 @@
     <!-- Hadith details -->
     <string name="details_title">Hadith Details</string>
     <string name="details_close">Close</string>
-    <string name="sheet_details">Hadith details and sanad health</string>
     <!-- Analytics -->
-    <string name="analytics_open">Statistics</string>
     <string name="analytics_title">Mastery Statistics</string>
     <string name="analytics_empty_banner">Complete your first review and your statistics will appear here</string>
     <string name="analytics_streak_title">Review Streak</string>
@@ -181,6 +211,50 @@
     <string name="analytics_weak_empty">No narrator has tripped you up repeatedly yet. The names slipping most from your memory will appear here after a few reviews.</string>
     <string name="analytics_weak_drill">Drill</string>
     <string name="analytics_weak_cd">%1$s, error rate %2$d%%, tap to drill their hadiths</string>
+
+    <!-- Library -->
+    <string name="library_title">Library</string>
+    <string name="library_search_hint">Search the hadith text…</string>
+    <string name="library_search_clear">Clear search</string>
+    <string name="level_1_title">Level 1: Core Foundations</string>
+    <string name="level_2_title">Level 2: Hadiths of Rulings</string>
+    <string name="level_3_title">Level 3: The Sunnah Collections</string>
+    <string name="level_1_desc">The Forty Hadith of al-Nawawi: comprehensive texts with their Companion narrators and sources</string>
+    <string name="level_2_desc">Umdat al-Ahkam: hadiths of legal rulings</string>
+    <string name="level_3_desc">The musnad collections, studied with their full chains</string>
+    <string name="level_badge">Level %1$d</string>
+    <string name="library_status_count">%1$s: %2$d</string>
+    <string name="progress_new">New</string>
+    <string name="progress_learning">Learning</string>
+    <string name="progress_mastered">Mastered</string>
+    <string name="library_level_empty_title">Coming soon</string>
+    <string name="library_level_empty_body">This level has no hadiths yet. They will appear here once they are added.</string>
+    <string name="library_no_results">No results for “%1$s” in this level</string>
+    <string name="library_no_results_hint">Try another word, or check the other levels; the tabs show how many results each one has.</string>
+
+    <!-- Hadith study -->
+    <string name="study_title">Hadith Reader</string>
+    <string name="study_matn_title">Matn</string>
+    <string name="study_sanad_title">Chain of Transmission</string>
+    <string name="study_sanad_hint">From the compiler down to the Companion; pivot narrators are highlighted</string>
+    <string name="study_sanad_compiler">Compiler</string>
+    <string name="study_sanad_short_note">Here the hadith is given without its long chain: the single link is the Companion who narrated it.</string>
+    <string name="study_takhrij">Takhrij: %1$s</string>
+    <string name="study_grade">Grade: %1$s</string>
+    <string name="study_chapter">Chapter: %1$s</string>
+    <string name="study_text_smaller">Smaller text</string>
+    <string name="study_text_larger">Larger text</string>
+    <string name="study_text_size">%1$d%%</string>
+    <string name="study_copy">Copy</string>
+    <string name="study_copied">Copied</string>
+    <string name="study_copy_citation">— %1$s, hadith no. %2$d</string>
+    <string name="study_start">Start Memorizing</string>
+    <string name="study_start_hint">You will learn its matn, then its sanad, and it joins your review schedule.</string>
+    <string name="study_starting">Adding…</string>
+    <string name="study_start_error">Couldn\'t add it. Try again.</string>
+    <string name="study_retention_title">Current retention</string>
+    <string name="study_retention_detail">Matn %1$d%% · Sanad %2$d%%</string>
+    <string name="study_review_now">Review Now</string>
 
     <!-- Settings -->
     <string name="settings_open">Settings</string>
@@ -232,4 +306,40 @@
     <string name="about_method_pivots">• Pivots and narrators: the isnad network and the list of most slippery narrators point your review at your weak spots.</string>
     <string name="about_method_privacy">• Your data is yours: everything works offline, and your backups are JSON files you hold yourself.</string>
     <string name="about_ok">OK</string>
+
+    <!-- Layers: the staged memorization of a hadith (core, Sanad tree, transmission terms) -->
+    <string name="layer_1_name">The core of the hadith</string>
+    <string name="layer_2_name">The Sanad tree</string>
+    <string name="layer_3_name">Transmission terms and precision</string>
+    <string name="layer_1_badge">Layer 1: matn and Companion</string>
+    <string name="layer_2_badge">Layer 2: the Sanad tree</string>
+    <string name="layer_3_badge">Layer 3: transmission terms and precision</string>
+    <string name="layer_1_desc">You memorize the matn, its Companion and its takhrij first, so the foundation is firm before the chain.</string>
+    <string name="layer_2_desc">You memorize the chain of narrators and their order, and train on it with Sanad builder and the missing narrator.</string>
+    <string name="layer_3_desc">You master the transmission terms (haddathana, akhbarana, \'an) and learn the weakest links of the chain.</string>
+    <string name="layer_progress_to_2">Progress toward unlocking the Sanad tree: %1$d%%</string>
+    <string name="layer_progress_to_3">Progress toward unlocking transmission terms: %1$d%%</string>
+    <string name="layer_all_open">All layers are open</string>
+    <string name="layer_sanad_locked_hint">Master the core of the hadith to unlock the Sanad tree</string>
+    <string name="layer_terms_locked_hint">Firm up the chain to unlock transmission terms and precision</string>
+    <string name="layer_unlock_title_2">Sanad tree unlocked</string>
+    <string name="layer_unlock_title_3">Transmission terms and precision unlocked</string>
+    <string name="layer_unlock_body_2">You mastered the core of hadith %1$d; its chain and drills are now open to you.</string>
+    <string name="layer_unlock_body_3">The chain of hadith %1$d is firm; you will now be asked for its transmission terms and shown its weakest links.</string>
+    <string name="layer_unlock_dismiss">Got it</string>
+    <string name="layer_unlock_summary_title">Layers unlocked this session</string>
+    <string name="layer_unlock_summary_item">Hadith %1$d: %2$s</string>
+    <string name="review_tashkeel_hide">Hide tashkeel</string>
+    <string name="review_tashkeel_show">Show tashkeel</string>
+    <string name="review_tashkeel_hint">Recall how the words are vowelled too, then show the tashkeel to check</string>
+    <string name="review_drills_hint">Train this hadith\'s chain after the review</string>
+    <string name="review_terms_title">Transmission terms and precision</string>
+    <string name="review_terms_hint">Recall the transmission term at each narrator (haddathana, akhbarana, \'an), then show them to check</string>
+    <string name="review_terms_reveal">Show transmission terms</string>
+    <string name="review_terms_masked">?</string>
+    <string name="review_empty_narrator_locked">This narrator\'s hadiths are still on layer 1; master the core of each one to unlock its chain and review it from here.</string>
+    <string name="study_layer_title">Memorization stage</string>
+    <string name="study_drills_locked">This hadith\'s drills unlock once you master its core</string>
+    <string name="study_retention_detail_matn">Matn %1$d%%</string>
+    <string name="home_drills_locked">Sanad drills unlock once you master the core of your first hadith</string>
 </resources>

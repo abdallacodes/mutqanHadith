@@ -6,6 +6,9 @@ object ArabicNormalizer {
     private val DIACRITICS = Regex("[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]")
     private val WHITESPACE = Regex("\\s+")
 
+    /** [text] without its tashkeel and tatweel, every letter as written. */
+    fun stripDiacritics(text: String): String = text.replace(DIACRITICS, "")
+
     fun normalize(text: String): String =
         text
             .replace(DIACRITICS, "")

@@ -3,6 +3,7 @@ package com.mutqan.hadith.data.seed
 import android.content.ContentValues
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mutqan.hadith.data.entity.CatalogStateEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
@@ -17,10 +18,21 @@ data class SeedData(
 
 /**
  * Parses `assets/seed_hadiths.json` and writes it straight into the database being created,
- * so the seed commits atomically with the schema.
+ * so the seed commits atomically with the schema. An existing database is brought up to date
+ * with [sync] instead, which leaves the user's progress alone.
  */
 object SeedLoader {
     const val ASSET_NAME = "seed_hadiths.json"
+
+    /**
+     * The version of the bundled catalog. Raise it whenever `seed_hadiths.json` changes: a database
+     * that has absorbed an older version [sync]s the new one the next time it opens, then records it
+     * in `catalog_state`. A schema change is a Room migration instead.
+     *
+     * 1: the first levelled catalog. 2: every text and chain re-sourced from audited datasets
+     * (`tools/import_hadiths.py`), replacing the hand-written one.
+     */
+    const val CATALOG_VERSION = 2
 
     fun load(context: Context): SeedData =
         parse(context.assets.open(ASSET_NAME).bufferedReader(Charsets.UTF_8).use { it.readText() })
@@ -56,6 +68,9 @@ object SeedLoader {
                 chapter = h.getString("chapter"),
                 grade = h.getString("grade"),
                 collector = h.getString("collector"),
+                takhrij = h.getString("takhrij"),
+                sahabi = h.getString("sahabi"),
+                level = h.getInt("level"),
             )
             val sanad = h.getJSONArray("sanad")
             for (j in 0 until sanad.length()) {
@@ -74,38 +89,124 @@ object SeedLoader {
     fun isEmpty(db: SupportSQLiteDatabase): Boolean =
         db.query("SELECT COUNT(*) FROM hadith").use { it.moveToFirst() && it.getInt(0) == 0 }
 
-    /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
-    fun write(db: SupportSQLiteDatabase, data: SeedData) {
-        data.narrators.forEach {
-            db.insert("narrator", CONFLICT_REPLACE, ContentValues().apply {
-                put("id", it.id)
-                put("primaryName", it.primaryName)
-                put("fullName", it.fullName)
-                put("tier", it.tier)
-                put("isPivot", if (it.isPivot) 1 else 0)
-            })
+    /** The catalog version this database has absorbed; 0 when it has not recorded one. */
+    fun appliedVersion(db: SupportSQLiteDatabase): Int =
+        db.query("SELECT version FROM catalog_state WHERE id = ${CatalogStateEntity.SINGLETON_ID}").use {
+            if (it.moveToFirst()) it.getInt(0) else 0
         }
-        data.hadiths.forEach {
-            db.insert("hadith", CONFLICT_REPLACE, ContentValues().apply {
-                put("id", it.id)
-                put("matnWithTashkeel", it.matnWithTashkeel)
-                put("matnClean", it.matnClean)
-                put("sourceBook", it.sourceBook)
-                put("hadithNumber", it.hadithNumber)
-                put("chapter", it.chapter)
-                put("grade", it.grade)
-                put("collector", it.collector)
-            })
-        }
-        data.edges.forEach {
-            db.insert("sanad_edge", CONFLICT_REPLACE, ContentValues().apply {
-                put("hadithId", it.hadithId)
-                put("narratorId", it.narratorId)
-                put("orderIndex", it.orderIndex)
-                put("transmissionTerm", it.transmissionTerm)
-            })
-        }
+
+    fun markApplied(db: SupportSQLiteDatabase, version: Int) {
+        db.execSQL(
+            "INSERT OR REPLACE INTO catalog_state (id, version) VALUES (?, ?)",
+            arrayOf(CatalogStateEntity.SINGLETON_ID, version),
+        )
     }
 
+    /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
+    fun write(db: SupportSQLiteDatabase, data: SeedData) {
+        data.narrators.forEach { db.insert("narrator", CONFLICT_REPLACE, narratorValues(it)) }
+        data.hadiths.forEach { db.insert("hadith", CONFLICT_REPLACE, hadithValues(it)) }
+        data.edges.forEach { db.insert("sanad_edge", CONFLICT_REPLACE, edgeValues(it)) }
+    }
+
+    /**
+     * Brings a database that already holds a catalog up to [data]: adds the narrators and hadiths it
+     * lacks and refreshes the ones it has. Existing rows are updated in place, never replaced, because
+     * deleting a hadith would cascade into the user's mastery records, which this never touches.
+     *
+     * The chain of a hadith that is already there is replaced when the catalog words it differently,
+     * and so is the narrator-level history recorded against the old chain: it says how well the user
+     * knew narrators the hadith no longer has, and narrator ids may now mean someone else. Narrators
+     * that nothing refers to any more are removed. Call inside a transaction.
+     */
+    fun sync(db: SupportSQLiteDatabase, data: SeedData) {
+        val knownHadiths = ids(db, "hadith")
+        val storedChains = chains(db)
+        val newChains = data.edges.groupBy { it.hadithId }.mapValues { (_, edges) ->
+            edges.sortedBy { it.orderIndex }.map { it.narratorId to it.transmissionTerm }
+        }
+        val replaced = data.hadiths.map { it.id }
+            .filter { it in knownHadiths && storedChains[it].orEmpty() != newChains[it].orEmpty() }
+            .toSet()
+        // The old chains go first, so that no narrator row is rewritten under an edge that still means someone else.
+        replaced.forEach {
+            db.delete("narrator_review_event", "hadithId = ?", arrayOf(it))
+            db.delete("sanad_edge", "hadithId = ?", arrayOf(it))
+        }
+
+        val knownNarrators = ids(db, "narrator")
+        data.narrators.forEach {
+            if (it.id in knownNarrators) {
+                db.update("narrator", CONFLICT_NONE, narratorValues(it), "id = ?", arrayOf(it.id))
+            } else {
+                db.insert("narrator", CONFLICT_ABORT, narratorValues(it))
+            }
+        }
+
+        data.hadiths.forEach {
+            if (it.id in knownHadiths) {
+                db.update("hadith", CONFLICT_NONE, hadithValues(it), "id = ?", arrayOf(it.id))
+            } else {
+                db.insert("hadith", CONFLICT_ABORT, hadithValues(it))
+            }
+        }
+        data.edges.filter { it.hadithId !in knownHadiths || it.hadithId in replaced }.forEach {
+            db.insert("sanad_edge", CONFLICT_ABORT, edgeValues(it))
+        }
+
+        val wanted = data.narrators.joinToString(",") { it.id.toString() }
+        db.execSQL(
+            "DELETE FROM narrator WHERE id NOT IN ($wanted) " +
+                "AND id NOT IN (SELECT narratorId FROM sanad_edge) " +
+                "AND id NOT IN (SELECT narratorId FROM narrator_review_event)"
+        )
+    }
+
+    /** Each stored chain as (narrator, term) pairs in order, from the collector's side. */
+    private fun chains(db: SupportSQLiteDatabase): Map<Long, List<Pair<Long, String>>> =
+        db.query("SELECT hadithId, narratorId, transmissionTerm FROM sanad_edge ORDER BY hadithId, orderIndex").use { cursor ->
+            val chains = mutableMapOf<Long, MutableList<Pair<Long, String>>>()
+            while (cursor.moveToNext()) {
+                chains.getOrPut(cursor.getLong(0)) { mutableListOf() } += cursor.getLong(1) to cursor.getString(2)
+            }
+            chains
+        }
+
+    private fun ids(db: SupportSQLiteDatabase, table: String): Set<Long> =
+        db.query("SELECT id FROM $table").use { cursor ->
+            buildSet { while (cursor.moveToNext()) add(cursor.getLong(0)) }
+        }
+
+    private fun narratorValues(n: NarratorEntity) = ContentValues().apply {
+        put("id", n.id)
+        put("primaryName", n.primaryName)
+        put("fullName", n.fullName)
+        put("tier", n.tier)
+        put("isPivot", if (n.isPivot) 1 else 0)
+    }
+
+    private fun hadithValues(h: HadithEntity) = ContentValues().apply {
+        put("id", h.id)
+        put("matnWithTashkeel", h.matnWithTashkeel)
+        put("matnClean", h.matnClean)
+        put("sourceBook", h.sourceBook)
+        put("hadithNumber", h.hadithNumber)
+        put("chapter", h.chapter)
+        put("grade", h.grade)
+        put("collector", h.collector)
+        put("takhrij", h.takhrij)
+        put("sahabi", h.sahabi)
+        put("level", h.level)
+    }
+
+    private fun edgeValues(e: SanadEdgeEntity) = ContentValues().apply {
+        put("hadithId", e.hadithId)
+        put("narratorId", e.narratorId)
+        put("orderIndex", e.orderIndex)
+        put("transmissionTerm", e.transmissionTerm)
+    }
+
+    private const val CONFLICT_NONE = android.database.sqlite.SQLiteDatabase.CONFLICT_NONE
+    private const val CONFLICT_ABORT = android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT
     private const val CONFLICT_REPLACE = android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE
 }

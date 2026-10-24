@@ -16,9 +16,30 @@ class LocalizationResourcesTest {
 
     private class Entry(val value: String, val translatable: Boolean)
 
+    /** A `<plurals>` resource: its word forms by quantity (`one`, `few`, `other`, ...). */
+    private class Plural(val items: Map<String, String>)
+
     private val res = File("src/main/res")
     private val arabic = load("values/strings.xml")
     private val english = load("values-en/strings.xml")
+    private val arabicPlurals = loadPlurals("values/strings.xml")
+    private val englishPlurals = loadPlurals("values-en/strings.xml")
+
+    private fun loadPlurals(path: String): Map<String, Plural> {
+        val plurals = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File(res, path)).getElementsByTagName("plurals")
+        val result = LinkedHashMap<String, Plural>()
+        for (i in 0 until plurals.length) {
+            val element = plurals.item(i) as Element
+            val items = element.getElementsByTagName("item")
+            val forms = LinkedHashMap<String, String>()
+            for (j in 0 until items.length) {
+                val item = items.item(j) as Element
+                forms[item.getAttribute("quantity")] = item.textContent
+            }
+            assertTrue("$path declares ${element.getAttribute("name")} twice", result.put(element.getAttribute("name"), Plural(forms)) == null)
+        }
+        return result
+    }
 
     private fun load(path: String): Map<String, Entry> {
         val file = File(res, path)
@@ -54,6 +75,40 @@ class LocalizationResourcesTest {
     fun englishHasNoStringsTheDefaultLacks() {
         val orphans = english.keys - arabic.translatable().keys
         assertTrue("values-en/strings.xml translates strings that do not exist or are not translatable: $orphans", orphans.isEmpty())
+    }
+
+    @Test
+    fun everyArabicPluralHasAnEnglishTranslationAndTheOtherWayRound() {
+        assertEquals(arabicPlurals.keys, englishPlurals.keys)
+    }
+
+    @Test
+    fun pluralsHaveTheWordFormsOfTheirLanguage() {
+        // Arabic tells zero, one, two, a few, many and the rest apart; English has one and other.
+        arabicPlurals.forEach { (name, plural) ->
+            assertEquals("forms of $name", setOf("zero", "one", "two", "few", "many", "other"), plural.items.keys)
+        }
+        englishPlurals.forEach { (name, plural) ->
+            assertEquals("forms of $name", setOf("one", "other"), plural.items.keys)
+        }
+    }
+
+    @Test
+    fun pluralsKeepTheirPlaceholdersAndTheirScript() {
+        englishPlurals.forEach { (name, plural) ->
+            val expected = arabicPlurals.getValue(name).items.getValue("other")
+            plural.items.forEach { (quantity, text) ->
+                assertEquals("placeholders of $name/$quantity", placeholders(expected), placeholders(text))
+                assertTrue("$name/$quantity is not English: $text", !arabicLetters.containsMatchIn(text))
+            }
+        }
+        arabicPlurals.forEach { (name, plural) ->
+            plural.items.forEach { (quantity, text) ->
+                assertTrue("$name/$quantity is not Arabic: $text", !latinLetters.containsMatchIn(withoutPlaceholders(text)))
+                // The forms that stand for a number in particular carry it; "zero", "one" and "two" may say it in words.
+                if (quantity in setOf("few", "many", "other")) assertTrue("$name/$quantity lacks its number: $text", "%1\$d" in text)
+            }
+        }
     }
 
     @Test
@@ -98,12 +153,12 @@ class LocalizationResourcesTest {
     }
 
     @Test
-    fun theTiersAreWordedInArabicExactlyAsTheDatasetStoresThem() {
+    fun theTiersTheSeedStoresAreWordedInArabicExactlyAsTheDatasetStoresThem() {
         val seed = File("src/main/assets/seed_hadiths.json").readText(Charsets.UTF_8)
         val stored = Regex(""""tier"\s*:\s*"([^"]+)"""").findAll(seed).map { it.groupValues[1] }.toSet()
         val worded = arabic.filterKeys { it.startsWith("tier_") }.values.map { it.value }.toSet()
         assertTrue("the seed has no tiers to compare with", stored.isNotEmpty())
-        assertEquals("the Arabic tier strings are the tiers the seed stores", stored, worded)
+        assertTrue("every tier the seed stores is worded: ${stored - worded}", worded.containsAll(stored))
     }
 
     @Test

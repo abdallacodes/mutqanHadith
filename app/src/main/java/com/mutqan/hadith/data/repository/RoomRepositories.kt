@@ -1,7 +1,9 @@
 package com.mutqan.hadith.data.repository
 
 import androidx.room.withTransaction
+import com.mutqan.hadith.data.dao.searchInLevel
 import com.mutqan.hadith.data.db.MutqanDatabase
+import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
@@ -28,6 +30,12 @@ class RoomHadithRepository(private val db: MutqanDatabase) : HadithRepository {
 
     override suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad> =
         db.hadithDao().getHadithsByNarrator(narratorId)
+
+    override fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>> = db.hadithDao().getHadithsByLevel(level)
+
+    override fun countHadithsByLevel(level: Int): Flow<Int> = db.hadithDao().countHadithsByLevel(level)
+
+    override fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> = db.hadithDao().searchInLevel(level, query)
 }
 
 class RoomNarratorRepository(private val db: MutqanDatabase) : NarratorRepository {

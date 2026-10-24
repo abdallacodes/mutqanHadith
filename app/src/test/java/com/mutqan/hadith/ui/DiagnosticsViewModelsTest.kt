@@ -14,6 +14,7 @@ import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.ChainHealth
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
@@ -73,6 +74,10 @@ class DiagnosticsViewModelsTest {
         NarratorReviewEventEntity(hadithId = hadithId, narratorId = narratorId, reviewedAt = 1L, succeeded = succeeded)
 
     private fun studied(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 1f, 1f, 1L, 1L, 2L, 1) }
+
+    /** Hadiths whose Sanad tree is open, and ones well into the last layer, where the transmission terms are asked for. */
+    private fun sanadOpen(vararg ids: Long) = studied(*ids)
+    private fun mastered(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 60f, 60f, 1L, 1L, 2L, 5) }
 
     // -- Narrator graph --------------------------------------------------------------------
 
@@ -292,17 +297,38 @@ class DiagnosticsViewModelsTest {
             hadithRepo,
             SubmitReviewUseCase(hadithRepo, reviews, scheduler),
             heatmap ?: GetNarratorChainHeatmapUseCase(hadithRepo, reviews),
+            GetLayerStatusesUseCase(reviews, scheduler),
         )
 
     private fun ReviewViewModel.session(): ReviewSession = (state.value as UiState.Success).data
 
     @Test
     fun narratorReview_queuesEveryHadithThroughTheNarrator() = runTest {
+        sanadOpen(1, 2)
         val s = reviewVm(ReviewMode.NARRATOR, targetId = 3).session()
 
         assertEquals(listOf(1L, 2L), s.queue.map { it.hadithId })
         assertEquals(CardStage.RECALL, s.stage)
         assertFalse(s.isFinished)
+        assertEquals(0, s.lockedSkipped)
+    }
+
+    @Test
+    fun narratorReview_leavesOutTheHadithsWhoseSanadTreeIsClosed() = runTest {
+        sanadOpen(2) // hadith 1 is not studied yet: layer 1, no chain to review
+
+        val s = reviewVm(ReviewMode.NARRATOR, targetId = 3).session()
+
+        assertEquals(listOf(2L), s.queue.map { it.hadithId })
+        assertEquals(1, s.lockedSkipped)
+    }
+
+    @Test
+    fun narratorReview_withEveryTreeClosedIsAnEmptySessionThatSaysWhy() = runTest {
+        val s = reviewVm(ReviewMode.NARRATOR, targetId = 3).session()
+
+        assertTrue(s.queue.isEmpty() && s.isFinished)
+        assertEquals(2, s.lockedSkipped)
     }
 
     @Test
@@ -313,6 +339,7 @@ class DiagnosticsViewModelsTest {
 
     @Test
     fun narratorReview_runsThroughTheQueueAndRecordsEachHadith() = runTest {
+        sanadOpen(1, 2)
         val vm = reviewVm(ReviewMode.NARRATOR, targetId = 3)
 
         repeat(2) {
@@ -323,10 +350,12 @@ class DiagnosticsViewModelsTest {
 
         assertTrue(vm.session().isFinished)
         assertEquals(setOf(1L, 2L), reviews.mastery.keys)
+        assertEquals(listOf(2, 2), reviews.mastery.values.map { it.repetitionCount })
     }
 
     @Test
     fun heatmap_isNotLoadedUntilTheSanadIsRevealed() = runTest {
+        mastered(1)
         reviews.events += event(1, 3, false)
         val vm = reviewVm(ReviewMode.SINGLE, targetId = 1)
 
@@ -343,6 +372,7 @@ class DiagnosticsViewModelsTest {
 
     @Test
     fun heatmap_isFetchedOncePerCard() = runTest {
+        mastered(1)
         var calls = 0
         val counting = object : ReviewRepository by reviews {
             override suspend fun getNarratorOutcomeCounts(hadithId: Long) = reviews.getNarratorOutcomeCounts(hadithId).also { calls++ }
@@ -356,7 +386,20 @@ class DiagnosticsViewModelsTest {
     }
 
     @Test
+    fun heatmap_isLeftForTheLastLayer() = runTest {
+        sanadOpen(1) // layer 2: the chain is shown, but its narrators' records are not
+        reviews.events += event(1, 3, false)
+        val vm = reviewVm(ReviewMode.SINGLE, targetId = 1)
+
+        repeat(2) { vm.onEvent(ReviewEvent.Reveal) }
+
+        assertEquals(CardStage.SANAD, vm.session().stage)
+        assertTrue(vm.session().heatmaps.isEmpty())
+    }
+
+    @Test
     fun heatmap_aFailureDoesNotBreakTheReview() = runTest {
+        mastered(1)
         val broken = object : ReviewRepository by reviews {
             override suspend fun getNarratorOutcomeCounts(hadithId: Long) = error("ledger unreadable")
         }

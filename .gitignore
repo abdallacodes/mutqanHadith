@@ -32,3 +32,6 @@ local.properties
 *.pk8
 secrets.properties
 keystore_base64.txt
+
+# Python bytecode from tools/
+__pycache__/

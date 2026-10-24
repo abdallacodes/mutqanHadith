@@ -1,6 +1,8 @@
 package com.mutqan.hadith.domain.scheduler
 
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.StabilityMetrics
@@ -27,11 +29,19 @@ data class SchedulerConfig(
     val maxStabilityDays: Double = 365.0,
     /** Stability at which [SpacedRepetitionScheduler.metrics] reports a component as fully mastered. */
     val masteryHorizonDays: Double = 90.0,
+    /** Matn mastery (0..1, from its stability) at which the Sanad tree, layer 2, opens. */
+    val sanadTreeUnlockMastery: Double = 0.5,
+    /** Sanad mastery (0..1, from its stability) at which the transmission terms, layer 3, open. */
+    val termsUnlockMastery: Double = 0.6,
+    /** How long after the Sanad tree opens its first study is invited, so a review does not make its hadith due again at once. */
+    val sanadIntroDelayDays: Double = 1.0,
 ) {
     init {
         require(sanadDecayMultiplier >= 1.0) { "Sanad must not decay slower than Matn" }
         require(desiredRetention > 0.0 && desiredRetention < 1.0)
         require(brokenLinkMinFactor <= brokenLinkMaxFactor)
+        require(sanadTreeUnlockMastery in 0.0..1.0 && termsUnlockMastery in 0.0..1.0) { "Unlock thresholds are mastery levels, 0..1" }
+        require(sanadIntroDelayDays >= 0.0)
     }
 }
 
@@ -47,6 +57,8 @@ data class SchedulerConfig(
  * - **Next due** is `min(matnDue, sanadDue)`, where each component is due at its own last review
  *   plus its own interval, so a Matn-only or Sanad-only review never disturbs the other clock.
  *   A component that was never learned is due immediately.
+ * - **Layers:** the Sanad is not studied until the Matn holds (see [layerStatus]), so before that it has no
+ *   clock and its due time is left out; once the tree opens, its first study is due after a short delay.
  */
 class DualDecayScheduler(
     private val config: SchedulerConfig = SchedulerConfig(),
@@ -72,8 +84,13 @@ class DualDecayScheduler(
 
         val matnInterval = intervalFor(matnStability, decay = 1.0)
         val sanadInterval = intervalFor(sanadStability, decay = config.sanadDecayMultiplier)
+        val layer = layerFor(matnStability, sanadStability, sanadLastReviewedAt).layer
         val matnDue = dueAt(matnLastReviewedAt, matnInterval, matnStability, now)
-        val sanadDue = dueAt(sanadLastReviewedAt, sanadInterval, sanadStability, now)
+        val sanadDue = when {
+            !layer.opensSanad -> Long.MAX_VALUE
+            sanadLastReviewedAt == null -> now + (config.sanadIntroDelayDays * DAY_MS).roundToLong()
+            else -> dueAt(sanadLastReviewedAt, sanadInterval, sanadStability, now)
+        }
 
         val record = MasteryRecordEntity(
             hadithId = request.hadithId,
@@ -105,6 +122,29 @@ class DualDecayScheduler(
             sanadMastery = sanad.toFloat(),
         )
     }
+
+    override fun layerStatus(record: MasteryRecordEntity?): LayerStatus =
+        if (record == null) LayerStatus.Fresh else layerFor(record.matnStability.toDouble(), record.sanadStability.toDouble(), record.sanadLastReviewedAt)
+
+    /**
+     * Layer 2 opens when the Matn is mastered to [SchedulerConfig.sanadTreeUnlockMastery], or as soon as the chain
+     * has been studied at all (a hadith whose chain was reviewed before layers existed keeps it). Layer 3 opens
+     * from there once the Sanad is mastered to [SchedulerConfig.termsUnlockMastery].
+     */
+    private fun layerFor(matnStability: Double, sanadStability: Double, sanadLastReviewedAt: Long?): LayerStatus {
+        val matn = mastery(matnStability, decay = 1.0)
+        val sanad = mastery(sanadStability, decay = config.sanadDecayMultiplier)
+        return when {
+            matn < config.sanadTreeUnlockMastery && sanadLastReviewedAt == null ->
+                LayerStatus(MemorizationLayer.LAYER_1_CORE, progressTo(matn, config.sanadTreeUnlockMastery))
+            sanad < config.termsUnlockMastery ->
+                LayerStatus(MemorizationLayer.LAYER_2_SANAD_TREE, progressTo(sanad, config.termsUnlockMastery))
+            else -> LayerStatus(MemorizationLayer.LAYER_3_TRANSMISSION_TERMS, 1f)
+        }
+    }
+
+    private fun progressTo(mastery: Double, threshold: Double): Float =
+        if (threshold <= 0.0) 1f else (mastery / threshold).coerceIn(0.0, 1.0).toFloat()
 
     private fun elapsedDays(lastReviewedAt: Long?, now: Long): Double =
         if (lastReviewedAt == null) 0.0 else max(0L, now - lastReviewedAt) / DAY_MS

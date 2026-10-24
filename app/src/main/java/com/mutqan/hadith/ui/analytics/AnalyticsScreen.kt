@@ -204,7 +204,7 @@ private fun StreakCard(streak: StudyStreak) {
 
 /** Seven dots, oldest first and today last and outlined; a filled dot is a day with a review. */
 @Composable
-private fun WeekStrip(days: List<Boolean>) {
+internal fun WeekStrip(days: List<Boolean>) {
     val scheme = MaterialTheme.colorScheme
     val studied = stringResource(R.string.analytics_day_studied)
     val missed = stringResource(R.string.analytics_day_missed)
@@ -284,7 +284,7 @@ private fun RetentionRing(label: String, component: ComponentRetention?) {
 }
 
 /** 0.4 → "0.4", 12.34 → "12.3", 120 → "120"; digits stay Western like the rest of the app. */
-private fun formatDays(days: Float): String =
+internal fun formatDays(days: Float): String =
     if (days >= 100f) days.roundToInt().toString() else String.format(Locale.ROOT, "%.1f", days).removeSuffix(".0")
 
 @Composable

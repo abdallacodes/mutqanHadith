@@ -33,12 +33,18 @@ data class StabilityMetrics(
     val overallMastery: Float,
     val matnMastery: Float = 0f,
     val sanadMastery: Float = 0f,
-)
+) {
+    /** The mastery that counts in [layer]: before the chain opens only the Matn is being learned. */
+    fun masteryIn(layer: MemorizationLayer): Float = if (layer.opensSanad) overallMastery else matnMastery
+}
 
 /** Probability of recall right now, per component, in 0..1. */
 data class Retrievability(val matn: Float, val sanad: Float) {
     /** The weaker component decides how urgent a review is. */
     val weakest: Float get() = minOf(matn, sanad)
+
+    /** The weaker of the components being studied in [layer]: the chain does not count before its layer opens. */
+    fun weakestIn(layer: MemorizationLayer): Float = if (layer.opensSanad) weakest else matn
 }
 
 /** Per-narrator tally of recall attempts within one chain. */
