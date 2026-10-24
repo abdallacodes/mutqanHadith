@@ -8,6 +8,7 @@ import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.home.HomeViewModel
+import com.mutqan.hadith.ui.insights.InsightsViewModel
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
@@ -52,6 +53,10 @@ fun AppContainer.hadithStudyViewModelFactory(hadithId: Long): ViewModelProvider.
 
 fun AppContainer.analyticsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
     initializer { AnalyticsViewModel(getMasteryAnalytics) }
+}
+
+fun AppContainer.insightsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+    initializer { InsightsViewModel(getMasteryAnalytics) }
 }
 
 fun AppContainer.settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

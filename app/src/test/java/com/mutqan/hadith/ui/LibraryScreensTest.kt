@@ -21,8 +21,6 @@ import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.withMatn
 import com.mutqan.hadith.ui.common.UiState
-import com.mutqan.hadith.ui.home.HomeActions
-import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.library.LibraryRoute
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.study.HadithStudyRoute
@@ -30,7 +28,6 @@ import com.mutqan.hadith.ui.study.HadithStudyViewModel
 import com.mutqan.hadith.ui.study.MatnScale
 import com.mutqan.hadith.ui.study.ReaderSettings
 import com.mutqan.hadith.ui.theme.MutqanHadithTheme
-import com.mutqan.hadith.domain.usecase.StudyDashboard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -98,24 +95,6 @@ class LibraryScreensTest {
             settings,
         )
         compose.setContent { MutqanHadithTheme { HadithStudyRoute(vm, onClose = {}, onStartLearning = onStartLearning, onReview = onReview) } }
-    }
-
-    // -- Home -------------------------------------------------------------------------------
-
-    @Test
-    fun home_offersTheLibrary() {
-        var opened = 0
-        val dashboard = StudyDashboard(dueCount = 0, newCount = 4, overallMastery = 0f, items = emptyList(), drillSuggestionId = null)
-        compose.setContent {
-            MutqanHadithTheme {
-                HomeScreen(UiState.Success(dashboard), HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {}, onOpenLibrary = { opened++ })) {}
-            }
-        }
-
-        compose.onNodeWithText("تصفّح الأحاديث حسب المستوى وابحث في نصوصها").assertExists()
-        compose.onNodeWithText("المكتبة").performClick()
-
-        assertEquals(1, opened)
     }
 
     // -- Library ----------------------------------------------------------------------------

@@ -1,9 +1,17 @@
 package com.mutqan.hadith.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
@@ -14,6 +22,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mutqan.hadith.di.AppContainer
@@ -30,6 +39,10 @@ import com.mutqan.hadith.ui.home.HomeActions
 import com.mutqan.hadith.ui.home.HomeRoute
 import com.mutqan.hadith.ui.home.HomeViewModel
 import com.mutqan.hadith.ui.homeViewModelFactory
+import com.mutqan.hadith.ui.insights.InsightsActions
+import com.mutqan.hadith.ui.insights.InsightsRoute
+import com.mutqan.hadith.ui.insights.InsightsViewModel
+import com.mutqan.hadith.ui.insightsViewModelFactory
 import com.mutqan.hadith.ui.library.LibraryRoute
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.libraryViewModelFactory
@@ -65,6 +78,7 @@ object Routes {
     const val NARRATOR_GRAPH = "narrator_graph"
     const val ANALYTICS = "analytics"
     const val LIBRARY = "library"
+    const val INSIGHTS = "insights"
     const val SETTINGS = "settings"
     const val HADITH_DETAILS = "hadith_details/{$ARG_HADITH_ID}"
     const val HADITH_STUDY = "hadith_study/{$ARG_HADITH_ID}"
@@ -102,20 +116,50 @@ private val backOut: AnimatedContentTransitionScope<NavBackStackEntry>.() -> and
     slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End, tween(TRANSITION_MS)) + fadeOut(tween(TRANSITION_MS))
 }
 
+/** Moving between two tabs is a change of view, not a step forward or back, so it fades instead of sliding. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+    TopLevelTab.isTopLevel(initialState.destination.route) && TopLevelTab.isTopLevel(targetState.destination.route)
+
+/**
+ * The root of the app: the bottom bar over the destinations. The bar is there on the three tabs and gives way
+ * to the screens pushed above them, which are tasks of their own (a review, a reading) with their own Back.
+ */
 @Composable
 fun MutqanNavHost(
     container: AppContainer,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
 ) {
+    val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+    Scaffold(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.background,
+        // Each screen below handles the system bars itself; only the space of the bottom bar is taken here.
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            AnimatedVisibility(
+                visible = currentRoute == null || TopLevelTab.isTopLevel(currentRoute),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                MutqanBottomBar(currentRoute, onSelect = navController::navigateToTab)
+            }
+        },
+    ) { padding ->
+        MutqanDestinations(container, navController, Modifier.padding(padding).consumeWindowInsets(padding))
+    }
+}
+
+@Composable
+private fun MutqanDestinations(container: AppContainer, navController: NavHostController, modifier: Modifier) {
     NavHost(
         navController = navController,
         startDestination = Routes.HOME,
         modifier = modifier,
-        enterTransition = forwardIn,
-        exitTransition = forwardOut,
-        popEnterTransition = backIn,
-        popExitTransition = backOut,
+        enterTransition = { if (isTabSwitch()) fadeIn(tween(TRANSITION_MS)) else forwardIn(this) },
+        exitTransition = { if (isTabSwitch()) fadeOut(tween(TRANSITION_MS)) else forwardOut(this) },
+        popEnterTransition = { if (isTabSwitch()) fadeIn(tween(TRANSITION_MS)) else backIn(this) },
+        popExitTransition = { if (isTabSwitch()) fadeOut(tween(TRANSITION_MS)) else backOut(this) },
     ) {
         composable(Routes.HOME) {
             val viewModel: HomeViewModel = viewModel(factory = container.homeViewModelFactory())
@@ -123,15 +167,22 @@ fun MutqanNavHost(
                 viewModel = viewModel,
                 actions = HomeActions(
                     onStartDueReview = { navController.navigate(Routes.review(ReviewMode.DUE)) },
-                    onLearnNew = { navController.navigate(Routes.review(ReviewMode.NEW)) },
-                    onReviewHadith = { navController.navigate(Routes.review(ReviewMode.SINGLE, it)) },
+                    onStudyHadith = { navController.navigate(Routes.hadithStudy(it)) },
                     onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                     onMissingLink = { navController.navigate(Routes.missingLink(it)) },
-                    onOpenDetails = { navController.navigate(Routes.hadithDetails(it)) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                ),
+            )
+        }
+
+        composable(Routes.INSIGHTS) {
+            val viewModel: InsightsViewModel = viewModel(factory = container.insightsViewModelFactory())
+            InsightsRoute(
+                viewModel = viewModel,
+                actions = InsightsActions(
                     onOpenGraph = { navController.navigate(Routes.NARRATOR_GRAPH) },
                     onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                    onOpenLibrary = { navController.navigate(Routes.LIBRARY) },
                 ),
             )
         }
@@ -190,7 +241,8 @@ fun MutqanNavHost(
             val viewModel: LibraryViewModel = viewModel(factory = container.libraryViewModelFactory())
             LibraryRoute(
                 viewModel = viewModel,
-                onClose = { navController.popBackStack() },
+                // A tab, not a page above another: there is nowhere to go back to.
+                onClose = null,
                 onOpenHadith = { navController.navigate(Routes.hadithStudy(it)) },
             )
         }

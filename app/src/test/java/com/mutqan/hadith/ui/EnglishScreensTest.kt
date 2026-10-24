@@ -29,12 +29,16 @@ import com.mutqan.hadith.ui.study.MatnScale
 import com.mutqan.hadith.ui.study.ReaderSettings
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
-import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.StudyDashboard
-import com.mutqan.hadith.domain.model.StabilityMetrics
+import com.mutqan.hadith.domain.analytics.StudyStreak
+import com.mutqan.hadith.domain.usecase.ComponentRetention
+import com.mutqan.hadith.domain.usecase.DualRetention
+import com.mutqan.hadith.domain.usecase.LibraryStatus
+import com.mutqan.hadith.domain.usecase.MasteryAnalytics
+import com.mutqan.hadith.domain.usecase.NextToLearn
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.graph.NarratorGraphScreen
@@ -42,6 +46,9 @@ import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
 import com.mutqan.hadith.ui.home.HomeActions
 import com.mutqan.hadith.ui.home.HomeScreen
+import com.mutqan.hadith.ui.insights.InsightsActions
+import com.mutqan.hadith.ui.insights.InsightsScreen
+import com.mutqan.hadith.ui.navigation.MutqanBottomBar
 import com.mutqan.hadith.ui.settings.AppLanguage
 import com.mutqan.hadith.ui.settings.SettingsActions
 import com.mutqan.hadith.ui.settings.SettingsScreen
@@ -123,38 +130,106 @@ class EnglishScreensTest {
         }
     }
 
-    // -- Home ------------------------------------------------------------------------------
+    // -- Home and the tabs -----------------------------------------------------------------
+
+    private val noActions = HomeActions({}, {}, {}, {}, {})
+
+    private fun dashboard(
+        due: Int = 0,
+        learning: Int = 0,
+        streak: StudyStreak = StudyStreak.None,
+        next: NextToLearn? = null,
+        retention: Float? = null,
+    ) = StudyDashboard(
+        dueCount = due,
+        newCount = 0,
+        overallMastery = 0f,
+        items = emptyList(),
+        drillSuggestionId = 1,
+        learningCount = learning,
+        masteredCount = 2,
+        retention = retention,
+        streak = streak,
+        nextToLearn = next,
+    )
 
     @Test
-    fun home_isEnglishWhileTheHadithDataStaysArabic() {
-        val dashboard = StudyDashboard(
-            dueCount = 2,
-            newCount = 1,
-            overallMastery = 0.36f,
-            items = listOf(
-                DashboardItem(1, 1, "صحيح البخاري", "يحيى", StabilityMetrics(3f, 2f, 0.72f, 0.72f, 0.4f), isDue = true),
-                DashboardItem(2, 2, "صحيح البخاري", "عمر", metrics = null, isDue = false),
-            ),
-            drillSuggestionId = 1,
-        )
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})) {} } }
+    fun home_withReviewsDue_isEnglishWhileTheHadithDataStaysArabic() {
+        val next = NextToLearn(11, 1, 1, "الأربعون النووية", "عمر بن الخطاب", "إنما الأعمال بالنيات")
+        val streak = StudyStreak(current = 5, longest = 5, studiedToday = true, studyDays = 5, lastSevenDays = List(7) { true })
+        compose.setContent {
+            MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(due = 3, learning = 4, streak = streak, next = next, retention = 0.834f)), noActions) {} }
+        }
 
-        compose.onNodeWithText("Today\'s portion").assertExists()
-        compose.onNodeWithText("Start Review (2)").assertExists()
-        compose.onNodeWithText("Learn New (1)").assertExists()
+        compose.onNodeWithText("Memorization streak: 5 days").assertExists()
+        compose.onNodeWithText("Daily Review").assertExists()
+        compose.onNodeWithText("3 hadiths are due for review").assertExists()
+        compose.onNodeWithText("Start Daily Review").assertExists()
+        compose.onNodeWithText("Next Step in Memorization").assertExists()
+        compose.onNodeWithText("Hadith no. 1").assertExists()
+        compose.onNodeWithText("Level 1").assertExists()
+        compose.onNodeWithText("Companion: عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("إنما الأعمال بالنيات").assertExists()
+        compose.onNodeWithText("Learn This Hadith").assertExists()
+        compose.onNodeWithText("Learning").assertExists()
+        compose.onNodeWithText("Mastered").assertExists()
+        compose.onNodeWithText("Retention").assertExists()
+        compose.onNodeWithText("83%").assertExists()
         compose.onNodeWithText("Sanad Builder").assertExists()
         compose.onNodeWithText("Missing Link").assertExists()
-        compose.onNodeWithText("Companion: يحيى").assertExists()
-        compose.onNodeWithText("Companion: عمر").assertExists()
     }
 
     @Test
-    fun home_disablesReviewWhenNothingIsDue() {
-        val dashboard = StudyDashboard(0, 0, 1f, emptyList(), drillSuggestionId = null)
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})) {} } }
+    fun home_dueCountAndStreakAgreeWithTheirNumbersInEnglish() {
+        val one = StudyStreak(current = 1, longest = 1, studiedToday = false, studyDays = 1, lastSevenDays = List(7) { false })
+        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(due = 1, learning = 1, streak = one)), noActions) {} } }
 
-        compose.onNodeWithText("Start Review (0)").assertIsNotEnabled()
+        compose.onNodeWithText("1 hadith is due for review").assertExists()
+        compose.onNodeWithText("Memorization streak: 1 day").assertExists()
+        compose.onNodeWithText("Review today to keep your streak going").assertExists()
+    }
+
+    @Test
+    fun home_withNothingDue_showsTheCompletionBadge() {
+        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(due = 0, learning = 2)), noActions) {} } }
+
+        compose.onNodeWithText("You completed today\'s review").assertExists()
+        compose.onNodeWithText("Come back tomorrow, or move on to a new hadith").assertExists()
+        compose.onNodeWithText("Start Daily Review").assertDoesNotExist()
         compose.onNodeWithText("You\'ve finished all the new hadiths").assertExists()
+    }
+
+    @Test
+    fun home_beforeAnythingIsStudied_invitesTheFirstMemorization() {
+        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(learning = 0).copy(masteredCount = 0)), noActions) {} } }
+
+        compose.onNodeWithText("Start your memorization streak today").assertExists()
+        compose.onNodeWithText("No reviews yet; they begin once you memorize your first hadith").assertExists()
+        compose.onNodeWithText("You completed today\'s review").assertDoesNotExist()
+    }
+
+    @Test
+    fun insights_isEnglishWithItsThreeCards() {
+        val analytics = MasteryAnalytics(
+            streak = StudyStreak(current = 5, longest = 9, studiedToday = true, studyDays = 20, lastSevenDays = List(7) { true }),
+            retention = DualRetention(ComponentRetention(0.82f, 12.34f), ComponentRetention(0.64f, 5f)),
+            status = LibraryStatus(total = 9, unseen = 4, learning = 2, mastered = 3),
+            weakestNarrators = emptyList(),
+        )
+        compose.setContent { MutqanHadithTheme { InsightsScreen(UiState.Success(analytics), InsightsActions({}, {}, {}), {}) } }
+
+        listOf(
+            "Network & Insights", "Narrator Network", "Mastery Analytics", "Memory Clocks", "Settings",
+            "Matn", "Sanad", "82%", "64%", "3 of 9 mastered",
+            "Memorization streak: 5 days", "Matn clock: 12.3 days", "Sanad clock: 5 days",
+        ).forEach { compose.onNodeWithText(it).assertExists() }
+    }
+
+    @Test
+    fun theBottomBarNamesItsTabsInEnglish() {
+        compose.setContent { MutqanHadithTheme { MutqanBottomBar(currentRoute = null, onSelect = {}) } }
+
+        listOf("Daily Study", "Library", "Network & Insights").forEach { compose.onNodeWithText(it).assertExists() }
     }
 
     // -- Chain heatmap ---------------------------------------------------------------------
@@ -238,15 +313,6 @@ class EnglishScreensTest {
     // -- Library and reader ----------------------------------------------------------------
 
     private class MemorySettings(override var matnScale: Float = MatnScale.DEFAULT) : ReaderSettings
-
-    @Test
-    fun home_offersTheLibraryInEnglish() {
-        val dashboard = StudyDashboard(dueCount = 0, newCount = 3, overallMastery = 0f, items = emptyList(), drillSuggestionId = null)
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})) {} } }
-
-        compose.onNodeWithText("Library").assertExists()
-        compose.onNodeWithText("Browse hadiths by level and search their text").assertExists()
-    }
 
     @Test
     fun library_isEnglishWhileTheHadithTextStaysArabic() {

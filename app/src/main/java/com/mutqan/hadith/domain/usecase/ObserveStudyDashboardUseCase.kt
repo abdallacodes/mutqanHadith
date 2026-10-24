@@ -1,10 +1,14 @@
 package com.mutqan.hadith.domain.usecase
 
+import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.domain.analytics.StudyStreak
+import com.mutqan.hadith.domain.analytics.StudyStreakCalculator
 import com.mutqan.hadith.domain.model.CurriculumOrder
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 
@@ -20,6 +24,17 @@ data class DashboardItem(
     val isNew: Boolean get() = metrics == null
 }
 
+/** The first Hadith still unseen in curriculum order: where the memorization carries on. */
+data class NextToLearn(
+    val hadithId: Long,
+    val level: Int,
+    val hadithNumber: Int,
+    val sourceBook: String,
+    val sahabiName: String,
+    /** The whole matn, with tashkeel; the screen decides how much of it to show. */
+    val matn: String,
+)
+
 data class StudyDashboard(
     val dueCount: Int,
     val newCount: Int,
@@ -29,19 +44,31 @@ data class StudyDashboard(
     val items: List<DashboardItem>,
     /** The studied Hadith whose Sanad is shakiest, for the Sanad drills; any Hadith if none is studied. */
     val drillSuggestionId: Long?,
-)
+    /** Studied Hadiths not yet mastered; see [GetMasteryAnalyticsUseCase.MASTERED_AT]. */
+    val learningCount: Int = 0,
+    val masteredCount: Int = 0,
+    /** Mean probability of recalling the studied Hadiths right now, 0..1; null until something has been studied. */
+    val retention: Float? = null,
+    val streak: StudyStreak = StudyStreak.None,
+    /** Null once every Hadith in the library has been started. */
+    val nextToLearn: NextToLearn? = null,
+) {
+    val studiedCount: Int get() = learningCount + masteredCount
+}
 
 class ObserveStudyDashboardUseCase(
     private val hadiths: HadithRepository,
     private val reviews: ReviewRepository,
     private val scheduler: SpacedRepetitionScheduler,
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     operator fun invoke(): Flow<StudyDashboard> =
         combine(hadiths.observeAll(), reviews.observeAllMastery()) { library, mastery ->
             val at = now()
             val masteryById = mastery.associateBy { it.hadithId }
-            val items = library.sortedWith(compareBy(CurriculumOrder) { it.hadith }).map { h ->
+            val inCurriculumOrder = library.sortedWith(compareBy(CurriculumOrder) { it.hadith })
+            val items = inCurriculumOrder.map { h ->
                 val record = masteryById[h.hadith.id]
                 DashboardItem(
                     hadithId = h.hadith.id,
@@ -53,12 +80,41 @@ class ObserveStudyDashboardUseCase(
                 )
             }.sortedBy { !it.isDue }
 
+            val studied = items.filter { !it.isNew }
+            val mastered = studied.count { it.metrics!!.overallMastery >= GetMasteryAnalyticsUseCase.MASTERED_AT }
+            val next = inCurriculumOrder.firstOrNull { it.hadith.id !in masteryById }
+            val recall = inCurriculumOrder.mapNotNull { h -> masteryById[h.hadith.id]?.let { recallNow(it, at) } }
+
             StudyDashboard(
                 dueCount = items.count { it.isDue },
                 newCount = items.count { it.isNew },
                 overallMastery = if (items.isEmpty()) 0f else items.map { it.metrics?.overallMastery ?: 0f }.average().toFloat(),
                 items = items,
-                drillSuggestionId = (items.filter { !it.isNew }.minByOrNull { it.metrics!!.sanadMastery } ?: items.firstOrNull())?.hadithId,
+                drillSuggestionId = (studied.minByOrNull { it.metrics!!.sanadMastery } ?: items.firstOrNull())?.hadithId,
+                learningCount = studied.size - mastered,
+                masteredCount = mastered,
+                retention = if (recall.isEmpty()) null else recall.average().toFloat(),
+                streak = StudyStreakCalculator.compute(reviews.getReviewTimestamps(), at, zone()),
+                nextToLearn = next?.let {
+                    NextToLearn(
+                        hadithId = it.hadith.id,
+                        level = it.hadith.level,
+                        hadithNumber = it.hadith.hadithNumber,
+                        sourceBook = it.hadith.sourceBook,
+                        sahabiName = it.sanad.lastOrNull()?.narrator?.primaryName.orEmpty(),
+                        matn = it.hadith.matnWithTashkeel,
+                    )
+                },
             )
         }
+
+    /** The mean recall of the components that have been reviewed; a Hadith with neither has no figure. */
+    private fun recallNow(record: MasteryRecordEntity, at: Long): Float? {
+        val recall = scheduler.retrievability(record, at)
+        val parts = listOfNotNull(
+            recall.matn.takeIf { record.matnLastReviewedAt != null },
+            recall.sanad.takeIf { record.sanadLastReviewedAt != null },
+        )
+        return if (parts.isEmpty()) null else parts.average().toFloat()
+    }
 }

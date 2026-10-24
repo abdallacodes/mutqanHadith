@@ -15,18 +15,15 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
-import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
-import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
-import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.details.HadithDetailsContent
@@ -34,8 +31,6 @@ import com.mutqan.hadith.ui.details.HadithDetailsUi
 import com.mutqan.hadith.ui.graph.NarratorGraphScreen
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
-import com.mutqan.hadith.ui.home.HomeActions
-import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewRoute
 import com.mutqan.hadith.ui.review.ReviewViewModel
@@ -318,37 +313,6 @@ class DiagnosticsScreensTest {
         compose.onNodeWithText("مراجعة هذا الحديث").assertIsNotEnabled()
         compose.onNodeWithText("إغلاق").assertIsEnabled()
         assertEquals(false, reviewed)
-    }
-
-    // -- Home entry points -----------------------------------------------------------------
-
-    @Test
-    fun home_graphIconAndDetailsActionReachTheirDestinations() {
-        val calls = mutableListOf<String>()
-        val actions = HomeActions(
-            onStartDueReview = {}, onLearnNew = {}, onReviewHadith = {}, onSanadBuilder = {}, onMissingLink = {},
-            onOpenDetails = { calls += "details$it" },
-            onOpenGraph = { calls += "graph" },
-            onOpenAnalytics = { calls += "analytics" },
-            onOpenSettings = { calls += "settings" },
-        )
-        val dashboard = StudyDashboard(
-            dueCount = 1,
-            newCount = 0,
-            overallMastery = 0.5f,
-            items = listOf(DashboardItem(1, 1, "صحيح البخاري", "أبو هريرة", StabilityMetrics(3f, 2f, 0.72f, 0.72f, 0.4f), isDue = true)),
-            drillSuggestionId = 1,
-        )
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
-
-        compose.onNodeWithContentDescription("شبكة الأسانيد").performClick()
-        compose.onNodeWithContentDescription("الإحصائيات").performClick()
-        compose.onNodeWithContentDescription("الإعدادات").performClick()
-        assertEquals(listOf("graph", "analytics", "settings"), calls)
-
-        compose.onNodeWithText("الصحابي: أبو هريرة").performClick()
-        compose.onNodeWithText("تفاصيل الحديث وصحة السند").performClick()
-        assertEquals(listOf("graph", "analytics", "settings", "details1"), calls)
     }
 
     // -- Review of a narrator's hadiths ----------------------------------------------------

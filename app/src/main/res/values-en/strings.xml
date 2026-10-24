@@ -30,19 +30,51 @@
 
     <!-- Home -->
     <string name="home_title">Mutqan</string>
-    <string name="home_today">Today\'s portion</string>
-    <string name="home_due">Due for review</string>
-    <string name="home_new">New to memorize</string>
-    <string name="home_mastery">Overall mastery</string>
-    <string name="action_start_review_count">Start Review (%1$d)</string>
-    <string name="action_learn_new_count">Learn New (%1$d)</string>
-    <string name="home_nothing_due">Nothing due for review right now</string>
     <string name="home_nothing_new">You\'ve finished all the new hadiths</string>
     <string name="home_drills">Sanad Drills</string>
     <string name="drill_sanad_builder">Sanad Builder</string>
     <string name="drill_missing_link">Missing Link</string>
-    <string name="home_library">Hadiths</string>
     <string name="sheet_review_this">Review this hadith</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_daily">Daily Study</string>
+    <string name="tab_library">Library</string>
+    <string name="tab_insights">Network &amp; Insights</string>
+
+    <!-- Daily study -->
+    <plurals name="home_streak_days">
+        <item quantity="one">Memorization streak: %1$d day</item>
+        <item quantity="other">Memorization streak: %1$d days</item>
+    </plurals>
+    <string name="home_streak_none">Start your memorization streak today</string>
+    <string name="home_review_title">Daily Review</string>
+    <plurals name="home_review_due">
+        <item quantity="one">%1$d hadith is due for review</item>
+        <item quantity="other">%1$d hadiths are due for review</item>
+    </plurals>
+    <string name="home_review_start">Start Daily Review</string>
+    <string name="home_review_done">You completed today\'s review</string>
+    <string name="home_review_done_hint">Come back tomorrow, or move on to a new hadith</string>
+    <string name="home_review_empty">No reviews yet; they begin once you memorize your first hadith</string>
+    <string name="home_next_title">Next Step in Memorization</string>
+    <string name="home_next_number">Hadith no. %1$d</string>
+    <string name="home_next_start">Learn This Hadith</string>
+    <string name="home_stats_learning">Learning</string>
+    <string name="home_stats_mastered">Mastered</string>
+    <string name="home_stats_retention">Retention</string>
+
+    <!-- Network and insights -->
+    <string name="insights_title">Network &amp; Insights</string>
+    <string name="insights_graph_title">Narrator Network</string>
+    <string name="insights_graph_hint">Explore the narrators your chains share, and where each one stands in your hadiths</string>
+    <string name="insights_analytics_title">Mastery Analytics</string>
+    <string name="insights_analytics_hint">How well the matn and the sanad hold in your memory right now</string>
+    <string name="insights_memory_title">Memory Clocks</string>
+    <string name="insights_memory_hint">Your streak, and how long your memory holds before it needs a review</string>
+    <string name="insights_clock_matn">Matn clock: %1$s</string>
+    <string name="insights_clock_sanad">Sanad clock: %1$s</string>
+    <string name="insights_clock_value">%1$s days</string>
+    <string name="insights_settings_hint">Language, backup, and resetting your progress</string>
 
     <!-- Review -->
     <string name="review_title_due">Review Session</string>
@@ -121,7 +153,6 @@
 
     <!-- Narrator graph -->
     <string name="graph_title">Isnad Network</string>
-    <string name="graph_open">Isnad Network</string>
     <string name="graph_filter_all">All hadiths</string>
     <string name="graph_filter_studied">Memorized only</string>
     <string name="graph_legend_pivot">Pivot</string>
@@ -149,9 +180,7 @@
     <!-- Hadith details -->
     <string name="details_title">Hadith Details</string>
     <string name="details_close">Close</string>
-    <string name="sheet_details">Hadith details and sanad health</string>
     <!-- Analytics -->
-    <string name="analytics_open">Statistics</string>
     <string name="analytics_title">Mastery Statistics</string>
     <string name="analytics_empty_banner">Complete your first review and your statistics will appear here</string>
     <string name="analytics_streak_title">Review Streak</string>
@@ -184,9 +213,7 @@
     <string name="analytics_weak_cd">%1$s, error rate %2$d%%, tap to drill their hadiths</string>
 
     <!-- Library -->
-    <string name="library_open">Library</string>
     <string name="library_title">Library</string>
-    <string name="library_entry_hint">Browse hadiths by level and search their text</string>
     <string name="library_search_hint">Search the hadith text…</string>
     <string name="library_search_clear">Clear search</string>
     <string name="level_1_title">Level 1: Core Foundations</string>

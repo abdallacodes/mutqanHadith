@@ -30,19 +30,59 @@
 
     <!-- Home -->
     <string name="home_title">متقن</string>
-    <string name="home_today">ورد اليوم</string>
-    <string name="home_due">مستحق للمراجعة</string>
-    <string name="home_new">جديد للحفظ</string>
-    <string name="home_mastery">إتقان المحفوظ</string>
-    <string name="action_start_review_count">ورد المراجعة (%1$d)</string>
-    <string name="action_learn_new_count">حفظ جديد (%1$d)</string>
-    <string name="home_nothing_due">لا مراجعات مستحقة الآن</string>
     <string name="home_nothing_new">أنهيت كل الأحاديث الجديدة</string>
     <string name="home_drills">تدريبات السند</string>
     <string name="drill_sanad_builder">بناء السند</string>
     <string name="drill_missing_link">الراوي المفقود</string>
-    <string name="home_library">الأحاديث</string>
     <string name="sheet_review_this">مراجعة هذا الحديث</string>
+
+    <!-- Bottom navigation -->
+    <string name="tab_daily">الورد اليومي</string>
+    <string name="tab_library">المكتبة</string>
+    <string name="tab_insights">الشبكة والتحليلات</string>
+
+    <!-- Daily study -->
+    <plurals name="home_streak_days">
+        <item quantity="zero">سلسلة الحفظ: لا أيام</item>
+        <item quantity="one">سلسلة الحفظ: يوم واحد</item>
+        <item quantity="two">سلسلة الحفظ: يومان</item>
+        <item quantity="few">سلسلة الحفظ: %1$d أيام</item>
+        <item quantity="many">سلسلة الحفظ: %1$d يومًا</item>
+        <item quantity="other">سلسلة الحفظ: %1$d يوم</item>
+    </plurals>
+    <string name="home_streak_none">ابدأ سلسلة الحفظ اليوم</string>
+    <string name="home_review_title">ورد المراجعة</string>
+    <plurals name="home_review_due">
+        <item quantity="zero">لا أحاديث مستحقة للمراجعة</item>
+        <item quantity="one">لديك حديث واحد مستحق للمراجعة</item>
+        <item quantity="two">لديك حديثان مستحقان للمراجعة</item>
+        <item quantity="few">لديك %1$d أحاديث مستحقة للمراجعة</item>
+        <item quantity="many">لديك %1$d حديثًا مستحقًا للمراجعة</item>
+        <item quantity="other">لديك %1$d حديث مستحق للمراجعة</item>
+    </plurals>
+    <string name="home_review_start">ابدأ ورد اليوم</string>
+    <string name="home_review_done">أتممت ورد اليوم بنجاح</string>
+    <string name="home_review_done_hint">عُد غدًا بإذن الله، أو تقدّم إلى حديث جديد</string>
+    <string name="home_review_empty">لا مراجعات بعد؛ تبدأ مراجعاتك حين تحفظ أول حديث</string>
+    <string name="home_next_title">المحطة التالية في الحفظ</string>
+    <string name="home_next_number">الحديث رقم %1$d</string>
+    <string name="home_next_start">ابدأ حفظ هذا الحديث</string>
+    <string name="home_stats_learning">قيد الحفظ</string>
+    <string name="home_stats_mastered">متقن</string>
+    <string name="home_stats_retention">نسبة التذكّر</string>
+
+    <!-- Network and insights -->
+    <string name="insights_title">الشبكة والتحليلات</string>
+    <string name="insights_graph_title">شبكة الرواة</string>
+    <string name="insights_graph_hint">استكشف الرواة المشتركين بين الأسانيد، وموضع كل راوٍ منها في أحاديثك</string>
+    <string name="insights_analytics_title">تحليلات الإتقان</string>
+    <string name="insights_analytics_hint">مدى ثبات المتن والسند في ذاكرتك الآن</string>
+    <string name="insights_memory_title">سجل الذاكرة</string>
+    <string name="insights_memory_hint">سلسلة أيامك، وكم تصمد ذاكرتك قبل أن تحتاج إلى مراجعة</string>
+    <string name="insights_clock_matn">ساعة المتن: %1$s</string>
+    <string name="insights_clock_sanad">ساعة السند: %1$s</string>
+    <string name="insights_clock_value">%1$s يوم</string>
+    <string name="insights_settings_hint">اللغة والنسخ الاحتياطي وإعادة ضبط التقدّم</string>
 
     <!-- Review -->
     <string name="review_title_due">ورد المراجعة</string>
@@ -121,7 +161,6 @@
 
     <!-- Narrator graph -->
     <string name="graph_title">شبكة الأسانيد</string>
-    <string name="graph_open">شبكة الأسانيد</string>
     <string name="graph_filter_all">كل الأحاديث</string>
     <string name="graph_filter_studied">المحفوظة فقط</string>
     <string name="graph_legend_pivot">مدار</string>
@@ -149,9 +188,7 @@
     <!-- Hadith details -->
     <string name="details_title">تفاصيل الحديث</string>
     <string name="details_close">إغلاق</string>
-    <string name="sheet_details">تفاصيل الحديث وصحة السند</string>
     <!-- Analytics -->
-    <string name="analytics_open">الإحصائيات</string>
     <string name="analytics_title">إحصائيات الإتقان</string>
     <string name="analytics_empty_banner">ابدأ أول مراجعة لتظهر هنا إحصائياتك</string>
     <string name="analytics_streak_title">سلسلة المراجعة</string>
@@ -184,9 +221,7 @@
     <string name="analytics_weak_cd">%1$s، نسبة الخطأ %2$d٪، اضغط للتدرّب على أحاديثه</string>
 
     <!-- Library -->
-    <string name="library_open">المكتبة</string>
     <string name="library_title">المكتبة</string>
-    <string name="library_entry_hint">تصفّح الأحاديث حسب المستوى وابحث في نصوصها</string>
     <string name="library_search_hint">ابحث في نص الحديث…</string>
     <string name="library_search_clear">مسح البحث</string>
     <string name="level_1_title">المستوى الأول: الأصول والأسس</string>

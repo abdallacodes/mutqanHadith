@@ -33,10 +33,14 @@ import com.mutqan.hadith.ui.study.ReaderSettings
 import com.mutqan.hadith.ui.study.SharedPreferencesReaderSettings
 
 /** Hand-rolled dependency graph: one instance per process, owned by the Application. */
-class AppContainer(context: Context) {
+class AppContainer(
+    context: Context,
+    /** Where the data lives; a test hands in an in-memory database. */
+    openDatabase: (Context) -> MutqanDatabase = MutqanDatabase::getInstance,
+) {
     private val appContext = context.applicationContext
 
-    private val database: MutqanDatabase by lazy { MutqanDatabase.getInstance(appContext) }
+    private val database: MutqanDatabase by lazy { openDatabase(appContext) }
 
     val hadithRepository: HadithRepository by lazy { RoomHadithRepository(database) }
     val reviewRepository: ReviewRepository by lazy { RoomReviewRepository(database) }

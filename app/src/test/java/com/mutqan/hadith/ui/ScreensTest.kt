@@ -14,19 +14,14 @@ import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.FakeNarratorRepository
 import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
-import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
-import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
-import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
-import com.mutqan.hadith.ui.home.HomeActions
-import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.missinglink.MissingLinkRoute
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
@@ -90,54 +85,6 @@ class ScreensTest {
         compose.setContent { MutqanHadithTheme { direction = LocalLayoutDirection.current } }
         compose.waitForIdle()
         assertEquals(LayoutDirection.Rtl, direction)
-    }
-
-    @Test
-    fun home_shows_the_dashboard_and_routes_taps() {
-        val calls = mutableListOf<String>()
-        val actions = HomeActions(
-            onStartDueReview = { calls += "due" },
-            onLearnNew = { calls += "new" },
-            onReviewHadith = { calls += "review$it" },
-            onSanadBuilder = { calls += "builder$it" },
-            onMissingLink = { calls += "link$it" },
-            onOpenDetails = { calls += "details$it" },
-            onOpenGraph = { calls += "graph" },
-            onOpenAnalytics = { calls += "analytics" },
-            onOpenSettings = { calls += "settings" },
-        )
-        val dashboard = StudyDashboard(
-            dueCount = 1,
-            newCount = 1,
-            overallMastery = 0.36f,
-            items = listOf(
-                DashboardItem(1, 1, "صحيح البخاري", "يحيى", StabilityMetrics(3f, 2f, 0.72f, 0.72f, 0.4f), isDue = true),
-                DashboardItem(2, 2, "صحيح البخاري", "عمر", metrics = null, isDue = false),
-            ),
-            drillSuggestionId = 1,
-        )
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
-
-        compose.onNodeWithText("ورد اليوم").assertExists()
-        compose.onNodeWithText("ورد المراجعة (1)").performClick()
-        compose.onNodeWithText("حفظ جديد (1)").performClick()
-        compose.onNodeWithText("بناء السند").performClick()
-        compose.onNodeWithText("الراوي المفقود").performClick()
-        assertEquals(listOf("due", "new", "builder1", "link1"), calls)
-
-        compose.onNodeWithText("الصحابي: يحيى").performClick()
-        compose.onNodeWithText("مراجعة هذا الحديث").performClick()
-        assertEquals("review1", calls.last())
-    }
-
-    @Test
-    fun home_disables_review_when_nothing_is_due() {
-        val dashboard = StudyDashboard(0, 0, 1f, emptyList(), drillSuggestionId = null)
-        val actions = HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})
-        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
-
-        compose.onNodeWithText("ورد المراجعة (0)").assertIsNotEnabled()
-        compose.onNodeWithText("أنهيت كل الأحاديث الجديدة").assertExists()
     }
 
     private fun reviewViewModel(mode: ReviewMode) = ReviewViewModel(

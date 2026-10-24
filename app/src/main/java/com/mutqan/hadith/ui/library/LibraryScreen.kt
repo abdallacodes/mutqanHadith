@@ -87,7 +87,7 @@ fun HadithProgress.labelRes(): Int = when (this) {
 }
 
 @Composable
-fun LibraryRoute(viewModel: LibraryViewModel, onClose: () -> Unit, onOpenHadith: (Long) -> Unit) {
+fun LibraryRoute(viewModel: LibraryViewModel, onClose: (() -> Unit)?, onOpenHadith: (Long) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
@@ -112,7 +112,8 @@ fun LibraryScreen(
     onSelectLevel: (HadithLevel) -> Unit,
     onQueryChange: (String) -> Unit,
     onRetry: () -> Unit,
-    onClose: () -> Unit,
+    /** Null when the library is a tab of its own, which has no page to go back to. */
+    onClose: (() -> Unit)?,
     onOpenHadith: (Long) -> Unit,
 ) {
     Scaffold(

@@ -49,3 +49,29 @@ fun AnalyticsIcon(modifier: Modifier = Modifier, tint: Color = LocalContentColor
         }
     }
 }
+
+/** Four books standing on a shelf: the "library" glyph, which the core icon set lacks. */
+@Composable
+fun LibraryIcon(modifier: Modifier = Modifier, tint: Color = LocalContentColor.current, size: Dp = 24.dp) {
+    Canvas(modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val corner = androidx.compose.ui.geometry.CornerRadius(w * 0.04f)
+        val shelf = h * 0.8f
+        // Left to right: start, width and height of each spine, all standing on the shelf.
+        listOf(
+            Triple(0.12f, 0.16f, 0.6f),
+            Triple(0.32f, 0.16f, 0.72f),
+            Triple(0.52f, 0.16f, 0.52f),
+            Triple(0.72f, 0.16f, 0.66f),
+        ).forEach { (start, width, height) ->
+            drawRoundRect(
+                color = tint,
+                topLeft = Offset(w * start, shelf - h * height),
+                size = androidx.compose.ui.geometry.Size(w * width, h * height),
+                cornerRadius = corner,
+            )
+        }
+        drawLine(tint, Offset(w * 0.08f, h * 0.88f), Offset(w * 0.92f, h * 0.88f), strokeWidth = h * 0.07f, cap = StrokeCap.Round)
+    }
+}
