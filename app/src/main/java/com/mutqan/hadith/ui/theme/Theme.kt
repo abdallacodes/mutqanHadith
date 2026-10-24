@@ -11,8 +11,6 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 
 private val LightColors = lightColorScheme(
     primary = Emerald,
@@ -126,8 +124,8 @@ object MutqanTheme {
 }
 
 /**
- * The app is Arabic-only, so layout is forced right-to-left whatever the device locale is.
- * Brand colors are fixed (no dynamic color) to keep the emerald/gold identity.
+ * Layout direction is not set here: Compose takes it from the app's locale, right-to-left for Arabic
+ * and left-to-right for English. Brand colors are fixed (no dynamic color) to keep the emerald/gold identity.
  */
 @Composable
 fun MutqanHadithTheme(
@@ -136,7 +134,6 @@ fun MutqanHadithTheme(
 ) {
     val colorScheme: ColorScheme = if (darkTheme) DarkColors else LightColors
     CompositionLocalProvider(
-        LocalLayoutDirection provides LayoutDirection.Rtl,
         LocalMutqanColors provides if (darkTheme) DarkExtras else LightExtras,
     ) {
         MaterialTheme(

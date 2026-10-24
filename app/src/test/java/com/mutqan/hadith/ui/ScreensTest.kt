@@ -58,7 +58,7 @@ import kotlin.random.Random
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 // A tall screen keeps every node on screen: lazy lists compose only visible rows and taps outside the window are dropped.
-@Config(sdk = [34], qualifiers = "w411dp-h1600dp-xxhdpi")
+@Config(sdk = [34], qualifiers = "+w411dp-h1600dp-xxhdpi")
 class ScreensTest {
 
     @get:Rule
@@ -85,7 +85,7 @@ class ScreensTest {
     }
 
     @Test
-    fun theme_forces_right_to_left() {
+    fun theme_is_right_to_left_in_arabic() {
         var direction: LayoutDirection? = null
         compose.setContent { MutqanHadithTheme { direction = LocalLayoutDirection.current } }
         compose.waitForIdle()

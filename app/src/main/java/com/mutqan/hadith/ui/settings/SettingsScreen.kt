@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -69,9 +72,11 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit) {
         uri?.let { viewModel.readBackup(it.toString()) }
     }
     val context = LocalContext.current
+    val languages = remember(context) { AppLanguageController(context) }
     SettingsScreen(
         ui = ui,
         appVersion = remember(context) { appVersionName(context) },
+        language = remember(languages) { languages.current() },
         actions = SettingsActions(
             onBack = onClose,
             onExport = { exportLauncher.launch(viewModel.suggestedBackupName()) },
@@ -80,6 +85,8 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit) {
             onCancelImport = viewModel::cancelImport,
             onConfirmReset = viewModel::reset,
             onMessageShown = viewModel::messageShown,
+            // The activity is recreated by the change, which re-reads every string and the layout direction.
+            onLanguageSelected = languages::select,
         ),
     )
 }
@@ -93,13 +100,15 @@ data class SettingsActions(
     val onCancelImport: () -> Unit,
     val onConfirmReset: () -> Unit,
     val onMessageShown: () -> Unit,
+    val onLanguageSelected: (AppLanguage) -> Unit = {},
 )
 
 @Composable
-fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions) {
+fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions, language: AppLanguage = AppLanguage.ARABIC) {
     val snackbar = remember { SnackbarHostState() }
     var confirmingReset by rememberSaveable { mutableStateOf(false) }
     var showingAbout by rememberSaveable { mutableStateOf(false) }
+    var choosingLanguage by rememberSaveable { mutableStateOf(false) }
 
     val message = ui.message?.let { messageText(it) }
     LaunchedEffect(ui.message) {
@@ -122,6 +131,13 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions)
                 if (ui.isBusy) {
                     val busy = stringResource(R.string.settings_busy)
                     LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = busy })
+                }
+                SettingsGroup(stringResource(R.string.settings_section_general)) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_language),
+                        supporting = stringResource(language.nameRes),
+                        onClick = { choosingLanguage = true },
+                    )
                 }
                 SettingsGroup(stringResource(R.string.settings_section_backup)) {
                     SettingsRow(
@@ -168,6 +184,16 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions)
         ConfirmImportDialog(prepared, onConfirm = actions.onConfirmImport, onDismiss = actions.onCancelImport)
     }
     if (showingAbout) AboutDialog(appVersion, onDismiss = { showingAbout = false })
+    if (choosingLanguage) {
+        LanguageDialog(
+            selected = language,
+            onSelect = { chosen ->
+                choosingLanguage = false
+                if (chosen != language) actions.onLanguageSelected(chosen)
+            },
+            onDismiss = { choosingLanguage = false },
+        )
+    }
 }
 
 @Composable
@@ -282,6 +308,34 @@ private fun ConfirmImportDialog(prepared: PreparedBackup, onConfirm: () -> Unit,
                 Text(stringResource(R.string.settings_import_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
+    )
+}
+
+@Composable
+private fun LanguageDialog(selected: AppLanguage, onSelect: (AppLanguage) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_language_title)) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                AppLanguage.entries.forEach { language ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .selectable(selected = language == selected, role = Role.RadioButton, onClick = { onSelect(language) })
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        // The row is the one selectable element; the button only shows its state.
+                        RadioButton(selected = language == selected, onClick = null)
+                        Text(stringResource(language.nameRes), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
     )
 }

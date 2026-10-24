@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Languages the app is translated into; Android lists exactly these under Settings > Apps > Mutqan Hadith > Language. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="ar" />
+    <locale android:name="en" />
+</locale-config>

@@ -295,7 +295,7 @@ class BackupTest {
 
     @Test
     fun decodeToleratesAByteOrderMark() {
-        val text = "﻿" + BackupCodec.encode(UserData.Empty, 1L)
+        val text = "\uFEFF" + BackupCodec.encode(UserData.Empty, 1L)
         assertEquals(UserData.Empty, BackupCodec.decode(text).data)
     }
 
