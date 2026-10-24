@@ -20,6 +20,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -36,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -49,6 +52,7 @@ import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.MasteryBadge
 import com.mutqan.hadith.ui.common.MasteryRing
 import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.NetworkIcon
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
@@ -62,6 +66,8 @@ data class HomeActions(
     val onReviewHadith: (Long) -> Unit,
     val onSanadBuilder: (Long) -> Unit,
     val onMissingLink: (Long) -> Unit,
+    val onOpenDetails: (Long) -> Unit,
+    val onOpenGraph: () -> Unit,
 )
 
 @Composable
@@ -76,7 +82,18 @@ fun HomeRoute(viewModel: HomeViewModel, actions: HomeActions) {
 fun HomeScreen(state: UiState<StudyDashboard>, actions: HomeActions, onRetry: () -> Unit) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { MutqanTopBar(title = stringResource(R.string.home_title), onBack = null) },
+        topBar = {
+            val graphLabel = stringResource(R.string.graph_open)
+            MutqanTopBar(
+                title = stringResource(R.string.home_title),
+                onBack = null,
+                actions = {
+                    IconButton(onClick = actions.onOpenGraph, modifier = Modifier.semantics { contentDescription = graphLabel }) {
+                        NetworkIcon()
+                    }
+                },
+            )
+        },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { dashboard ->
@@ -116,6 +133,8 @@ fun HomeContent(dashboard: StudyDashboard, actions: HomeActions, modifier: Modif
         ModalBottomSheet(onDismissRequest = { sheetFor = null }) {
             Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 24.dp)) {
                 SheetAction(stringResource(R.string.sheet_review_this)) { sheetFor = null; actions.onReviewHadith(id) }
+                HorizontalDivider()
+                SheetAction(stringResource(R.string.sheet_details)) { sheetFor = null; actions.onOpenDetails(id) }
                 HorizontalDivider()
                 SheetAction(stringResource(R.string.drill_sanad_builder)) { sheetFor = null; actions.onSanadBuilder(id) }
                 HorizontalDivider()

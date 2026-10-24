@@ -80,6 +80,9 @@ data class MutqanColors(
     val masteryLow: Color,
     val masteryMid: Color,
     val masteryHigh: Color,
+    val heatStrong: Color,
+    val heatFair: Color,
+    val heatFragile: Color,
 )
 
 private val LightExtras = MutqanColors(
@@ -90,6 +93,9 @@ private val LightExtras = MutqanColors(
     masteryLow = Color(0xFFB3571E),
     masteryMid = Gold,
     masteryHigh = Emerald,
+    heatStrong = HeatStrongLight,
+    heatFair = HeatFairLight,
+    heatFragile = HeatFragileLight,
 )
 
 private val DarkExtras = MutqanColors(
@@ -100,6 +106,9 @@ private val DarkExtras = MutqanColors(
     masteryLow = Color(0xFFFFA06B),
     masteryMid = GoldLight,
     masteryHigh = EmeraldLight,
+    heatStrong = HeatStrongDark,
+    heatFair = HeatFairDark,
+    heatFragile = HeatFragileDark,
 )
 
 private val LocalMutqanColors = staticCompositionLocalOf { LightExtras }

@@ -6,10 +6,13 @@ import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadLink
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.repository.HadithRepository
+import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
+import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +26,10 @@ enum class ReviewMode(val route: String) {
     NEW("new"),
 
     /** One chosen Hadith. */
-    SINGLE("single");
+    SINGLE("single"),
+
+    /** Every Hadith whose chain passes through one narrator, e.g. a pivot (مدار). */
+    NARRATOR("narrator");
 
     companion object {
         fun fromRoute(route: String?) = entries.firstOrNull { it.route == route } ?: DUE
@@ -62,6 +68,8 @@ data class ReviewSession(
     val missedNarratorIds: Set<Long> = emptySet(),
     val isSubmitting: Boolean = false,
     val submitError: String? = null,
+    /** Chain heatmaps loaded when a card's Sanad was revealed, by Hadith id. */
+    val heatmaps: Map<Long, ChainHeatmap> = emptyMap(),
 ) {
     val current: ReviewCard? get() = queue.getOrNull(index)
     val isFinished: Boolean get() = index >= queue.size
@@ -80,11 +88,13 @@ sealed interface ReviewEvent {
 
 class ReviewViewModel(
     private val mode: ReviewMode,
-    private val hadithId: Long?,
+    /** The Hadith for [ReviewMode.SINGLE], the narrator for [ReviewMode.NARRATOR], unused otherwise. */
+    private val targetId: Long?,
     private val getDue: GetDueHadithsUseCase,
     private val getUnseen: GetUnseenHadithsUseCase,
     private val hadiths: HadithRepository,
     private val submitReview: SubmitReviewUseCase,
+    private val getHeatmap: GetNarratorChainHeatmapUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<UiState<ReviewSession>>(UiState.Loading)
@@ -101,10 +111,11 @@ class ReviewViewModel(
                 val queue = when (mode) {
                     ReviewMode.DUE -> getDue().map { it.hadith.toReviewCard() }
                     ReviewMode.NEW -> getUnseen(limit = NEW_BATCH_SIZE).map { it.toReviewCard() }
-                    ReviewMode.SINGLE -> listOfNotNull(hadithId?.let { hadiths.getWithSanad(it) }?.toReviewCard())
+                    ReviewMode.SINGLE -> listOfNotNull(targetId?.let { hadiths.getWithSanad(it) }?.toReviewCard())
+                    ReviewMode.NARRATOR -> targetId?.let { hadiths.getThroughNarrator(it) }.orEmpty().map { it.toReviewCard() }
                 }
                 if (queue.isEmpty() && mode == ReviewMode.SINGLE) {
-                    UiState.Error("Hadith $hadithId not found")
+                    UiState.Error("Hadith $targetId not found")
                 } else {
                     UiState.Success(ReviewSession(mode, queue, stage = initialStage()))
                 }
@@ -116,8 +127,11 @@ class ReviewViewModel(
 
     fun onEvent(event: ReviewEvent) {
         when (event) {
-            ReviewEvent.Reveal -> update { s ->
-                s.copy(stage = CardStage.entries[(s.stage.ordinal + 1).coerceAtMost(CardStage.SANAD.ordinal)])
+            ReviewEvent.Reveal -> {
+                update { s ->
+                    s.copy(stage = CardStage.entries[(s.stage.ordinal + 1).coerceAtMost(CardStage.SANAD.ordinal)])
+                }
+                loadHeatmapIfRevealed()
             }
             is ReviewEvent.RateMatn -> update { it.copy(matnRating = event.rating) }
             is ReviewEvent.RateSanad -> update { it.copy(sanadRating = event.rating) }
@@ -132,6 +146,23 @@ class ReviewViewModel(
             }
             ReviewEvent.DismissError -> update { it.copy(submitError = null) }
             ReviewEvent.Submit -> submit()
+        }
+    }
+
+    /** Once the chain is on screen, fetch how well each of its narrators has been recalled so far. */
+    private fun loadHeatmapIfRevealed() {
+        val session = (_state.value as? UiState.Success)?.data ?: return
+        val card = session.current ?: return
+        if (session.stage != CardStage.SANAD || card.hadithId in session.heatmaps) return
+        viewModelScope.launch {
+            try {
+                val heatmap = getHeatmap(card.hadithId)
+                update { it.copy(heatmaps = it.heatmaps + (card.hadithId to heatmap)) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // The heatmap is an extra; the review itself works without it.
+            }
         }
     }
 

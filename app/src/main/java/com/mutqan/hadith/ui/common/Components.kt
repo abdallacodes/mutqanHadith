@@ -286,3 +286,30 @@ fun Modifier.shakeOn(trigger: Int, active: Boolean): Modifier {
 /** Describes a drill state for screen readers where color alone carries the meaning. */
 fun Modifier.stateText(text: String?): Modifier =
     if (text == null) this else this.semantics { stateDescription = text }
+
+/** A number over its caption, for the stat rows of the narrator and heatmap sheets. */
+@Composable
+fun StatTile(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+            .padding(horizontal = 10.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = valueColor)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}

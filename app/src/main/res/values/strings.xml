@@ -40,6 +40,7 @@
     <string name="review_title_due">ورد المراجعة</string>
     <string name="review_title_new">حفظ جديد</string>
     <string name="review_title_single">مراجعة حديث</string>
+    <string name="review_title_narrator">أحاديث الراوي</string>
     <string name="review_progress">%1$d / %2$d</string>
     <string name="review_recall_prompt">استحضر المتن من ذاكرتك، ثم اضغط لكشفه</string>
     <string name="review_reveal_sanad">اضغط لكشف السند</string>
@@ -58,6 +59,7 @@
     <string name="review_done_body">أنهيت %1$d من المراجعات</string>
     <string name="review_empty_due">لا توجد أحاديث مستحقة للمراجعة الآن. عُد لاحقًا بإذن الله.</string>
     <string name="review_empty_new">لا توجد أحاديث جديدة للحفظ.</string>
+    <string name="review_empty_narrator">لا توجد أحاديث تمر بهذا الراوي.</string>
     <string name="review_submit_error">تعذّر حفظ التقييم، حاول مرة أخرى</string>
 
     <!-- Sanad builder -->
@@ -88,4 +90,56 @@
     <string name="missing_link_stability">ثبات هذه الحلقة: %1$d٪ (%2$d من %3$d)</string>
     <string name="missing_score">الإجابات الصحيحة: %1$d من %2$d</string>
     <string name="missing_next">السؤال التالي</string>
+    <!-- Chain heatmap -->
+    <string name="heatmap_title">صحة السلسلة</string>
+    <string name="heatmap_hint">اضغط على أي راوٍ لعرض سجلّه</string>
+    <string name="heatmap_legend_strong">قوي (أكثر من %1$d٪)</string>
+    <string name="heatmap_legend_fair">متوسط (%1$d–%2$d٪)</string>
+    <string name="heatmap_legend_fragile">هش (أقل من %1$d٪)</string>
+    <string name="health_strong">قوي</string>
+    <string name="health_fair">متوسط</string>
+    <string name="health_fragile">هش</string>
+    <string name="health_untested">لم يُختبر</string>
+    <string name="heatmap_weakest">أضعف حلقة</string>
+    <string name="heatmap_weakest_note">هذه أضعف حلقة في هذه السلسلة</string>
+    <string name="heatmap_collector">المصنّف: %1$s</string>
+    <string name="heatmap_record">أخطأت %1$d من %2$d</string>
+    <string name="heatmap_untested_record">لم يُختبر بعد</string>
+    <string name="heatmap_node_position">الحلقة %1$d من %2$d</string>
+    <string name="heat_sheet_errors">الأخطاء</string>
+    <string name="heat_sheet_appearances">مرات الاختبار</string>
+    <string name="heat_sheet_retention">نسبة التذكّر</string>
+    <string name="heat_node_cd">%1$s، %2$s</string>
+
+    <!-- Narrator graph -->
+    <string name="graph_title">شبكة الأسانيد</string>
+    <string name="graph_open">شبكة الأسانيد</string>
+    <string name="graph_filter_all">كل الأحاديث</string>
+    <string name="graph_filter_studied">المحفوظة فقط</string>
+    <string name="graph_legend_pivot">مدار</string>
+    <string name="graph_legend_normal">راوٍ</string>
+    <string name="graph_legend_edge">الخط الأسمك: أحاديث أكثر</string>
+    <string name="graph_reset_view">ملاءمة العرض</string>
+    <string name="graph_empty">لا توجد أسانيد لعرضها</string>
+    <string name="graph_empty_studied">لم تحفظ أي حديث بعد</string>
+    <string name="graph_node_cd">%1$s، %2$s</string>
+    <string name="graph_node_pivot_cd">%1$s، %2$s، مدار</string>
+
+    <!-- Narrator profile -->
+    <string name="narrator_pivot_badge">مدار</string>
+    <string name="narrator_stat_hadiths">الأحاديث</string>
+    <string name="narrator_stat_attempts">مرات الاختبار</string>
+    <string name="narrator_stat_errors">الأخطاء</string>
+    <string name="narrator_stat_error_rate">نسبة الخطأ</string>
+    <string name="narrator_hadiths_title">أحاديثك عبر هذا الراوي</string>
+    <string name="narrator_hadiths_loading">جارٍ تحميل الأحاديث…</string>
+    <string name="narrator_hadiths_empty">لا توجد أحاديث تمر بهذا الراوي</string>
+    <string name="narrator_review_pivot">راجع أحاديث هذا المدار</string>
+    <string name="narrator_review_normal">راجع أحاديث هذا الراوي</string>
+    <string name="narrator_not_tested">لم يُختبر بعد</string>
+
+    <!-- Hadith details -->
+    <string name="details_title">تفاصيل الحديث</string>
+    <string name="details_close">إغلاق</string>
+    <string name="sheet_details">تفاصيل الحديث وصحة السند</string>
 </resources>

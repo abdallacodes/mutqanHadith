@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.model.ReviewRating
+import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
 import com.mutqan.hadith.ui.common.InfoChip
@@ -58,6 +59,7 @@ import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
+import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
 import com.mutqan.hadith.ui.theme.MatnTextStyle
 import com.mutqan.hadith.ui.theme.MutqanTheme
 
@@ -90,6 +92,7 @@ fun ReviewScreen(
             ReviewMode.DUE -> R.string.review_title_due
             ReviewMode.NEW -> R.string.review_title_new
             ReviewMode.SINGLE -> R.string.review_title_single
+            ReviewMode.NARRATOR -> R.string.review_title_narrator
         },
     )
     Scaffold(
@@ -121,7 +124,7 @@ fun ReviewScreen(
 }
 
 /** Everything the card area needs; a value type so [AnimatedContent] can freeze the outgoing card. */
-private data class CardFrame(val card: ReviewCard, val stage: CardStage, val missed: Set<Long>)
+private data class CardFrame(val card: ReviewCard, val stage: CardStage, val missed: Set<Long>, val heatmap: ChainHeatmap?)
 
 @Composable
 fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
@@ -138,7 +141,7 @@ fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClos
         )
         Box(Modifier.weight(1f)) {
             AnimatedContent(
-                targetState = CardFrame(card, session.stage, session.missedNarratorIds),
+                targetState = CardFrame(card, session.stage, session.missedNarratorIds, session.heatmaps[card.hadithId]),
                 contentKey = { it.card.hadithId },
                 transitionSpec = {
                     (slideIntoContainer(SlideDirection.Start, tween(380)) + fadeIn(tween(380))) togetherWith
@@ -161,7 +164,7 @@ fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClos
 
 @Composable
 private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Long) -> Unit) {
-    val (card, stage, missed) = frame
+    val (card, stage, missed, heatmap) = frame
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -236,6 +239,11 @@ private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Lo
                                 state = if (link.narrator.id in missed) ChainNodeState.Missed else ChainNodeState.Normal,
                                 onClick = { onToggleMissed(link.narrator.id) },
                             )
+                        }
+                        if (heatmap != null) {
+                            HorizontalDivider(Modifier.padding(top = 6.dp))
+                            Text(stringResource(R.string.heatmap_title), style = MaterialTheme.typography.titleMedium)
+                            ChainHeatmapView(heatmap, compact = true)
                         }
                     }
                 }
@@ -331,7 +339,13 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
     ) {
         if (session.queue.isEmpty()) {
             Text(
-                stringResource(if (session.mode == ReviewMode.NEW) R.string.review_empty_new else R.string.review_empty_due),
+                stringResource(
+                    when (session.mode) {
+                        ReviewMode.NEW -> R.string.review_empty_new
+                        ReviewMode.NARRATOR -> R.string.review_empty_narrator
+                        else -> R.string.review_empty_due
+                    },
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
             )

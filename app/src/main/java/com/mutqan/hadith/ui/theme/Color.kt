@@ -34,3 +34,11 @@ val WrongLight = Color(0xFFB3261E)
 val WrongContainerLight = Color(0xFFFADAD6)
 val WrongDark = Color(0xFFFFB4AB)
 val WrongContainerDark = Color(0xFF4A1612)
+
+// Chain heatmap: forest green, ochre and coral for strong, fair and fragile links.
+val HeatStrongLight = Color(0xFF2A7350)
+val HeatFairLight = Color(0xFF9A6A12)
+val HeatFragileLight = Color(0xFFC23B3B)
+val HeatStrongDark = Color(0xFF6FCB9F)
+val HeatFairDark = Color(0xFFE6B25A)
+val HeatFragileDark = Color(0xFFFF8A80)

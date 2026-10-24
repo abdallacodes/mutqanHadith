@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mutqan.hadith.di.AppContainer
+import com.mutqan.hadith.ui.details.HadithDetailsViewModel
+import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.home.HomeViewModel
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
@@ -14,8 +16,10 @@ fun AppContainer.homeViewModelFactory(): ViewModelProvider.Factory = viewModelFa
     initializer { HomeViewModel(observeStudyDashboard) }
 }
 
-fun AppContainer.reviewViewModelFactory(mode: ReviewMode, hadithId: Long?): ViewModelProvider.Factory = viewModelFactory {
-    initializer { ReviewViewModel(mode, hadithId, getDueHadiths, getUnseenHadiths, hadithRepository, submitReview) }
+fun AppContainer.reviewViewModelFactory(mode: ReviewMode, targetId: Long?): ViewModelProvider.Factory = viewModelFactory {
+    initializer {
+        ReviewViewModel(mode, targetId, getDueHadiths, getUnseenHadiths, hadithRepository, submitReview, getNarratorChainHeatmap)
+    }
 }
 
 fun AppContainer.sanadBuilderViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
@@ -24,4 +28,12 @@ fun AppContainer.sanadBuilderViewModelFactory(hadithId: Long): ViewModelProvider
 
 fun AppContainer.missingLinkViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
     initializer { MissingLinkViewModel(hadithId, hadithRepository, narratorRepository, submitLinkDrill) }
+}
+
+fun AppContainer.narratorGraphViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+    initializer { NarratorGraphViewModel(getNarratorGraph, getHadithsByNarrator) }
+}
+
+fun AppContainer.hadithDetailsViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
+    initializer { HadithDetailsViewModel(hadithId, hadithRepository, getNarratorChainHeatmap) }
 }

@@ -1,6 +1,7 @@
 package com.mutqan.hadith.ui
 
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -18,6 +19,7 @@ import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
+import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
@@ -99,6 +101,8 @@ class ScreensTest {
             onReviewHadith = { calls += "review$it" },
             onSanadBuilder = { calls += "builder$it" },
             onMissingLink = { calls += "link$it" },
+            onOpenDetails = { calls += "details$it" },
+            onOpenGraph = { calls += "graph" },
         )
         val dashboard = StudyDashboard(
             dueCount = 1,
@@ -127,7 +131,7 @@ class ScreensTest {
     @Test
     fun home_disables_review_when_nothing_is_due() {
         val dashboard = StudyDashboard(0, 0, 1f, emptyList(), drillSuggestionId = null)
-        val actions = HomeActions({}, {}, {}, {}, {})
+        val actions = HomeActions({}, {}, {}, {}, {}, {}, {})
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
 
         compose.onNodeWithText("ورد المراجعة (0)").assertIsNotEnabled()
@@ -140,6 +144,7 @@ class ScreensTest {
         GetUnseenHadithsUseCase(hadiths),
         hadiths,
         submitReview,
+        GetNarratorChainHeatmapUseCase(hadiths, reviews),
     )
 
     @Test
@@ -157,8 +162,10 @@ class ScreensTest {
 
         compose.onNodeWithText("اضغط لكشف السند").performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("الحميدي").assertExists()
-        compose.onNodeWithText("يحيى").assertExists()
+        // Each narrator now appears twice: in the chain to mark misses, and in the heatmap strip.
+        compose.onAllNodesWithText("الحميدي").assertCountEquals(2)
+        compose.onAllNodesWithText("يحيى").assertCountEquals(2)
+        compose.onNodeWithText("صحة السلسلة").assertExists()
 
         compose.onAllNodesWithText("جيد")[0].performClick()
         compose.onAllNodesWithText("جيد")[1].assertIsEnabled().performClick()
