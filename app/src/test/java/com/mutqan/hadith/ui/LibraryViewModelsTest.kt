@@ -182,8 +182,40 @@ class LibraryViewModelsTest {
         assertEquals(1L, vm.ui().study.hadith.hadith.id)
         assertFalse(vm.ui().study.isInStudy)
         assertEquals(MatnScale.DEFAULT, vm.ui().textScale, 0f)
+        assertTrue(vm.ui().showTashkeel)
         assertFalse(vm.ui().isStarting)
         assertFalse(vm.ui().startFailed)
+    }
+
+    @Test
+    fun study_tashkeelIsShownByDefaultAndTheToggleFlipsItBothWays() = runTest {
+        val vm = studyVm(1)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        assertTrue(vm.ui().showTashkeel)
+
+        vm.toggleTashkeel()
+        assertFalse(vm.ui().showTashkeel)
+
+        vm.toggleTashkeel()
+        assertTrue(vm.ui().showTashkeel)
+    }
+
+    @Test
+    fun study_tashkeelAndTextSizeAreIndependent() = runTest {
+        val settings = MemorySettings()
+        val vm = studyVm(1, settings)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+
+        vm.toggleTashkeel()
+        vm.increaseText()
+        assertFalse(vm.ui().showTashkeel)
+        assertEquals(MatnScale.larger(MatnScale.DEFAULT), vm.ui().textScale, 0f)
+
+        // The text size is a stored preference; the tashkeel is not, so a new visit opens on the full text.
+        val again = studyVm(1, settings)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { again.state.collect {} }
+        assertTrue(again.ui().showTashkeel)
+        assertEquals(settings.matnScale, again.ui().textScale, 0f)
     }
 
     @Test

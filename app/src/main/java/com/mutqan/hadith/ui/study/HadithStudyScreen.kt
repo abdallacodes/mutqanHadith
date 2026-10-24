@@ -19,12 +19,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.entity.HadithEntity
+import com.mutqan.hadith.data.text.ArabicNormalizer
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.usecase.HadithStudy
@@ -85,7 +93,33 @@ fun HadithStudyRoute(
         onReview = onReview,
         onSanadBuilder = onSanadBuilder,
         onMissingLink = onMissingLink,
+        onToggleTashkeel = viewModel::toggleTashkeel,
     )
+}
+
+/**
+ * The app bar's switch between the matn with its tashkeel and without it. It shows the current state ("بَ" or "ب") and
+ * says what it will do: hide the tashkeel while it is shown, show it while it is hidden.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TashkeelAction(showTashkeel: Boolean, onToggle: () -> Unit) {
+    val label = stringResource(if (showTashkeel) R.string.study_tashkeel_hide else R.string.study_tashkeel_show)
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(label) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(onClick = onToggle, modifier = Modifier.semantics { contentDescription = label }) {
+            Text(
+                if (showTashkeel) GLYPH_WITH_TASHKEEL else GLYPH_WITHOUT_TASHKEEL,
+                modifier = Modifier.clearAndSetSemantics {},
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = if (showTashkeel) FontWeight.Bold else FontWeight.Normal,
+                color = if (showTashkeel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 /** A calm page for reading one hadith: its source, its matn at a comfortable size, its chain, and what to do next. */
@@ -101,10 +135,19 @@ fun HadithStudyScreen(
     /** Opens the Sanad drills for the hadith; offered once its Sanad tree is open. */
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onToggleTashkeel: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        topBar = { MutqanTopBar(title = stringResource(R.string.study_title), onBack = onClose) },
+        topBar = {
+            MutqanTopBar(
+                title = stringResource(R.string.study_title),
+                onBack = onClose,
+                actions = {
+                    (state as? UiState.Success)?.data?.let { TashkeelAction(it.showTashkeel, onToggleTashkeel) }
+                },
+            )
+        },
         bottomBar = {
             (state as? UiState.Success)?.data?.let { ui -> StudyFooter(ui, onStart, onReview) }
         },
@@ -133,7 +176,7 @@ private fun StudyContent(
     ) {
         StudyHeader(hadith)
         ui.study.layer?.let { LayerCard(hadith.id, it, onSanadBuilder, onMissingLink) }
-        MatnCard(hadith, ui.textScale, onSmaller, onLarger)
+        MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
         SanadCard(ui.study)
     }
 }
@@ -204,7 +247,7 @@ private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long
 }
 
 @Composable
-private fun MatnCard(hadith: HadithEntity, scale: Float, onSmaller: () -> Unit, onLarger: () -> Unit) {
+private fun MatnCard(hadith: HadithEntity, scale: Float, showTashkeel: Boolean, onSmaller: () -> Unit, onLarger: () -> Unit) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
@@ -219,7 +262,9 @@ private fun MatnCard(hadith: HadithEntity, scale: Float, onSmaller: () -> Unit, 
         append(stringResource(R.string.study_copy_citation, hadith.sourceBook, hadith.hadithNumber))
         if (hadith.takhrij.isNotBlank()) append(stringResource(R.string.list_separator)).append(hadith.takhrij)
     }
-    val copyText = hadith.matnWithTashkeel + "\n\n" + citation
+    // What is on screen is what is selected and copied.
+    val matn = if (showTashkeel) hadith.matnWithTashkeel else ArabicNormalizer.stripDiacritics(hadith.matnWithTashkeel)
+    val copyText = matn + "\n\n" + citation
     val smaller = stringResource(R.string.study_text_smaller)
     val larger = stringResource(R.string.study_text_larger)
 
@@ -260,7 +305,7 @@ private fun MatnCard(hadith: HadithEntity, scale: Float, onSmaller: () -> Unit, 
             // The matn follows the text size; the line height follows it too, so stacked tashkeel never touches the line above.
             SelectionContainer {
                 Text(
-                    hadith.matnWithTashkeel,
+                    matn,
                     style = MatnTextStyle.copy(fontSize = (MATN_BASE_SP * scale).sp, lineHeight = (MATN_BASE_LINE_SP * scale).sp),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -368,6 +413,8 @@ private fun RetentionSummary(study: HadithStudy) {
     }
 }
 
+private const val GLYPH_WITH_TASHKEEL = "\u0628\u064E" // ba with a fatha
+private const val GLYPH_WITHOUT_TASHKEEL = "\u0628" // ba bare
 private const val MATN_BASE_SP = 24f
 private const val MATN_BASE_LINE_SP = 46f
 private const val COPIED_FOR_MS = 2_000L

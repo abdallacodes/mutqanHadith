@@ -352,6 +352,7 @@ class EnglishScreensTest {
         compose.onNodeWithText("Hadith no. 1").assertExists()
         compose.onNodeWithText("Takhrij: متفق عليه").assertExists()
         compose.onNodeWithContentDescription("Smaller text").assertExists()
+        compose.onNodeWithContentDescription("Hide tashkeel from the matn").assertExists()
         compose.onNodeWithText("100%").assertExists()
         compose.onNodeWithText("Copy").assertExists()
         // The chain: the compiler, then each narrator with his tier worded in English and his name as the dataset gives it.
