@@ -37,6 +37,10 @@ interface HadithDao {
     fun observeHadithWithSanad(id: Long): Flow<HadithWithFullSanad?>
 
     @Transaction
+    @Query("SELECT * FROM hadith WHERE id IN (:ids) ORDER BY id")
+    suspend fun getWithSanadByIds(ids: Collection<Long>): List<HadithWithFullSanad>
+
+    @Transaction
     @Query("SELECT * FROM hadith ORDER BY id")
     suspend fun getAllWithSanad(): List<HadithWithFullSanad>
 
