@@ -18,12 +18,16 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** [textScale] sizes the matn; [isStarting] and [startFailed] describe the "start memorizing" request. */
+/**
+ * [textScale] sizes the matn and [showTashkeel] says whether it is shown with its tashkeel (it is, by default);
+ * [isStarting] and [startFailed] describe the "start memorizing" request.
+ */
 data class HadithStudyUi(
     val study: HadithStudy,
     val textScale: Float,
     val isStarting: Boolean = false,
     val startFailed: Boolean = false,
+    val showTashkeel: Boolean = true,
 )
 
 class HadithStudyViewModel(
@@ -36,17 +40,20 @@ class HadithStudyViewModel(
     private enum class Start { IDLE, STARTING, FAILED }
 
     private val textScale = MutableStateFlow(settings.matnScale)
+
+    // Not a stored preference: every visit opens on the full text, and the toggle is for a quick look without it.
+    private val showTashkeel = MutableStateFlow(true)
     private val start = MutableStateFlow(Start.IDLE)
     private val retryTick = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<UiState<HadithStudyUi>> = retryTick
         .flatMapLatest {
-            combine(getStudy(hadithId), textScale, start) { study, scale, start ->
+            combine(getStudy(hadithId), textScale, start, showTashkeel) { study, scale, start, tashkeel ->
                 if (study == null) {
                     UiState.Error("Hadith $hadithId not found")
                 } else {
-                    UiState.Success(HadithStudyUi(study, scale, start == Start.STARTING, start == Start.FAILED))
+                    UiState.Success(HadithStudyUi(study, scale, start == Start.STARTING, start == Start.FAILED, tashkeel))
                 }
             }.catch { emit(UiState.Error(it.message.orEmpty())) }
         }
@@ -57,6 +64,8 @@ class HadithStudyViewModel(
     fun increaseText() = setScale(MatnScale.larger(textScale.value))
 
     fun decreaseText() = setScale(MatnScale.smaller(textScale.value))
+
+    fun toggleTashkeel() = showTashkeel.update { !it }
 
     private fun setScale(scale: Float) {
         textScale.value = scale

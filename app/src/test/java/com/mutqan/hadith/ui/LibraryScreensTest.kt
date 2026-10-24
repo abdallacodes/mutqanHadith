@@ -82,6 +82,9 @@ class LibraryScreensTest {
         compose.setContent { MutqanHadithTheme { LibraryRoute(vm, onClose = {}, onOpenHadith = onOpenHadith) } }
     }
 
+    private val FULL_MATN = "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"
+    private val PLAIN_MATN = "إنما الأعمال بالنيات"
+
     private fun studyRoute(
         id: Long,
         settings: ReaderSettings = MemorySettings(),
@@ -273,6 +276,43 @@ class LibraryScreensTest {
         compose.onNodeWithText("170٪").assertExists()
         compose.onNodeWithContentDescription("تكبير الخط").assertIsNotEnabled()
         compose.onNodeWithContentDescription("تصغير الخط").assertIsEnabled()
+    }
+
+    @Test
+    fun study_theTashkeelToggleSwapsTheMatnBetweenFullAndPlainText() {
+        studyRoute(1)
+
+        // It opens on the full text, and the button offers to hide the tashkeel.
+        compose.onNodeWithText(FULL_MATN).assertExists()
+        compose.onNodeWithText(PLAIN_MATN).assertDoesNotExist()
+        compose.onNodeWithContentDescription("إظهار التشكيل على المتن").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("إخفاء التشكيل من المتن").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(PLAIN_MATN).assertExists()
+        compose.onNodeWithText(FULL_MATN).assertDoesNotExist()
+        compose.onNodeWithContentDescription("إخفاء التشكيل من المتن").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("إظهار التشكيل على المتن").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText(FULL_MATN).assertExists()
+        compose.onNodeWithText(PLAIN_MATN).assertDoesNotExist()
+        compose.onNodeWithContentDescription("إخفاء التشكيل من المتن").assertExists()
+    }
+
+    @Test
+    fun study_theTashkeelToggleLeavesTheRestOfThePageAlone() {
+        studyRoute(1)
+
+        compose.onNodeWithContentDescription("إخفاء التشكيل من المتن").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("حديث رقم 1").assertExists()
+        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("100٪").assertExists()
     }
 
     @Test

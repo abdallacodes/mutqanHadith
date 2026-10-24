@@ -253,6 +253,8 @@
     <string name="study_text_smaller">تصغير الخط</string>
     <string name="study_text_larger">تكبير الخط</string>
     <string name="study_text_size">%1$d٪</string>
+    <string name="study_tashkeel_hide">إخفاء التشكيل من المتن</string>
+    <string name="study_tashkeel_show">إظهار التشكيل على المتن</string>
     <string name="study_copy">نسخ</string>
     <string name="study_copied">تم النسخ</string>
     <string name="study_copy_citation">— %1$s، حديث رقم %2$d</string>
