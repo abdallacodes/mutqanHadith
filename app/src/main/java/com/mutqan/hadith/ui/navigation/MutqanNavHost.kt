@@ -25,10 +25,14 @@ import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphRoute
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.hadithDetailsViewModelFactory
+import com.mutqan.hadith.ui.hadithStudyViewModelFactory
 import com.mutqan.hadith.ui.home.HomeActions
 import com.mutqan.hadith.ui.home.HomeRoute
 import com.mutqan.hadith.ui.home.HomeViewModel
 import com.mutqan.hadith.ui.homeViewModelFactory
+import com.mutqan.hadith.ui.library.LibraryRoute
+import com.mutqan.hadith.ui.library.LibraryViewModel
+import com.mutqan.hadith.ui.libraryViewModelFactory
 import com.mutqan.hadith.ui.narratorGraphViewModelFactory
 import com.mutqan.hadith.ui.missinglink.MissingLinkRoute
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
@@ -43,6 +47,8 @@ import com.mutqan.hadith.ui.sanadbuilder.SanadBuilderViewModel
 import com.mutqan.hadith.ui.settings.SettingsRoute
 import com.mutqan.hadith.ui.settings.SettingsViewModel
 import com.mutqan.hadith.ui.settingsViewModelFactory
+import com.mutqan.hadith.ui.study.HadithStudyRoute
+import com.mutqan.hadith.ui.study.HadithStudyViewModel
 
 object Routes {
     const val HOME = "home"
@@ -58,8 +64,10 @@ object Routes {
     const val MISSING_LINK = "missing_link/{$ARG_HADITH_ID}"
     const val NARRATOR_GRAPH = "narrator_graph"
     const val ANALYTICS = "analytics"
+    const val LIBRARY = "library"
     const val SETTINGS = "settings"
     const val HADITH_DETAILS = "hadith_details/{$ARG_HADITH_ID}"
+    const val HADITH_STUDY = "hadith_study/{$ARG_HADITH_ID}"
 
     fun review(mode: ReviewMode, id: Long? = null): String =
         "review/${mode.route}" + if (id != null) "?$ARG_ID=$id" else ""
@@ -69,6 +77,8 @@ object Routes {
     fun missingLink(hadithId: Long): String = "missing_link/$hadithId"
 
     fun hadithDetails(hadithId: Long): String = "hadith_details/$hadithId"
+
+    fun hadithStudy(hadithId: Long): String = "hadith_study/$hadithId"
 }
 
 private const val TRANSITION_MS = 300
@@ -121,6 +131,7 @@ fun MutqanNavHost(
                     onOpenGraph = { navController.navigate(Routes.NARRATOR_GRAPH) },
                     onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenLibrary = { navController.navigate(Routes.LIBRARY) },
                 ),
             )
         }
@@ -172,6 +183,30 @@ fun MutqanNavHost(
                 viewModel = viewModel,
                 onClose = { navController.popBackStack() },
                 onDrillNarrator = { navController.navigate(Routes.review(ReviewMode.NARRATOR, it)) },
+            )
+        }
+
+        composable(Routes.LIBRARY) {
+            val viewModel: LibraryViewModel = viewModel(factory = container.libraryViewModelFactory())
+            LibraryRoute(
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() },
+                onOpenHadith = { navController.navigate(Routes.hadithStudy(it)) },
+            )
+        }
+
+        composable(
+            route = Routes.HADITH_STUDY,
+            arguments = listOf(navArgument(Routes.ARG_HADITH_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val hadithId = entry.arguments?.getLong(Routes.ARG_HADITH_ID) ?: return@composable
+            val viewModel: HadithStudyViewModel = viewModel(factory = container.hadithStudyViewModelFactory(hadithId))
+            HadithStudyRoute(
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() },
+                // Back from the learning flow returns to the study page, which by then shows the hadith as in study.
+                onStartLearning = { navController.navigate(Routes.review(ReviewMode.NEW, it)) },
+                onReview = { navController.navigate(Routes.review(ReviewMode.SINGLE, it)) },
             )
         }
 

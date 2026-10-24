@@ -22,7 +22,10 @@ enum class ReviewMode(val route: String) {
     /** Hadiths whose review is due. */
     DUE("due"),
 
-    /** Never-seen Hadiths, studied for the first time. */
+    /**
+     * Hadiths studied for the first time: the next never-seen ones in curriculum order, or, when a target is
+     * given, that one Hadith (the library's "start memorizing").
+     */
     NEW("new"),
 
     /** One chosen Hadith. */
@@ -88,7 +91,7 @@ sealed interface ReviewEvent {
 
 class ReviewViewModel(
     private val mode: ReviewMode,
-    /** The Hadith for [ReviewMode.SINGLE], the narrator for [ReviewMode.NARRATOR], unused otherwise. */
+    /** The Hadith for [ReviewMode.SINGLE] and [ReviewMode.NEW], the narrator for [ReviewMode.NARRATOR], unused otherwise. */
     private val targetId: Long?,
     private val getDue: GetDueHadithsUseCase,
     private val getUnseen: GetUnseenHadithsUseCase,
@@ -110,11 +113,16 @@ class ReviewViewModel(
             _state.value = try {
                 val queue = when (mode) {
                     ReviewMode.DUE -> getDue().map { it.hadith.toReviewCard() }
-                    ReviewMode.NEW -> getUnseen(limit = NEW_BATCH_SIZE).map { it.toReviewCard() }
+                    ReviewMode.NEW ->
+                        if (targetId != null) {
+                            listOfNotNull(hadiths.getWithSanad(targetId)?.toReviewCard())
+                        } else {
+                            getUnseen(limit = NEW_BATCH_SIZE).map { it.toReviewCard() }
+                        }
                     ReviewMode.SINGLE -> listOfNotNull(targetId?.let { hadiths.getWithSanad(it) }?.toReviewCard())
                     ReviewMode.NARRATOR -> targetId?.let { hadiths.getThroughNarrator(it) }.orEmpty().map { it.toReviewCard() }
                 }
-                if (queue.isEmpty() && mode == ReviewMode.SINGLE) {
+                if (queue.isEmpty() && (mode == ReviewMode.SINGLE || (mode == ReviewMode.NEW && targetId != null))) {
                     UiState.Error("Hadith $targetId not found")
                 } else {
                     UiState.Success(ReviewSession(mode, queue, stage = initialStage()))

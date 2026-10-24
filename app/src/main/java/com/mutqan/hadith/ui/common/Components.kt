@@ -174,16 +174,18 @@ fun <T> UiStateHost(
     }
 }
 
-enum class ChainNodeState { Normal, Missed, Masked, Correct }
+/** [Highlighted] sets a node apart without judging it, e.g. a pivot narrator on a read-only chain. */
+enum class ChainNodeState { Normal, Missed, Masked, Correct, Highlighted }
 
 /**
  * One narrator in a chain drawn as a timeline step: numbered dot, connector line, and a card with
  * the narrator's name, tier and the transmission term by which the next link received from him.
- * A null [name] draws the masked placeholder of the missing-link drill.
+ * A null [name] draws the masked placeholder of the missing-link drill; a null [position] draws an
+ * empty dot, for the compiler at the head of a chain; a [badge] is an extra label on the card.
  */
 @Composable
 fun ChainNode(
-    position: Int,
+    position: Int?,
     name: String?,
     fullName: String?,
     tier: String?,
@@ -192,6 +194,7 @@ fun ChainNode(
     isLast: Boolean,
     state: ChainNodeState,
     modifier: Modifier = Modifier,
+    badge: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val colors = MutqanTheme.colors
@@ -201,11 +204,13 @@ fun ChainNode(
         ChainNodeState.Missed -> colors.wrong
         ChainNodeState.Masked -> scheme.primary
         ChainNodeState.Correct -> colors.correct
+        ChainNodeState.Highlighted -> scheme.primary
     }
     val container = when (state) {
         ChainNodeState.Missed -> colors.wrongContainer.copy(alpha = 0.55f)
         ChainNodeState.Correct -> colors.correctContainer.copy(alpha = 0.55f)
         ChainNodeState.Masked -> scheme.primaryContainer.copy(alpha = 0.45f)
+        ChainNodeState.Highlighted -> scheme.primaryContainer.copy(alpha = 0.7f)
         ChainNodeState.Normal -> scheme.surfaceContainerLowest
     }
     val line = scheme.outlineVariant
@@ -217,12 +222,16 @@ fun ChainNode(
                 Modifier.size(28.dp).clip(CircleShape).background(if (state == ChainNodeState.Normal) scheme.primary else accent),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    position.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = scheme.onPrimary,
-                )
+                if (position != null) {
+                    Text(
+                        position.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = scheme.onPrimary,
+                    )
+                } else {
+                    Box(Modifier.size(10.dp).clip(CircleShape).background(scheme.onPrimary))
+                }
             }
             Box(Modifier.width(2.dp).weight(1f).background(if (isLast) Color.Transparent else line))
         }
@@ -255,6 +264,7 @@ fun ChainNode(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     if (!tier.isNullOrBlank()) InfoChip(tierLabel(tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                     if (!term.isNullOrBlank()) InfoChip(term)
+                    if (!badge.isNullOrBlank()) InfoChip(badge, container = scheme.primary, content = scheme.onPrimary)
                     if (state == ChainNodeState.Missed) {
                         Spacer(Modifier.weight(1f))
                         Text(

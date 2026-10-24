@@ -1,5 +1,6 @@
 package com.mutqan.hadith.domain.usecase
 
+import com.mutqan.hadith.domain.model.CurriculumOrder
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -40,7 +41,7 @@ class ObserveStudyDashboardUseCase(
         combine(hadiths.observeAll(), reviews.observeAllMastery()) { library, mastery ->
             val at = now()
             val masteryById = mastery.associateBy { it.hadithId }
-            val items = library.sortedBy { it.hadith.id }.map { h ->
+            val items = library.sortedWith(compareBy(CurriculumOrder) { it.hadith }).map { h ->
                 val record = masteryById[h.hadith.id]
                 DashboardItem(
                     hadithId = h.hadith.id,

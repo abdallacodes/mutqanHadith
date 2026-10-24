@@ -52,11 +52,11 @@ interface HadithDao {
     @Query("SELECT * FROM hadith ORDER BY id")
     fun observeAllWithSanad(): Flow<List<HadithWithFullSanad>>
 
-    /** Hadiths that were never reviewed (no mastery record), in curriculum order. */
+    /** Hadiths that were never reviewed (no mastery record), in curriculum order: by level, then number, then id. */
     @Transaction
     @Query(
         "SELECT * FROM hadith h WHERE NOT EXISTS " +
-            "(SELECT 1 FROM mastery_record m WHERE m.hadithId = h.id) ORDER BY h.id"
+            "(SELECT 1 FROM mastery_record m WHERE m.hadithId = h.id) ORDER BY h.level, h.hadithNumber, h.id"
     )
     suspend fun getUnseenWithSanad(): List<HadithWithFullSanad>
 
@@ -65,15 +65,15 @@ interface HadithDao {
     @Query("SELECT * FROM hadith WHERE matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")
     suspend fun searchByCleanText(pattern: String): List<HadithWithFullSanad>
 
-    /** The hadiths of one curriculum [level], in curriculum order; emits again when the library changes. */
-    @Query("SELECT * FROM hadith WHERE level = :level ORDER BY id")
+    /** The hadiths of one curriculum [level], by number then id; emits again when the library changes. */
+    @Query("SELECT * FROM hadith WHERE level = :level ORDER BY hadithNumber, id")
     fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>>
 
     @Query("SELECT COUNT(*) FROM hadith WHERE level = :level")
     fun countHadithsByLevel(level: Int): Flow<Int>
 
     /** [pattern] must already be normalized and LIKE-escaped (`\` is the escape character); prefer [searchInLevel]. */
-    @Query("SELECT * FROM hadith WHERE level = :level AND matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")
+    @Query("SELECT * FROM hadith WHERE level = :level AND matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY hadithNumber, id")
     fun searchInLevelByCleanText(level: Int, pattern: String): Flow<List<HadithEntity>>
 
     /** Every Hadith whose chain passes through [narratorId], at any position. */
@@ -81,7 +81,7 @@ interface HadithDao {
     @Query(
         "SELECT DISTINCT h.* FROM hadith h " +
             "INNER JOIN sanad_edge e ON e.hadithId = h.id " +
-            "WHERE e.narratorId = :narratorId ORDER BY h.id"
+            "WHERE e.narratorId = :narratorId ORDER BY h.level, h.hadithNumber, h.id"
     )
     suspend fun getHadithsByNarrator(narratorId: Long): List<HadithWithFullSanad>
 }

@@ -1,5 +1,7 @@
 package com.mutqan.hadith.domain.model
 
+import com.mutqan.hadith.data.entity.HadithEntity
+
 /**
  * The three stages of the curriculum. [value] is what the database stores in `hadith.level`.
  *
@@ -18,3 +20,9 @@ enum class HadithLevel(val value: Int) {
         fun of(value: Int): HadithLevel? = entries.firstOrNull { it.value == value }
     }
 }
+
+/**
+ * The order the curriculum is taught in: level by level, then by the number in the book, then by id.
+ * The database queries that promise "curriculum order" sort the same way.
+ */
+val CurriculumOrder: Comparator<HadithEntity> = compareBy<HadithEntity> { it.level }.thenBy { it.hadithNumber }.thenBy { it.id }

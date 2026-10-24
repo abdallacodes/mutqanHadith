@@ -183,6 +183,52 @@
     <string name="analytics_weak_drill">Drill</string>
     <string name="analytics_weak_cd">%1$s, error rate %2$d%%, tap to drill their hadiths</string>
 
+    <!-- Library -->
+    <string name="library_open">Library</string>
+    <string name="library_title">Library</string>
+    <string name="library_entry_hint">Browse hadiths by level and search their text</string>
+    <string name="library_search_hint">Search the hadith text…</string>
+    <string name="library_search_clear">Clear search</string>
+    <string name="level_1_title">Level 1: Core Foundations</string>
+    <string name="level_2_title">Level 2: Hadiths of Rulings</string>
+    <string name="level_3_title">Level 3: The Sunnah Collections</string>
+    <string name="level_1_desc">The Forty Hadith of al-Nawawi: comprehensive texts with their Companion narrators and sources</string>
+    <string name="level_2_desc">Umdat al-Ahkam: hadiths of legal rulings</string>
+    <string name="level_3_desc">The musnad collections, studied with their full chains</string>
+    <string name="level_badge">Level %1$d</string>
+    <string name="library_status_count">%1$s: %2$d</string>
+    <string name="progress_new">New</string>
+    <string name="progress_learning">Learning</string>
+    <string name="progress_mastered">Mastered</string>
+    <string name="library_level_empty_title">Coming soon</string>
+    <string name="library_level_empty_body">This level has no hadiths yet. They will appear here once they are added.</string>
+    <string name="library_no_results">No results for “%1$s” in this level</string>
+    <string name="library_no_results_hint">Try another word, or check the other levels; the tabs show how many results each one has.</string>
+
+    <!-- Hadith study -->
+    <string name="study_title">Hadith Reader</string>
+    <string name="study_matn_title">Matn</string>
+    <string name="study_sanad_title">Chain of Transmission</string>
+    <string name="study_sanad_hint">From the compiler down to the Companion; pivot narrators are highlighted</string>
+    <string name="study_sanad_compiler">Compiler</string>
+    <string name="study_sanad_short_note">Here the hadith is given without its long chain: the single link is the Companion who narrated it.</string>
+    <string name="study_takhrij">Takhrij: %1$s</string>
+    <string name="study_grade">Grade: %1$s</string>
+    <string name="study_chapter">Chapter: %1$s</string>
+    <string name="study_text_smaller">Smaller text</string>
+    <string name="study_text_larger">Larger text</string>
+    <string name="study_text_size">%1$d%%</string>
+    <string name="study_copy">Copy</string>
+    <string name="study_copied">Copied</string>
+    <string name="study_copy_citation">— %1$s, hadith no. %2$d</string>
+    <string name="study_start">Start Memorizing</string>
+    <string name="study_start_hint">You will learn its matn, then its sanad, and it joins your review schedule.</string>
+    <string name="study_starting">Adding…</string>
+    <string name="study_start_error">Couldn\'t add it. Try again.</string>
+    <string name="study_retention_title">Current retention</string>
+    <string name="study_retention_detail">Matn %1$d%% · Sanad %2$d%%</string>
+    <string name="study_review_now">Review Now</string>
+
     <!-- Settings -->
     <string name="settings_open">Settings</string>
     <string name="settings_title">Settings</string>

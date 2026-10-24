@@ -151,8 +151,9 @@ class CatalogMigrationTest {
         val arbain = db.hadithDao().getHadithWithSanad(13)!!
         assertEquals(1, arbain.hadith.level)
         assertEquals(seed.hadiths.single { it.id == 13L }.sahabi, arbain.sanad.single().narrator.primaryName)
-        // Never reviewed, so they are waiting to be learned; hadith 1 has progress.
-        assertEquals(seed.hadiths.map { it.id }.sorted() - 1L, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
+        // Never reviewed, so they are waiting to be learned, level by level and by the number in the book; hadith 1 has progress.
+        val curriculum = compareBy<com.mutqan.hadith.data.entity.HadithEntity>({ it.level }, { it.hadithNumber }, { it.id })
+        assertEquals(seed.hadiths.filter { it.id != 1L }.sortedWith(curriculum).map { it.id }, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
         db.close()
     }
 

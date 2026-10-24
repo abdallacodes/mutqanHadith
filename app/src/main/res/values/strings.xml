@@ -183,6 +183,52 @@
     <string name="analytics_weak_drill">تدرّب</string>
     <string name="analytics_weak_cd">%1$s، نسبة الخطأ %2$d٪، اضغط للتدرّب على أحاديثه</string>
 
+    <!-- Library -->
+    <string name="library_open">المكتبة</string>
+    <string name="library_title">المكتبة</string>
+    <string name="library_entry_hint">تصفّح الأحاديث حسب المستوى وابحث في نصوصها</string>
+    <string name="library_search_hint">ابحث في نص الحديث…</string>
+    <string name="library_search_clear">مسح البحث</string>
+    <string name="level_1_title">المستوى الأول: الأصول والأسس</string>
+    <string name="level_2_title">المستوى الثاني: أحاديث الأحكام</string>
+    <string name="level_3_title">المستوى الثالث: دواوين السنّة</string>
+    <string name="level_1_desc">الأربعون النووية: متون جامعة، مع راويها من الصحابة وتخريجها</string>
+    <string name="level_2_desc">عمدة الأحكام: أحاديث الأحكام الفقهية</string>
+    <string name="level_3_desc">دواوين السنّة المسندة، تُدرس بأسانيدها الكاملة</string>
+    <string name="level_badge">المستوى %1$d</string>
+    <string name="library_status_count">%1$s: %2$d</string>
+    <string name="progress_new">جديد</string>
+    <string name="progress_learning">قيد الحفظ</string>
+    <string name="progress_mastered">متقن</string>
+    <string name="library_level_empty_title">قريبًا بإذن الله</string>
+    <string name="library_level_empty_body">لم تُضف أحاديث هذا المستوى بعد، وستظهر هنا عند توفّرها.</string>
+    <string name="library_no_results">لا نتائج لـ «%1$s» في هذا المستوى</string>
+    <string name="library_no_results_hint">جرّب كلمة أخرى، أو انظر في المستويات الأخرى؛ فالتبويبات تعرض عدد النتائج في كل مستوى.</string>
+
+    <!-- Hadith study -->
+    <string name="study_title">قراءة الحديث</string>
+    <string name="study_matn_title">المتن</string>
+    <string name="study_sanad_title">سلسلة الإسناد</string>
+    <string name="study_sanad_hint">من المصنّف إلى الصحابي، والمدار مُبرَز</string>
+    <string name="study_sanad_compiler">المصنّف</string>
+    <string name="study_sanad_short_note">يُذكر الحديث هنا دون سلسلته الطويلة، فالحلقة الوحيدة هي الصحابي راوي الحديث.</string>
+    <string name="study_takhrij">التخريج: %1$s</string>
+    <string name="study_grade">الدرجة: %1$s</string>
+    <string name="study_chapter">الباب: %1$s</string>
+    <string name="study_text_smaller">تصغير الخط</string>
+    <string name="study_text_larger">تكبير الخط</string>
+    <string name="study_text_size">%1$d٪</string>
+    <string name="study_copy">نسخ</string>
+    <string name="study_copied">تم النسخ</string>
+    <string name="study_copy_citation">— %1$s، حديث رقم %2$d</string>
+    <string name="study_start">أضف إلى وِرد الحفظ</string>
+    <string name="study_start_hint">ستحفظ متنه ثم سنده، ويدخل في جدول مراجعاتك.</string>
+    <string name="study_starting">جارٍ الإضافة…</string>
+    <string name="study_start_error">تعذّرت الإضافة، حاول مرة أخرى</string>
+    <string name="study_retention_title">نسبة التذكّر الآن</string>
+    <string name="study_retention_detail">المتن %1$d٪ · السند %2$d٪</string>
+    <string name="study_review_now">مراجعة الآن</string>
+
     <!-- Settings -->
     <string name="settings_open">الإعدادات</string>
     <string name="settings_title">الإعدادات</string>

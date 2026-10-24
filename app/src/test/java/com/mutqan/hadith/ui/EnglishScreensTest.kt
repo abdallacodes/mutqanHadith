@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.LayoutDirection
@@ -16,6 +17,16 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
+import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
+import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
+import com.mutqan.hadith.ui.library.LibraryRoute
+import com.mutqan.hadith.ui.library.LibraryViewModel
+import com.mutqan.hadith.ui.study.HadithStudyRoute
+import com.mutqan.hadith.ui.study.HadithStudyViewModel
+import com.mutqan.hadith.ui.study.MatnScale
+import com.mutqan.hadith.ui.study.ReaderSettings
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.domain.usecase.DashboardItem
@@ -102,12 +113,12 @@ class EnglishScreensTest {
         compose.setContent {
             MutqanHadithTheme {
                 Column {
-                    listOf("صحابي", "تابعي", "تابع التابعين", "شيخ المصنف", "طبقة أخرى").forEach { Text(tierLabel(it)) }
+                    listOf("صحابي", "تابعي", "تابع التابعين", "شيخ المصنف", "راوٍ", "طبقة أخرى").forEach { Text(tierLabel(it)) }
                 }
             }
         }
 
-        listOf("Companion", "Successor", "Successors\' followers", "Collector\'s teacher", "طبقة أخرى").forEach {
+        listOf("Companion", "Successor", "Successors\' followers", "Collector\'s teacher", "Narrator", "طبقة أخرى").forEach {
             compose.onNodeWithText(it).assertExists()
         }
     }
@@ -222,6 +233,67 @@ class EnglishScreensTest {
         compose.onNodeWithText("Error rate").assertExists()
         compose.onNodeWithText("25%").assertExists()
         compose.onNodeWithText("Review this pivot narrator\'s hadiths").assertExists()
+    }
+
+    // -- Library and reader ----------------------------------------------------------------
+
+    private class MemorySettings(override var matnScale: Float = MatnScale.DEFAULT) : ReaderSettings
+
+    @Test
+    fun home_offersTheLibraryInEnglish() {
+        val dashboard = StudyDashboard(dueCount = 0, newCount = 3, overallMastery = 0f, items = emptyList(), drillSuggestionId = null)
+        compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})) {} } }
+
+        compose.onNodeWithText("Library").assertExists()
+        compose.onNodeWithText("Browse hadiths by level and search their text").assertExists()
+    }
+
+    @Test
+    fun library_isEnglishWhileTheHadithTextStaysArabic() {
+        val vm = LibraryViewModel(GetLibraryByLevelUseCase(hadiths, reviews, DualDecayScheduler()) { 1_700_000_000_000L })
+        compose.setContent { MutqanHadithTheme { LibraryRoute(vm, onClose = {}, onOpenHadith = {}) } }
+
+        compose.onNodeWithText("Library").assertExists()
+        compose.onNodeWithText("Search the hadith text…").assertExists()
+        listOf("Level 1: Core Foundations", "Level 2: Hadiths of Rulings", "Level 3: The Sunnah Collections").forEach {
+            compose.onNodeWithText(it).assertExists()
+        }
+        // Level 1 has none of the fixtures: it says so, in English.
+        compose.onNodeWithText("Coming soon").assertExists()
+
+        compose.onNodeWithText("Level 3: The Sunnah Collections").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("New: 3").assertExists()
+        compose.onNodeWithText("Learning: 0").assertExists()
+        compose.onAllNodesWithText("New").assertCountEquals(3)
+        compose.onAllNodesWithText("Companion: أبو هريرة").assertCountEquals(3)
+    }
+
+    @Test
+    fun reader_isEnglishWhileTheHadithAndItsChainStayArabic() {
+        val vm = HadithStudyViewModel(
+            1,
+            GetHadithStudyUseCase(hadiths, reviews, DualDecayScheduler()) { 1_700_000_000_000L },
+            StartMemorizingUseCase(hadiths, reviews) { 1_700_000_000_000L },
+            MemorySettings(),
+        )
+        compose.setContent { MutqanHadithTheme { HadithStudyRoute(vm, onClose = {}, onStartLearning = {}, onReview = {}) } }
+
+        compose.onNodeWithText("Hadith Reader").assertExists()
+        compose.onNodeWithText("Matn").assertExists()
+        compose.onNodeWithText("Chain of Transmission").assertExists()
+        compose.onNodeWithText("Hadith no. 1").assertExists()
+        compose.onNodeWithText("Takhrij: متفق عليه").assertExists()
+        compose.onNodeWithContentDescription("Smaller text").assertExists()
+        compose.onNodeWithText("100%").assertExists()
+        compose.onNodeWithText("Copy").assertExists()
+        // The chain: the compiler, then each narrator with his tier worded in English and his name as the dataset gives it.
+        compose.onNodeWithText("Compiler").assertExists()
+        listOf("الحميدي", "سفيان", "الزهري", "أبو هريرة").forEach { compose.onNodeWithText(it).assertExists() }
+        compose.onNodeWithText("Collector\'s teacher").assertExists()
+        compose.onNodeWithText("Start Memorizing").assertExists()
+        compose.onNodeWithText("You will learn its matn, then its sanad, and it joins your review schedule.").assertExists()
     }
 
     // -- Settings --------------------------------------------------------------------------

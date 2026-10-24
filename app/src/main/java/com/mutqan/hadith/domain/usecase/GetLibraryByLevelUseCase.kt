@@ -12,18 +12,20 @@ import kotlinx.coroutines.flow.combine
 /** How far a hadith has come for the user. */
 enum class HadithProgress { NEW, LEARNING, MASTERED }
 
+/** The progress shown for a hadith with these [metrics]; null means it was never taken into study. */
+fun hadithProgress(metrics: StabilityMetrics?): HadithProgress = when {
+    metrics == null -> HadithProgress.NEW
+    metrics.overallMastery >= GetMasteryAnalyticsUseCase.MASTERED_AT -> HadithProgress.MASTERED
+    else -> HadithProgress.LEARNING
+}
+
 /** A library hadith with the user's mastery of it; [metrics] is null for one that was never reviewed. */
 data class LibraryHadith(
     val hadith: HadithEntity,
     val metrics: StabilityMetrics?,
     val isDue: Boolean,
 ) {
-    val progress: HadithProgress
-        get() = when {
-            metrics == null -> HadithProgress.NEW
-            metrics.overallMastery >= GetMasteryAnalyticsUseCase.MASTERED_AT -> HadithProgress.MASTERED
-            else -> HadithProgress.LEARNING
-        }
+    val progress: HadithProgress get() = hadithProgress(metrics)
 }
 
 /**

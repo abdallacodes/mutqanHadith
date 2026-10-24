@@ -8,12 +8,15 @@ import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadEdgeWithNarrator
 import com.mutqan.hadith.data.text.ArabicNormalizer
+import com.mutqan.hadith.domain.model.CurriculumOrder
 import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import com.mutqan.hadith.domain.repository.ReviewRepository
 
 const val DAY_MS = 86_400_000L
@@ -46,23 +49,23 @@ class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepositor
 
     override suspend fun getWithSanad(ids: Collection<Long>) = ids.mapNotNull { byId[it] }
 
-    override suspend fun getUnseen() = all.filter { it.hadith.id !in seenIds() }
+    override suspend fun getUnseen() = all.filter { it.hadith.id !in seenIds() }.sortedWith(compareBy(CurriculumOrder) { it.hadith })
 
     override fun observeAll(): Flow<List<HadithWithFullSanad>> = flowOf(all)
 
     override suspend fun getAll() = all
 
     override suspend fun getThroughNarrator(narratorId: Long) =
-        all.filter { h -> h.edges.any { it.narrator.id == narratorId } }
+        all.filter { h -> h.edges.any { it.narrator.id == narratorId } }.sortedWith(compareBy(CurriculumOrder) { it.hadith })
 
     override fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>> =
-        flowOf(all.map { it.hadith }.filter { it.level == level })
+        flowOf(all.map { it.hadith }.filter { it.level == level }.sortedWith(CurriculumOrder))
 
     override fun countHadithsByLevel(level: Int): Flow<Int> = flowOf(all.count { it.hadith.level == level })
 
     override fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> {
         val needle = ArabicNormalizer.normalize(query)
-        return flowOf(if (needle.isEmpty()) emptyList() else all.map { it.hadith }.filter { it.level == level && needle in it.matnClean })
+        return flowOf(if (needle.isEmpty()) emptyList() else all.map { it.hadith }.filter { it.level == level && needle in it.matnClean }.sortedWith(CurriculumOrder))
     }
 }
 
@@ -112,4 +115,29 @@ class FakeReviewRepository : ReviewRepository {
             .map { (id, list) ->
                 HadithOutcomeCount(id, errorCount = list.count { !it.succeeded }, successCount = list.count { it.succeeded })
             }
+}
+
+/** [this] with its matn replaced, keeping the clean text searched against in step. */
+fun HadithWithFullSanad.withMatn(matn: String): HadithWithFullSanad =
+    copy(hadith = hadith.copy(matnWithTashkeel = matn, matnClean = ArabicNormalizer.normalize(matn)))
+
+/**
+ * A [FakeReviewRepository] whose mastery can be observed, as the database's can: a saved review is
+ * emitted again to whoever follows it. [failSaves] makes saving fail, like a full disk.
+ */
+class LiveReviewRepository(private val base: FakeReviewRepository = FakeReviewRepository()) : ReviewRepository by base {
+    private val saves = MutableStateFlow(0)
+    var failSaves = false
+
+    val mastery get() = base.mastery
+    val events get() = base.events
+
+    override suspend fun saveReview(record: MasteryRecordEntity, narratorEvents: List<NarratorReviewEventEntity>) {
+        if (failSaves) throw IllegalStateException("disk full")
+        base.saveReview(record, narratorEvents)
+        saves.value += 1
+    }
+
+    override fun observeAllMastery(): Flow<List<MasteryRecordEntity>> =
+        saves.map { base.mastery.values.toList() }
 }

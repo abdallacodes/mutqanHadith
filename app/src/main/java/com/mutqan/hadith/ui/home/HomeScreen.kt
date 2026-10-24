@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -74,6 +75,7 @@ data class HomeActions(
     val onOpenGraph: () -> Unit,
     val onOpenAnalytics: () -> Unit,
     val onOpenSettings: () -> Unit,
+    val onOpenLibrary: () -> Unit = {},
 )
 
 @Composable
@@ -129,6 +131,7 @@ fun HomeContent(dashboard: StudyDashboard, actions: HomeActions, modifier: Modif
     ) {
         item { SummaryCard(dashboard) }
         item { QuickActions(dashboard, actions) }
+        item { LibraryEntry(actions.onOpenLibrary) }
         item { DrillActions(dashboard, actions) }
         item {
             Text(
@@ -245,6 +248,34 @@ private fun QuickActions(dashboard: StudyDashboard, actions: HomeActions) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+/** The way into the library: hadiths by level, with search and a page to read each one. */
+@Composable
+private fun LibraryEntry(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(stringResource(R.string.library_open), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.library_entry_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
