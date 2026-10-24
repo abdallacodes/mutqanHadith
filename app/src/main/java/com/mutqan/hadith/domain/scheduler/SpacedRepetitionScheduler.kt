@@ -1,6 +1,7 @@
 package com.mutqan.hadith.domain.scheduler
 
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.ReviewTarget
@@ -49,4 +50,11 @@ interface SpacedRepetitionScheduler {
     fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability
 
     fun metrics(record: MasteryRecordEntity): StabilityMetrics
+
+    /**
+     * The memorization layer the stored state is in; [Fresh][LayerStatus.Fresh] for a hadith with no record.
+     * Decided by the stabilities only, never by the current recall, which sinks as time passes and is close to
+     * certain right after any review: the layer does not move with the clock.
+     */
+    fun layerStatus(record: MasteryRecordEntity?): LayerStatus
 }

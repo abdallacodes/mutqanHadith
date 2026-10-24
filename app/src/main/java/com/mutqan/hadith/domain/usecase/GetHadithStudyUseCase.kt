@@ -1,6 +1,7 @@
 package com.mutqan.hadith.domain.usecase
 
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
@@ -20,6 +21,8 @@ data class HadithStudy(
     val retention: Retrievability?,
     val nextReviewDue: Long?,
     val isDue: Boolean,
+    /** The memorization layer the hadith is in; null for one that was never taken into study. */
+    val layer: LayerStatus? = null,
 ) {
     val isInStudy: Boolean get() = metrics != null
 
@@ -47,6 +50,7 @@ class GetHadithStudyUseCase(
                 retention = record?.let { scheduler.retrievability(it, at) },
                 nextReviewDue = record?.nextReviewDue,
                 isDue = record != null && record.nextReviewDue <= at,
+                layer = record?.let(scheduler::layerStatus),
             )
         }
 }

@@ -120,14 +120,24 @@ class StudyUseCasesTest {
     }
 
     @Test
-    fun dashboard_suggestsTheStudiedHadithWithTheShakiestSanadForDrills() = runBlocking {
+    fun dashboard_suggestsTheHadithWithTheShakiestSanadForDrills() = runBlocking {
         reviews.mastery[1] = MasteryRecordEntity(1, 30f, 30f, now, now, now + DAY_MS, 3)
         reviews.mastery[3] = MasteryRecordEntity(3, 30f, 1f, now, now, now + DAY_MS, 3)
 
         assertEquals(3L, dashboard().first().drillSuggestionId)
+    }
 
-        // With nothing studied yet the first Hadith of the curriculum is suggested.
-        reviews.mastery.clear()
+    @Test
+    fun dashboard_suggestsNoDrillWhileNoSanadTreeIsOpen() = runBlocking {
+        // Nothing studied: nothing to drill.
+        assertNull(dashboard().first().drillSuggestionId)
+
+        // Studied, but only at layer 1: the chain is not asked for yet, however shaky its (empty) state is.
+        reviews.mastery[2] = MasteryRecordEntity(2, 1f, 0f, now, null, now + DAY_MS, 1)
+        assertNull(dashboard().first().drillSuggestionId)
+
+        // Once one hadith opens its tree, only that one is suggested.
+        reviews.mastery[1] = MasteryRecordEntity(1, 30f, 1f, now, now, now + DAY_MS, 3)
         assertEquals(1L, dashboard().first().drillSuggestionId)
     }
 

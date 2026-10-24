@@ -22,6 +22,7 @@ import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
 import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
 import com.mutqan.hadith.domain.usecase.GetMasteryAnalyticsUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
@@ -59,6 +60,7 @@ class AppContainer(
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }
     val submitLinkDrill by lazy { SubmitLinkDrillUseCase(hadithRepository, reviewRepository, scheduler) }
     val getNarratorChainHeatmap by lazy { GetNarratorChainHeatmapUseCase(hadithRepository, reviewRepository) }
+    val getLayerStatuses by lazy { GetLayerStatusesUseCase(reviewRepository, scheduler) }
     val getNarratorGraph by lazy { GetNarratorGraphUseCase(hadithRepository, reviewRepository) }
     val getHadithsByNarrator by lazy { GetHadithsByNarratorUseCase(hadithRepository, reviewRepository) }
     val getMasteryAnalytics by lazy { GetMasteryAnalyticsUseCase(hadithRepository, narratorRepository, reviewRepository, scheduler) }

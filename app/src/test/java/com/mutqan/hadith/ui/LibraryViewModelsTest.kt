@@ -13,6 +13,7 @@ import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.HadithProgress
@@ -278,6 +279,7 @@ class LibraryViewModelsTest {
         hadiths,
         SubmitReviewUseCase(hadiths, reviews, scheduler) { now },
         GetNarratorChainHeatmapUseCase(hadiths, reviews),
+        GetLayerStatusesUseCase(reviews, scheduler),
     )
 
     private fun ReviewViewModel.session(): ReviewSession = (state.value as UiState.Success).data
@@ -319,12 +321,13 @@ class LibraryViewModelsTest {
 
         vm.onEvent(com.mutqan.hadith.ui.review.ReviewEvent.Reveal)
         vm.onEvent(com.mutqan.hadith.ui.review.ReviewEvent.RateMatn(ReviewRating.GOOD))
-        vm.onEvent(com.mutqan.hadith.ui.review.ReviewEvent.RateSanad(ReviewRating.GOOD))
         vm.onEvent(com.mutqan.hadith.ui.review.ReviewEvent.Submit)
 
+        // Layer 1: only the matn is learned; the chain waits for its layer.
         val record = reviews.mastery.getValue(10L)
         assertEquals(2f, record.matnStability, 1e-6f)
-        assertEquals(2f, record.sanadStability, 1e-6f)
+        assertEquals(0f, record.sanadStability, 0f)
+        assertNull(record.sanadLastReviewedAt)
         assertEquals(1, record.repetitionCount)
         assertTrue(record.nextReviewDue > now)
     }

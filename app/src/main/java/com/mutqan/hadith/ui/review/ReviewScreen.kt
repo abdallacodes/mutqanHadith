@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -31,11 +32,13 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,23 +53,35 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.data.text.ArabicNormalizer
+import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
 import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.LayerBadge
+import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
+import com.mutqan.hadith.ui.common.nameRes
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
 import com.mutqan.hadith.ui.theme.MatnTextStyle
 import com.mutqan.hadith.ui.theme.MutqanTheme
 
 @Composable
-fun ReviewRoute(viewModel: ReviewViewModel, mode: ReviewMode, onClose: () -> Unit) {
+fun ReviewRoute(
+    viewModel: ReviewViewModel,
+    mode: ReviewMode,
+    onClose: () -> Unit,
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ReviewScreen(state, mode, viewModel::onEvent, viewModel::load, onClose)
+    ReviewScreen(state, mode, viewModel::onEvent, viewModel::load, onClose, onSanadBuilder, onMissingLink)
 }
 
 @Composable
@@ -76,6 +91,9 @@ fun ReviewScreen(
     onEvent: (ReviewEvent) -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
+    /** Opens the Sanad builder for a Hadith; offered once its Sanad tree is open. */
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val errorText = stringResource(R.string.review_submit_error)
@@ -117,17 +135,31 @@ fun ReviewScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { session ->
-                ReviewContent(session, onEvent, onClose, Modifier.contentWidth())
+                ReviewContent(session, onEvent, onClose, Modifier.contentWidth(), onSanadBuilder, onMissingLink)
             }
         }
     }
 }
 
 /** Everything the card area needs; a value type so [AnimatedContent] can freeze the outgoing card. */
-private data class CardFrame(val card: ReviewCard, val stage: CardStage, val missed: Set<Long>, val heatmap: ChainHeatmap?)
+private data class CardFrame(
+    val card: ReviewCard,
+    val stage: CardStage,
+    val missed: Set<Long>,
+    val heatmap: ChainHeatmap?,
+    val hideTashkeel: Boolean,
+    val termsRevealed: Boolean,
+)
 
 @Composable
-fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
+fun ReviewContent(
+    session: ReviewSession,
+    onEvent: (ReviewEvent) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
+) {
     val card = session.current
     if (card == null) {
         FinishedPanel(session, onClose, modifier)
@@ -139,9 +171,12 @@ fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClos
             modifier = Modifier.fillMaxWidth(),
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
+        session.unlock?.let { UnlockBanner(it, { onEvent(ReviewEvent.DismissUnlock) }, onSanadBuilder, onMissingLink) }
         Box(Modifier.weight(1f)) {
             AnimatedContent(
-                targetState = CardFrame(card, session.stage, session.missedNarratorIds, session.heatmaps[card.hadithId]),
+                targetState = CardFrame(
+                    card, session.stage, session.missedNarratorIds, session.heatmaps[card.hadithId], session.hideTashkeel, session.termsRevealed,
+                ),
                 contentKey = { it.card.hadithId },
                 transitionSpec = {
                     (slideIntoContainer(SlideDirection.Start, tween(380)) + fadeIn(tween(380))) togetherWith
@@ -149,7 +184,15 @@ fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClos
                 },
                 label = "review-card",
             ) { frame ->
-                CardPane(frame, onReveal = { onEvent(ReviewEvent.Reveal) }, onToggleMissed = { onEvent(ReviewEvent.ToggleMissed(it)) })
+                CardPane(
+                    frame,
+                    onReveal = { onEvent(ReviewEvent.Reveal) },
+                    onToggleMissed = { onEvent(ReviewEvent.ToggleMissed(it)) },
+                    onToggleTashkeel = { onEvent(ReviewEvent.ToggleTashkeel) },
+                    onRevealTerms = { onEvent(ReviewEvent.RevealTerms) },
+                    onSanadBuilder = onSanadBuilder,
+                    onMissingLink = onMissingLink,
+                )
             }
         }
         RatingPanel(
@@ -162,9 +205,55 @@ fun ReviewContent(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClos
     }
 }
 
+/** "The Sanad tree is unlocked": a layer was just opened by the previous review. */
 @Composable
-private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Long) -> Unit) {
-    val (card, stage, missed, heatmap) = frame
+private fun UnlockBanner(unlock: LayerUnlock, onDismiss: () -> Unit, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit) {
+    val colors = MutqanTheme.colors
+    val last = unlock.layer == MemorizationLayer.LAYER_3_TRANSMISSION_TERMS
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = colors.correctContainer,
+        border = BorderStroke(1.dp, colors.correct),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(if (last) R.string.layer_unlock_title_3 else R.string.layer_unlock_title_2),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                stringResource(if (last) R.string.layer_unlock_body_3 else R.string.layer_unlock_body_2, unlock.hadithNumber),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (!last) {
+                SanadDrillButtons(unlock.hadithId, onSanadBuilder, onMissingLink)
+            }
+            Row(Modifier.fillMaxWidth()) {
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.layer_unlock_dismiss)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CardPane(
+    frame: CardFrame,
+    onReveal: () -> Unit,
+    onToggleMissed: (Long) -> Unit,
+    onToggleTashkeel: () -> Unit,
+    onRevealTerms: () -> Unit,
+    onSanadBuilder: (Long) -> Unit,
+    onMissingLink: (Long) -> Unit,
+) {
+    val card = frame.card
+    val stage = frame.stage
+    val layer = card.activeLayer
+    val core = !layer.opensSanad
+    val matn = if (core && frame.hideTashkeel) ArabicNormalizer.stripDiacritics(card.matn) else card.matn
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -180,11 +269,14 @@ private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Lo
                 InfoChip(card.grade, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        LayerBadge(card.layer)
+        // At layer 1 the Companion and the takhrij are the cues the matn is recalled by, so they stay in front of the user.
+        if (core) CoreCues(card)
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = stage != CardStage.SANAD, onClick = onReveal),
+                .clickable(enabled = stage != card.finalStage, onClick = onReveal),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -202,13 +294,13 @@ private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Lo
                 }
                 AnimatedVisibility(stage != CardStage.RECALL, enter = fadeIn() + expandVertically(), exit = fadeOut()) {
                     Text(
-                        card.matn,
+                        matn,
                         style = MatnTextStyle,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                AnimatedVisibility(stage == CardStage.MATN, enter = fadeIn(), exit = fadeOut()) {
+                AnimatedVisibility(stage == CardStage.MATN && !core, enter = fadeIn(), exit = fadeOut()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         HorizontalDivider()
                         Text(
@@ -220,36 +312,136 @@ private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Lo
                         )
                     }
                 }
-                AnimatedVisibility(stage == CardStage.SANAD, enter = fadeIn() + expandVertically(), exit = fadeOut()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        HorizontalDivider()
-                        Text(stringResource(R.string.review_sanad_title), style = MaterialTheme.typography.titleLarge)
-                        Text(
-                            stringResource(R.string.review_sanad_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        card.links.forEachIndexed { i, link ->
-                            ChainNode(
-                                position = i + 1,
-                                name = link.narrator.primaryName,
-                                fullName = link.narrator.fullName,
-                                tier = link.narrator.tier,
-                                term = link.transmissionTerm,
-                                isFirst = i == 0,
-                                isLast = i == card.links.lastIndex,
-                                state = if (link.narrator.id in missed) ChainNodeState.Missed else ChainNodeState.Normal,
-                                onClick = { onToggleMissed(link.narrator.id) },
-                            )
-                        }
-                        if (heatmap != null) {
-                            HorizontalDivider(Modifier.padding(top = 6.dp))
-                            Text(stringResource(R.string.heatmap_title), style = MaterialTheme.typography.titleMedium)
-                            ChainHeatmapView(heatmap, compact = true)
-                        }
-                    }
+                AnimatedVisibility(stage == CardStage.SANAD && !core, enter = fadeIn() + expandVertically(), exit = fadeOut()) {
+                    SanadBlock(card, frame, onToggleMissed, onRevealTerms)
                 }
             }
+        }
+
+        if (core) {
+            if (stage != CardStage.RECALL) TashkeelToggle(frame.hideTashkeel, onToggleTashkeel)
+            SanadLockedPanel()
+        } else if (stage == CardStage.SANAD) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.review_drills_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SanadDrillButtons(card.hadithId, onSanadBuilder, onMissingLink)
+            }
+        }
+    }
+}
+
+/** The Companion and the takhrij of a hadith, in front of the matn that is being recalled. */
+@Composable
+private fun CoreCues(card: ReviewCard) {
+    if (card.sahabi.isBlank() && card.takhrij.isBlank()) return
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (card.sahabi.isNotBlank()) {
+                Text(stringResource(R.string.sahabi_label, card.sahabi), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            }
+            if (card.takhrij.isNotBlank()) {
+                Text(stringResource(R.string.study_takhrij, card.takhrij), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+/** Layer 1 hides the tashkeel on request, to recall how the words are vowelled too, and shows it again to check. */
+@Composable
+private fun TashkeelToggle(hidden: Boolean, onToggle: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onToggle) {
+            Text(stringResource(if (hidden) R.string.review_tashkeel_show else R.string.review_tashkeel_hide))
+        }
+        if (hidden) {
+            Text(
+                stringResource(R.string.review_tashkeel_hint),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** The chain, folded away until the core of the hadith holds. */
+@Composable
+private fun SanadLockedPanel() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.layer_2_name), style = MaterialTheme.typography.titleSmall)
+            LockedHint(stringResource(R.string.layer_sanad_locked_hint))
+        }
+    }
+}
+
+/**
+ * The chain of a hadith whose Sanad tree is open. Its transmission terms are left out until the last layer, where they
+ * are asked for: shown as blanks until the user has tried to recall them.
+ */
+@Composable
+private fun SanadBlock(card: ReviewCard, frame: CardFrame, onToggleMissed: (Long) -> Unit, onRevealTerms: () -> Unit) {
+    val terms = card.activeLayer.opensTerms
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        HorizontalDivider()
+        Text(stringResource(R.string.review_sanad_title), style = MaterialTheme.typography.titleLarge)
+        Text(
+            stringResource(R.string.review_sanad_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (terms) {
+            Text(stringResource(R.string.review_terms_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(
+                stringResource(R.string.review_terms_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (!frame.termsRevealed) {
+                OutlinedButton(onClick = onRevealTerms, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.review_terms_reveal))
+                }
+            }
+        }
+        val masked = stringResource(R.string.review_terms_masked)
+        card.links.forEachIndexed { i, link ->
+            ChainNode(
+                position = i + 1,
+                name = link.narrator.primaryName,
+                fullName = link.narrator.fullName,
+                tier = link.narrator.tier,
+                term = when {
+                    !terms -> null
+                    frame.termsRevealed -> link.transmissionTerm
+                    else -> masked
+                },
+                isFirst = i == 0,
+                isLast = i == card.links.lastIndex,
+                state = if (link.narrator.id in frame.missed) ChainNodeState.Missed else ChainNodeState.Normal,
+                onClick = { onToggleMissed(link.narrator.id) },
+            )
+        }
+        if (!terms) {
+            LockedHint(stringResource(R.string.layer_terms_locked_hint), Modifier.padding(top = 4.dp))
+        }
+        if (frame.heatmap != null) {
+            HorizontalDivider(Modifier.padding(top = 6.dp))
+            Text(stringResource(R.string.heatmap_title), style = MaterialTheme.typography.titleMedium)
+            ChainHeatmapView(frame.heatmap, compact = true)
         }
     }
 }
@@ -269,7 +461,10 @@ private fun RatingPanel(
         ) {
             // A component can only be rated once it has been shown, so an unseen card cannot be graded.
             RatingRow(stringResource(R.string.badge_matn), session.matnRating, onMatn, enabled = session.stage != CardStage.RECALL)
-            RatingRow(stringResource(R.string.badge_sanad), session.sanadRating, onSanad, enabled = session.stage == CardStage.SANAD)
+            // The chain is only graded once its layer is open; before that a card is rated on its Matn alone.
+            if (session.current?.activeLayer?.opensSanad == true) {
+                RatingRow(stringResource(R.string.badge_sanad), session.sanadRating, onSanad, enabled = session.stage == CardStage.SANAD)
+            }
             Button(onClick = onSubmit, enabled = session.canSubmit, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(if (isLast) R.string.action_finish else R.string.action_next))
             }
@@ -344,7 +539,8 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
                 stringResource(
                     when (session.mode) {
                         ReviewMode.NEW -> R.string.review_empty_new
-                        ReviewMode.NARRATOR -> R.string.review_empty_narrator
+                        ReviewMode.NARRATOR ->
+                            if (session.lockedSkipped > 0) R.string.review_empty_narrator_locked else R.string.review_empty_narrator
                         else -> R.string.review_empty_due
                     },
                 ),
@@ -358,7 +554,36 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
             )
+            if (session.unlocks.isNotEmpty()) UnlockSummary(session.unlocks)
         }
         Button(onClick = onClose) { Text(stringResource(R.string.action_back_home)) }
+    }
+}
+
+/** Every layer this session opened, so the last review's unlock is not lost when the session ends. */
+@Composable
+private fun UnlockSummary(unlocks: List<LayerUnlock>) {
+    val colors = MutqanTheme.colors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = colors.correctContainer,
+        border = BorderStroke(1.dp, colors.correct),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.layer_unlock_summary_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            unlocks.forEach {
+                Text(
+                    stringResource(R.string.layer_unlock_summary_item, it.hadithNumber, stringResource(it.layer.nameRes)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
     }
 }

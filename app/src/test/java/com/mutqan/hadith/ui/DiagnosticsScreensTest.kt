@@ -21,6 +21,7 @@ import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
@@ -85,6 +86,9 @@ class DiagnosticsScreensTest {
     }
 
     private fun studied(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 1f, 1f, 1L, 1L, 2L, 1) }
+
+    /** Hadiths well into the last layer: the Sanad tree and the transmission terms are open. */
+    private fun mastered(vararg ids: Long) = ids.forEach { reviews.mastery[it] = MasteryRecordEntity(it, 60f, 60f, 1L, 1L, 2L, 5) }
 
     private fun heatmap(hadithId: Long): ChainHeatmap = runBlocking { GetNarratorChainHeatmapUseCase(hadiths, reviews)(hadithId) }
 
@@ -324,10 +328,12 @@ class DiagnosticsScreensTest {
         hadiths,
         SubmitReviewUseCase(hadiths, reviews, scheduler),
         GetNarratorChainHeatmapUseCase(hadiths, reviews),
+        GetLayerStatusesUseCase(reviews, scheduler),
     )
 
     @Test
     fun narratorReview_hasItsOwnTitleAndStartsFromRecall() {
+        studied(1, 2)
         compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
 
         compose.onNodeWithText("أحاديث الراوي").assertExists()
@@ -336,6 +342,7 @@ class DiagnosticsScreensTest {
 
     @Test
     fun narratorReview_showsTheChainHealthOnceTheSanadIsRevealed() {
+        mastered(1, 2)
         record(1, 3, errors = 1, successes = 1)
         compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
 
@@ -346,6 +353,15 @@ class DiagnosticsScreensTest {
 
         compose.onNodeWithText("صحة السلسلة").assertExists()
         compose.onNodeWithText("أضعف حلقة").assertExists() // the Zuhri, the only link with a miss on record
+    }
+
+    @Test
+    fun narratorReview_saysSoWhenTheHadithsSanadTreesAreStillClosed() {
+        // Nothing studied yet: every hadith through the narrator is still on layer 1, which has no chain to review.
+        compose.setContent { MutqanHadithTheme { ReviewRoute(narratorReviewVm(3), ReviewMode.NARRATOR, onClose = {}) } }
+
+        compose.onNodeWithText("أحاديث هذا الراوي ما زالت في الطبقة الأولى؛ أتقن لبّ كل حديث لتفتح سنده وتراجعه من هنا.").assertExists()
+        compose.onNodeWithText("لا توجد أحاديث تمر بهذا الراوي.").assertDoesNotExist()
     }
 
     @Test

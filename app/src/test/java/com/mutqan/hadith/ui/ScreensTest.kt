@@ -17,6 +17,7 @@ import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
@@ -94,10 +95,11 @@ class ScreensTest {
         hadiths,
         submitReview,
         GetNarratorChainHeatmapUseCase(hadiths, reviews),
+        GetLayerStatusesUseCase(reviews, scheduler),
     )
 
     @Test
-    fun new_hadith_starts_with_the_matn_shown_and_is_rated_after_the_sanad_is_revealed() {
+    fun new_hadith_starts_with_the_matn_shown_and_is_rated_on_the_matn_alone() {
         val viewModel = reviewViewModel(ReviewMode.NEW)
         var closed = false
         compose.setContent { MutqanHadithTheme { ReviewRoute(viewModel, ReviewMode.NEW, onClose = { closed = true }) } }
@@ -105,23 +107,21 @@ class ScreensTest {
         // A hadith never seen is studied, not recalled: its text is shown straight away.
         compose.onNodeWithText("متن 1").assertExists()
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").assertDoesNotExist()
+        // Layer 1: the matn alone is graded, and the chain stays behind its lock.
+        compose.onAllNodesWithText("جيد").assertCountEquals(1)
         compose.onAllNodesWithText("جيد")[0].assertIsEnabled()
-        compose.onAllNodesWithText("جيد")[1].assertIsNotEnabled()
         compose.onNodeWithText("إنهاء").assertIsNotEnabled()
-
-        compose.onNodeWithText("اضغط لكشف السند").performClick()
-        compose.waitForIdle()
-        // Each narrator now appears twice: in the chain to mark misses, and in the heatmap strip.
-        compose.onAllNodesWithText("الحميدي").assertCountEquals(2)
-        compose.onAllNodesWithText("يحيى").assertCountEquals(2)
-        compose.onNodeWithText("صحة السلسلة").assertExists()
+        compose.onNodeWithText("اضغط لكشف السند").assertDoesNotExist()
+        compose.onNodeWithText("أتقن لبّ الحديث لفتح شجرة السند").assertExists()
+        compose.onAllNodesWithText("الحميدي").assertCountEquals(0)
+        compose.onNodeWithText("صحة السلسلة").assertDoesNotExist()
 
         compose.onAllNodesWithText("جيد")[0].performClick()
-        compose.onAllNodesWithText("جيد")[1].assertIsEnabled().performClick()
         compose.onNodeWithText("إنهاء").assertIsEnabled().performClick()
         compose.waitForIdle()
 
         assertTrue(1L in reviews.mastery)
+        assertEquals(0f, reviews.mastery.getValue(1L).sanadStability, 0f)
         compose.onNodeWithText("أحسنت!").assertExists()
         compose.onNodeWithText("العودة إلى الرئيسية").performClick()
         assertTrue(closed)

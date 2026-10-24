@@ -232,11 +232,12 @@ class DualDecaySchedulerTest {
     }
 
     @Test
-    fun matnOnlyFirstReview_keepsTheHadithDueUntilSanadIsLearned() {
+    fun matnOnlyFirstReview_leavesTheSanadWithoutAClockWhileTheMatnIsBeingLearned() {
+        // Layer 1: the chain is not studied yet, so its being unlearned does not make the hadith due.
         val result = review(null, EASY, null, t0)
         assertEquals(0f, result.record.sanadStability, 0f)
         assertEquals(null, result.record.sanadLastReviewedAt)
-        assertEquals(t0, result.record.nextReviewDue)
+        assertEquals(t0 + result.matnInterval.inWholeMilliseconds, result.record.nextReviewDue)
         assertEquals(t0, result.record.matnLastReviewedAt)
         assertTrue(result.record.matnStability > 0f)
         assertEquals(0f, scheduler.retrievability(result.record, t0 + DAY_MS).sanad, 0f)

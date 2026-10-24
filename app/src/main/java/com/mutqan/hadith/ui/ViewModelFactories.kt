@@ -23,7 +23,7 @@ fun AppContainer.homeViewModelFactory(): ViewModelProvider.Factory = viewModelFa
 
 fun AppContainer.reviewViewModelFactory(mode: ReviewMode, targetId: Long?): ViewModelProvider.Factory = viewModelFactory {
     initializer {
-        ReviewViewModel(mode, targetId, getDueHadiths, getUnseenHadiths, hadithRepository, submitReview, getNarratorChainHeatmap)
+        ReviewViewModel(mode, targetId, getDueHadiths, getUnseenHadiths, hadithRepository, submitReview, getNarratorChainHeatmap, getLayerStatuses)
     }
 }
 

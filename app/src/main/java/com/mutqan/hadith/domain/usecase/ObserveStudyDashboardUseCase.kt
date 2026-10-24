@@ -4,6 +4,7 @@ import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.analytics.StudyStreakCalculator
 import com.mutqan.hadith.domain.model.CurriculumOrder
+import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -20,6 +21,8 @@ data class DashboardItem(
     val sahabiName: String,
     val metrics: StabilityMetrics?,
     val isDue: Boolean,
+    /** The memorization layer; [LayerStatus.Fresh] for a hadith not yet taken into study. */
+    val layer: LayerStatus = LayerStatus.Fresh,
 ) {
     val isNew: Boolean get() = metrics == null
 }
@@ -42,7 +45,7 @@ data class StudyDashboard(
     val overallMastery: Float,
     /** Due Hadiths first, then curriculum order. */
     val items: List<DashboardItem>,
-    /** The studied Hadith whose Sanad is shakiest, for the Sanad drills; any Hadith if none is studied. */
+    /** The Hadith whose Sanad is shakiest among those whose Sanad tree is open, for the drills; null while none is. */
     val drillSuggestionId: Long?,
     /** Studied Hadiths not yet mastered; see [GetMasteryAnalyticsUseCase.MASTERED_AT]. */
     val learningCount: Int = 0,
@@ -77,6 +80,7 @@ class ObserveStudyDashboardUseCase(
                     sahabiName = h.sanad.lastOrNull()?.narrator?.primaryName.orEmpty(),
                     metrics = record?.let(scheduler::metrics),
                     isDue = record != null && record.nextReviewDue <= at,
+                    layer = scheduler.layerStatus(record),
                 )
             }.sortedBy { !it.isDue }
 
@@ -90,7 +94,7 @@ class ObserveStudyDashboardUseCase(
                 newCount = items.count { it.isNew },
                 overallMastery = if (items.isEmpty()) 0f else items.map { it.metrics?.overallMastery ?: 0f }.average().toFloat(),
                 items = items,
-                drillSuggestionId = (studied.minByOrNull { it.metrics!!.sanadMastery } ?: items.firstOrNull())?.hadithId,
+                drillSuggestionId = studied.filter { it.layer.layer.opensSanad }.minByOrNull { it.metrics!!.sanadMastery }?.hadithId,
                 learningCount = studied.size - mastered,
                 masteredCount = mastered,
                 retention = if (recall.isEmpty()) null else recall.average().toFloat(),

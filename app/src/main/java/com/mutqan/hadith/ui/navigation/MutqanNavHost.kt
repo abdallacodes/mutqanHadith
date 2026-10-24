@@ -197,7 +197,13 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
             val mode = ReviewMode.fromRoute(entry.arguments?.getString(Routes.ARG_MODE))
             val targetId = entry.arguments?.getLong(Routes.ARG_ID)?.takeIf { it != Routes.NO_ID }
             val viewModel: ReviewViewModel = viewModel(factory = container.reviewViewModelFactory(mode, targetId))
-            ReviewRoute(viewModel, mode, onClose = { navController.popBackStack() })
+            ReviewRoute(
+                viewModel = viewModel,
+                mode = mode,
+                onClose = { navController.popBackStack() },
+                onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
+                onMissingLink = { navController.navigate(Routes.missingLink(it)) },
+            )
         }
 
         composable(
@@ -259,6 +265,8 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 // Back from the learning flow returns to the study page, which by then shows the hadith as in study.
                 onStartLearning = { navController.navigate(Routes.review(ReviewMode.NEW, it)) },
                 onReview = { navController.navigate(Routes.review(ReviewMode.SINGLE, it)) },
+                onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
+                onMissingLink = { navController.navigate(Routes.missingLink(it)) },
             )
         }
 

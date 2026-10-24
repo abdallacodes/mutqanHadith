@@ -46,12 +46,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.entity.HadithEntity
+import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.LayerBadge
+import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
+import com.mutqan.hadith.ui.common.descriptionRes
 import com.mutqan.hadith.ui.common.masteryColor
 import com.mutqan.hadith.ui.theme.MatnTextStyle
 import kotlinx.coroutines.delay
@@ -65,6 +71,8 @@ fun HadithStudyRoute(
     /** Called once the hadith has been taken into memorization, to open the learning flow for it. */
     onStartLearning: (Long) -> Unit,
     onReview: (Long) -> Unit,
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     HadithStudyScreen(
@@ -75,6 +83,8 @@ fun HadithStudyRoute(
         onLarger = viewModel::increaseText,
         onStart = { viewModel.startMemorizing(onStartLearning) },
         onReview = onReview,
+        onSanadBuilder = onSanadBuilder,
+        onMissingLink = onMissingLink,
     )
 }
 
@@ -88,6 +98,9 @@ fun HadithStudyScreen(
     onLarger: () -> Unit,
     onStart: () -> Unit,
     onReview: (Long) -> Unit,
+    /** Opens the Sanad drills for the hadith; offered once its Sanad tree is open. */
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -98,20 +111,28 @@ fun HadithStudyScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { ui ->
-                StudyContent(ui, onSmaller, onLarger, Modifier.contentWidth())
+                StudyContent(ui, onSmaller, onLarger, Modifier.contentWidth(), onSanadBuilder, onMissingLink)
             }
         }
     }
 }
 
 @Composable
-private fun StudyContent(ui: HadithStudyUi, onSmaller: () -> Unit, onLarger: () -> Unit, modifier: Modifier = Modifier) {
+private fun StudyContent(
+    ui: HadithStudyUi,
+    onSmaller: () -> Unit,
+    onLarger: () -> Unit,
+    modifier: Modifier = Modifier,
+    onSanadBuilder: (Long) -> Unit = {},
+    onMissingLink: (Long) -> Unit = {},
+) {
     val hadith = ui.study.hadith.hadith
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         StudyHeader(hadith)
+        ui.study.layer?.let { LayerCard(hadith.id, it, onSanadBuilder, onMissingLink) }
         MatnCard(hadith, ui.textScale, onSmaller, onLarger)
         SanadCard(ui.study)
     }
@@ -151,6 +172,33 @@ private fun StudyHeader(hadith: HadithEntity) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+/** Where the user stands with a hadith in study: its layer and what is next, with the Sanad drills once they are open. */
+@Composable
+private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(stringResource(R.string.study_layer_title), style = MaterialTheme.typography.titleLarge)
+            LayerBadge(status)
+            Text(
+                stringResource(status.layer.descriptionRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (status.layer.opensSanad) {
+                Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
+                SanadDrillButtons(hadithId, onSanadBuilder, onMissingLink)
+            } else {
+                LockedHint(stringResource(R.string.study_drills_locked))
+            }
         }
     }
 }
@@ -283,17 +331,23 @@ private fun StudyFooter(ui: HadithStudyUi, onStart: () -> Unit, onReview: (Long)
 @Composable
 private fun RetentionSummary(study: HadithStudy) {
     val retention = study.retention ?: return
-    // The weaker component is what decides how urgent a review is, so it is the headline number.
-    val overall = retention.weakest
+    val layer = study.layer?.layer ?: MemorizationLayer.LAYER_3_TRANSMISSION_TERMS
+    // The weaker component is what decides how urgent a review is, so it is the headline number;
+    // while the chain is not part of the memorization yet only the matn counts.
+    val overall = retention.weakestIn(layer)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.study_retention_title), style = MaterialTheme.typography.labelLarge)
             Text(
-                stringResource(
-                    R.string.study_retention_detail,
-                    (retention.matn * 100).roundToInt(),
-                    (retention.sanad * 100).roundToInt(),
-                ),
+                if (layer.opensSanad) {
+                    stringResource(
+                        R.string.study_retention_detail,
+                        (retention.matn * 100).roundToInt(),
+                        (retention.sanad * 100).roundToInt(),
+                    )
+                } else {
+                    stringResource(R.string.study_retention_detail_matn, (retention.matn * 100).roundToInt())
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

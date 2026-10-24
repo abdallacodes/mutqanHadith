@@ -2,6 +2,8 @@ package com.mutqan.hadith.domain.usecase
 
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
+import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
@@ -15,8 +17,14 @@ data class ReviewOutcome(
     val metrics: StabilityMetrics,
     val matnInterval: Duration,
     val sanadInterval: Duration,
+    /** Where the hadith stood before this review, and where it stands now. */
+    val layerBefore: LayerStatus = LayerStatus.Fresh,
+    val layerAfter: LayerStatus = LayerStatus.Fresh,
 ) {
     val nextReviewDue: Long get() = record.nextReviewDue
+
+    /** The layer this review opened, or null if it did not move the hadith up. */
+    val unlockedLayer: MemorizationLayer? get() = layerAfter.layer.takeIf { it > layerBefore.layer }
 }
 
 class SubmitReviewUseCase(
@@ -51,10 +59,11 @@ class SubmitReviewUseCase(
         }
 
         val reviewedAt = now()
+        val previous = reviews.getMastery(hadithId)
         val result = scheduler.schedule(
             ScheduleRequest(
                 hadithId = hadithId,
-                previous = reviews.getMastery(hadithId),
+                previous = previous,
                 matnRating = matnRating,
                 sanadRating = sanadRating,
                 now = reviewedAt,
@@ -73,6 +82,13 @@ class SubmitReviewUseCase(
         }
         reviews.saveReview(result.record, events)
 
-        return ReviewOutcome(result.record, scheduler.metrics(result.record), result.matnInterval, result.sanadInterval)
+        return ReviewOutcome(
+            record = result.record,
+            metrics = scheduler.metrics(result.record),
+            matnInterval = result.matnInterval,
+            sanadInterval = result.sanadInterval,
+            layerBefore = scheduler.layerStatus(previous),
+            layerAfter = scheduler.layerStatus(result.record),
+        )
     }
 }

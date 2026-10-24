@@ -49,6 +49,7 @@ import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.usecase.NextToLearn
 import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.StatTile
 import com.mutqan.hadith.ui.common.UiState
@@ -312,7 +313,17 @@ private fun QuickStatsRow(dashboard: StudyDashboard) {
 
 @Composable
 private fun DrillActions(dashboard: StudyDashboard, actions: HomeActions) {
-    val target = dashboard.drillSuggestionId ?: return
+    val target = dashboard.drillSuggestionId
+    // The drills are on the chain, which opens hadith by hadith; with nothing studied there is nothing to wait for yet.
+    if (target == null) {
+        if (dashboard.studiedCount > 0) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
+                LockedHint(stringResource(R.string.home_drills_locked))
+            }
+        }
+        return
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
