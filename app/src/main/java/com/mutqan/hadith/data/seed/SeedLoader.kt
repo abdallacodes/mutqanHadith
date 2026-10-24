@@ -52,6 +52,7 @@ object SeedLoader {
                 matnWithTashkeel = matn,
                 matnClean = ArabicNormalizer.normalize(matn),
                 sourceBook = h.getString("sourceBook"),
+                hadithNumber = h.getInt("hadithNumber"),
                 chapter = h.getString("chapter"),
                 grade = h.getString("grade"),
                 collector = h.getString("collector"),
@@ -87,6 +88,7 @@ object SeedLoader {
                 put("matnWithTashkeel", it.matnWithTashkeel)
                 put("matnClean", it.matnClean)
                 put("sourceBook", it.sourceBook)
+                put("hadithNumber", it.hadithNumber)
                 put("chapter", it.chapter)
                 put("grade", it.grade)
                 put("collector", it.collector)

@@ -10,6 +10,7 @@ data class HadithEntity(
     /** [com.mutqan.hadith.data.text.ArabicNormalizer] output of [matnWithTashkeel], used for search. */
     val matnClean: String,
     val sourceBook: String,
+    val hadithNumber: Int,
     val chapter: String,
     val grade: String,
     val collector: String,

@@ -56,9 +56,22 @@ class HadithDaoTest {
     }
 
     @Test
+    fun seed_separatesSourceBookFromHadithNumber() = runBlocking {
+        val all = hadithDao.getAllWithSanad().map { it.hadith }
+        assertTrue(all.all { it.sourceBook == "صحيح البخاري" })
+        assertEquals(
+            setOf(1, 6, 8, 13, 50, 52, 54, 135, 611, 877),
+            all.map { it.hadithNumber }.toSet(),
+        )
+        // The Hadith about the Prophet's generosity is Bukhari no. 6.
+        val generosity = hadithDao.search("أجود الناس").single().hadith
+        assertEquals(6, generosity.hadithNumber)
+    }
+
+    @Test
     fun sanad_isReconstructedInChronologicalOrder() = runBlocking {
         // Bukhari 1: al-Humaydi <- Sufyan <- Yahya al-Ansari <- Muhammad b. Ibrahim <- Alqama <- Umar.
-        val bukhari1 = hadithDao.search("إنما الأعمال بالنيات").first { it.hadith.sourceBook.contains("(1)") }
+        val bukhari1 = hadithDao.search("إنما الأعمال بالنيات").first { it.hadith.hadithNumber == 1 }
         val chain = bukhari1.sanad
         assertEquals(
             listOf(
@@ -81,7 +94,7 @@ class HadithDaoTest {
 
     @Test
     fun sanad_orderIsIndependentOfInsertionOrder() = runBlocking {
-        val hadith = HadithEntity(100, "نص", "نص", "كتاب", "باب", "صحيح", "جامع")
+        val hadith = HadithEntity(100, "نص", "نص", "كتاب", 100, "باب", "صحيح", "جامع")
         // Narrators 1..3 exist from the seed; insert the edges back to front.
         hadithDao.insertWithSanad(
             hadith,

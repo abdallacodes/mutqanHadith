@@ -21,7 +21,7 @@ import com.mutqan.hadith.data.seed.SeedLoader
         SanadEdgeEntity::class,
         MasteryRecordEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {
