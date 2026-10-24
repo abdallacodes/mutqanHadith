@@ -3,6 +3,7 @@ package com.mutqan.hadith.data.seed
 import android.content.ContentValues
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mutqan.hadith.data.entity.CatalogStateEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
@@ -17,10 +18,18 @@ data class SeedData(
 
 /**
  * Parses `assets/seed_hadiths.json` and writes it straight into the database being created,
- * so the seed commits atomically with the schema.
+ * so the seed commits atomically with the schema. An existing database is brought up to date
+ * with [sync] instead, which leaves the user's progress alone.
  */
 object SeedLoader {
     const val ASSET_NAME = "seed_hadiths.json"
+
+    /**
+     * The version of the bundled catalog. Raise it whenever `seed_hadiths.json` changes: a database
+     * that has absorbed an older version [sync]s the new one the next time it opens, then records it
+     * in `catalog_state`. A schema change is a Room migration instead.
+     */
+    const val CATALOG_VERSION = 1
 
     fun load(context: Context): SeedData =
         parse(context.assets.open(ASSET_NAME).bufferedReader(Charsets.UTF_8).use { it.readText() })
@@ -56,6 +65,9 @@ object SeedLoader {
                 chapter = h.getString("chapter"),
                 grade = h.getString("grade"),
                 collector = h.getString("collector"),
+                takhrij = h.getString("takhrij"),
+                sahabi = h.getString("sahabi"),
+                level = h.getInt("level"),
             )
             val sanad = h.getJSONArray("sanad")
             for (j in 0 until sanad.length()) {
@@ -74,38 +86,88 @@ object SeedLoader {
     fun isEmpty(db: SupportSQLiteDatabase): Boolean =
         db.query("SELECT COUNT(*) FROM hadith").use { it.moveToFirst() && it.getInt(0) == 0 }
 
-    /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
-    fun write(db: SupportSQLiteDatabase, data: SeedData) {
-        data.narrators.forEach {
-            db.insert("narrator", CONFLICT_REPLACE, ContentValues().apply {
-                put("id", it.id)
-                put("primaryName", it.primaryName)
-                put("fullName", it.fullName)
-                put("tier", it.tier)
-                put("isPivot", if (it.isPivot) 1 else 0)
-            })
+    /** The catalog version this database has absorbed; 0 when it has not recorded one. */
+    fun appliedVersion(db: SupportSQLiteDatabase): Int =
+        db.query("SELECT version FROM catalog_state WHERE id = ${CatalogStateEntity.SINGLETON_ID}").use {
+            if (it.moveToFirst()) it.getInt(0) else 0
         }
-        data.hadiths.forEach {
-            db.insert("hadith", CONFLICT_REPLACE, ContentValues().apply {
-                put("id", it.id)
-                put("matnWithTashkeel", it.matnWithTashkeel)
-                put("matnClean", it.matnClean)
-                put("sourceBook", it.sourceBook)
-                put("hadithNumber", it.hadithNumber)
-                put("chapter", it.chapter)
-                put("grade", it.grade)
-                put("collector", it.collector)
-            })
-        }
-        data.edges.forEach {
-            db.insert("sanad_edge", CONFLICT_REPLACE, ContentValues().apply {
-                put("hadithId", it.hadithId)
-                put("narratorId", it.narratorId)
-                put("orderIndex", it.orderIndex)
-                put("transmissionTerm", it.transmissionTerm)
-            })
-        }
+
+    fun markApplied(db: SupportSQLiteDatabase, version: Int) {
+        db.execSQL(
+            "INSERT OR REPLACE INTO catalog_state (id, version) VALUES (?, ?)",
+            arrayOf(CatalogStateEntity.SINGLETON_ID, version),
+        )
     }
 
+    /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
+    fun write(db: SupportSQLiteDatabase, data: SeedData) {
+        data.narrators.forEach { db.insert("narrator", CONFLICT_REPLACE, narratorValues(it)) }
+        data.hadiths.forEach { db.insert("hadith", CONFLICT_REPLACE, hadithValues(it)) }
+        data.edges.forEach { db.insert("sanad_edge", CONFLICT_REPLACE, edgeValues(it)) }
+    }
+
+    /**
+     * Brings a database that already holds a catalog up to [data]: adds the narrators and hadiths it
+     * lacks and refreshes the descriptive columns of the ones it has. Existing rows are updated in
+     * place, never replaced, because deleting a hadith would cascade into the user's mastery records;
+     * the chain of a hadith that is already there is kept as it is. Call inside a transaction.
+     */
+    fun sync(db: SupportSQLiteDatabase, data: SeedData) {
+        val knownNarrators = ids(db, "narrator")
+        data.narrators.forEach {
+            if (it.id in knownNarrators) {
+                db.update("narrator", CONFLICT_NONE, narratorValues(it), "id = ?", arrayOf(it.id))
+            } else {
+                db.insert("narrator", CONFLICT_ABORT, narratorValues(it))
+            }
+        }
+
+        val knownHadiths = ids(db, "hadith")
+        data.hadiths.forEach {
+            if (it.id in knownHadiths) {
+                db.update("hadith", CONFLICT_NONE, hadithValues(it), "id = ?", arrayOf(it.id))
+            } else {
+                db.insert("hadith", CONFLICT_ABORT, hadithValues(it))
+            }
+        }
+        data.edges.filter { it.hadithId !in knownHadiths }.forEach { db.insert("sanad_edge", CONFLICT_ABORT, edgeValues(it)) }
+    }
+
+    private fun ids(db: SupportSQLiteDatabase, table: String): Set<Long> =
+        db.query("SELECT id FROM $table").use { cursor ->
+            buildSet { while (cursor.moveToNext()) add(cursor.getLong(0)) }
+        }
+
+    private fun narratorValues(n: NarratorEntity) = ContentValues().apply {
+        put("id", n.id)
+        put("primaryName", n.primaryName)
+        put("fullName", n.fullName)
+        put("tier", n.tier)
+        put("isPivot", if (n.isPivot) 1 else 0)
+    }
+
+    private fun hadithValues(h: HadithEntity) = ContentValues().apply {
+        put("id", h.id)
+        put("matnWithTashkeel", h.matnWithTashkeel)
+        put("matnClean", h.matnClean)
+        put("sourceBook", h.sourceBook)
+        put("hadithNumber", h.hadithNumber)
+        put("chapter", h.chapter)
+        put("grade", h.grade)
+        put("collector", h.collector)
+        put("takhrij", h.takhrij)
+        put("sahabi", h.sahabi)
+        put("level", h.level)
+    }
+
+    private fun edgeValues(e: SanadEdgeEntity) = ContentValues().apply {
+        put("hadithId", e.hadithId)
+        put("narratorId", e.narratorId)
+        put("orderIndex", e.orderIndex)
+        put("transmissionTerm", e.transmissionTerm)
+    }
+
+    private const val CONFLICT_NONE = android.database.sqlite.SQLiteDatabase.CONFLICT_NONE
+    private const val CONFLICT_ABORT = android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT
     private const val CONFLICT_REPLACE = android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE
 }

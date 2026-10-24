@@ -10,6 +10,7 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.repository.RoomBackupRepository
 import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
+import com.mutqan.hadith.data.seed.SeedLoader
 import com.mutqan.hadith.domain.backup.BackupCodec
 import com.mutqan.hadith.domain.backup.BackupException
 import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
@@ -41,6 +42,8 @@ import java.time.ZoneOffset
 class BackupTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
+    private val seed = SeedLoader.load(context)
+    private val seededCounts = seed.hadiths.size to seed.narrators.size
     private lateinit var db: MutqanDatabase
     private lateinit var backup: RoomBackupRepository
     private var clock = 1_760_000_000_000L
@@ -168,11 +171,11 @@ class BackupTest {
         val exported = export().json
 
         reset()
-        assertEquals(10 to 39, counts())
+        assertEquals(seededCounts, counts())
         assertEquals(library, RoomHadithRepository(db).getAll())
 
         importer(exported)
-        assertEquals(10 to 39, counts())
+        assertEquals(seededCounts, counts())
         assertEquals(library, RoomHadithRepository(db).getAll())
     }
 
@@ -181,12 +184,12 @@ class BackupTest {
     @Test
     fun resetReturnsEveryHadithToUnseen() = runBlocking {
         seedUserData()
-        assertEquals(6, RoomHadithRepository(db).getUnseen().size)
+        assertEquals(seed.hadiths.size - awkwardMastery.size, RoomHadithRepository(db).getUnseen().size)
 
         reset()
 
         assertEquals(UserData.Empty, backup.readUserData())
-        assertEquals(10, RoomHadithRepository(db).getUnseen().size)
+        assertEquals(seed.hadiths.size, RoomHadithRepository(db).getUnseen().size)
         assertTrue(RoomReviewRepository(db).getNarratorOutcomeTotals().isEmpty())
         assertTrue(RoomReviewRepository(db).getReviewTimestamps().isEmpty())
     }
@@ -195,7 +198,7 @@ class BackupTest {
     fun resetOnAFreshInstallIsHarmless() = runBlocking {
         reset()
         assertEquals(UserData.Empty, backup.readUserData())
-        assertEquals(10 to 39, counts())
+        assertEquals(seededCounts, counts())
     }
 
     // -- Validation and atomicity -----------------------------------------------------------

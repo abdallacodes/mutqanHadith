@@ -272,6 +272,13 @@
       "fullName": "أبو زرعة بن عمرو بن جرير البجلي",
       "tier": "تابعي",
       "isPivot": false
+    },
+    {
+      "id": 40,
+      "primaryName": "تميم الداري",
+      "fullName": "تميم بن أوس بن خارجة الداري (أبو رقية)",
+      "tier": "صحابي",
+      "isPivot": false
     }
   ],
   "hadiths": [
@@ -283,6 +290,9 @@
       "chapter": "كتاب بدء الوحي",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "عمر بن الخطاب",
       "sanad": [
         {
           "narratorId": 6,
@@ -318,6 +328,9 @@
       "chapter": "كتاب الإيمان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "عمر بن الخطاب",
       "sanad": [
         {
           "narratorId": 8,
@@ -353,6 +366,9 @@
       "chapter": "كتاب الإيمان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "عبد الله بن عمر",
       "sanad": [
         {
           "narratorId": 15,
@@ -380,6 +396,9 @@
       "chapter": "كتاب الإيمان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "أنس بن مالك",
       "sanad": [
         {
           "narratorId": 18,
@@ -411,6 +430,9 @@
       "chapter": "كتاب الإيمان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "النعمان بن بشير",
       "sanad": [
         {
           "narratorId": 23,
@@ -438,6 +460,9 @@
       "chapter": "كتاب الأذان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "أبو سعيد الخدري",
       "sanad": [
         {
           "narratorId": 12,
@@ -469,6 +494,9 @@
       "chapter": "كتاب الوضوء",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "أبو هريرة",
       "sanad": [
         {
           "narratorId": 27,
@@ -500,6 +528,9 @@
       "chapter": "كتاب الجمعة",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "عبد الله بن عمر",
       "sanad": [
         {
           "narratorId": 12,
@@ -527,6 +558,9 @@
       "chapter": "كتاب بدء الوحي",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "عبد الله بن عباس",
       "sanad": [
         {
           "narratorId": 32,
@@ -562,6 +596,9 @@
       "chapter": "كتاب الإيمان",
       "grade": "صحيح",
       "collector": "البخاري",
+      "level": 3,
+      "takhrij": "متفق عليه",
+      "sahabi": "أبو هريرة",
       "sanad": [
         {
           "narratorId": 18,
@@ -581,6 +618,60 @@
         },
         {
           "narratorId": 31,
+          "transmissionTerm": "عن"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "matnWithTashkeel": "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى، فَمَنْ كَانَتْ هِجْرَتُهُ إِلَى اللَّهِ وَرَسُولِهِ فَهِجْرَتُهُ إِلَى اللَّهِ وَرَسُولِهِ، وَمَنْ كَانَتْ هِجْرَتُهُ لِدُنْيَا يُصِيبُهَا أَوْ امْرَأَةٍ يَنْكِحُهَا فَهِجْرَتُهُ إِلَى مَا هَاجَرَ إِلَيْهِ",
+      "sourceBook": "الأربعون النووية",
+      "hadithNumber": 1,
+      "chapter": "النية والإخلاص",
+      "grade": "صحيح",
+      "collector": "النووي",
+      "level": 1,
+      "takhrij": "متفق عليه",
+      "sahabi": "عمر بن الخطاب",
+      "sanad": [
+        {
+          "narratorId": 1,
+          "transmissionTerm": "عن"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "matnWithTashkeel": "بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ: شَهَادَةِ أَنْ لَا إِلَهَ إِلَّا اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ، وَإِقَامِ الصَّلَاةِ، وَإِيتَاءِ الزَّكَاةِ، وَحَجِّ الْبَيْتِ، وَصَوْمِ رَمَضَانَ",
+      "sourceBook": "الأربعون النووية",
+      "hadithNumber": 3,
+      "chapter": "أركان الإسلام",
+      "grade": "صحيح",
+      "collector": "النووي",
+      "level": 1,
+      "takhrij": "متفق عليه",
+      "sahabi": "عبد الله بن عمر",
+      "sanad": [
+        {
+          "narratorId": 14,
+          "transmissionTerm": "عن"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "matnWithTashkeel": "الدِّينُ النَّصِيحَةُ، قُلْنَا: لِمَنْ؟ قَالَ: لِلَّهِ وَلِكِتَابِهِ وَلِرَسُولِهِ وَلِأَئِمَّةِ الْمُسْلِمِينَ وَعَامَّتِهِمْ",
+      "sourceBook": "الأربعون النووية",
+      "hadithNumber": 7,
+      "chapter": "النصيحة",
+      "grade": "صحيح",
+      "collector": "النووي",
+      "level": 1,
+      "takhrij": "رواه مسلم",
+      "sahabi": "تميم الداري",
+      "sanad": [
+        {
+          "narratorId": 40,
           "transmissionTerm": "عن"
         }
       ]

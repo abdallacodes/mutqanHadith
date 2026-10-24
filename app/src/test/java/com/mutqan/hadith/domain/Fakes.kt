@@ -7,6 +7,7 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadEdgeWithNarrator
+import com.mutqan.hadith.data.text.ArabicNormalizer
 import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import com.mutqan.hadith.domain.repository.HadithRepository
@@ -20,10 +21,15 @@ const val DAY_MS = 86_400_000L
 fun narrator(id: Long, name: String = "راوي $id", tier: String = "تابعي") =
     NarratorEntity(id = id, primaryName = name, fullName = name, tier = tier, isPivot = false)
 
-/** A Hadith whose chain is [narrators] in order (index 0 = the collector's teacher). */
-fun hadith(id: Long, narrators: List<NarratorEntity>): HadithWithFullSanad =
+/** A Hadith of curriculum [level] whose chain is [narrators] in order (index 0 = the collector's teacher). */
+fun hadith(id: Long, narrators: List<NarratorEntity>, level: Int = 3): HadithWithFullSanad =
     HadithWithFullSanad(
-        hadith = HadithEntity(id, "متن $id", "متن $id", "كتاب", id.toInt(), "باب", "صحيح", "جامع"),
+        hadith = HadithEntity(
+            id, "متن $id", "متن $id", "كتاب", id.toInt(), "باب", "صحيح", "جامع",
+            takhrij = "متفق عليه",
+            sahabi = narrators.lastOrNull()?.primaryName.orEmpty(),
+            level = level,
+        ),
         edges = narrators.mapIndexed { i, n ->
             SanadEdgeWithNarrator(SanadEdgeEntity(id * 100 + i, id, n.id, i, "عن"), n)
         },
@@ -48,6 +54,16 @@ class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepositor
 
     override suspend fun getThroughNarrator(narratorId: Long) =
         all.filter { h -> h.edges.any { it.narrator.id == narratorId } }
+
+    override fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>> =
+        flowOf(all.map { it.hadith }.filter { it.level == level })
+
+    override fun countHadithsByLevel(level: Int): Flow<Int> = flowOf(all.count { it.hadith.level == level })
+
+    override fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> {
+        val needle = ArabicNormalizer.normalize(query)
+        return flowOf(if (needle.isEmpty()) emptyList() else all.map { it.hadith }.filter { it.level == level && needle in it.matnClean })
+    }
 }
 
 class FakeNarratorRepository(private val narrators: List<NarratorEntity>) : NarratorRepository {

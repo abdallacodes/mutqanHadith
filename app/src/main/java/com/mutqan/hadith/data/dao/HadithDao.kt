@@ -10,6 +10,7 @@ import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.text.ArabicNormalizer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @Dao
 interface HadithDao {
@@ -64,6 +65,17 @@ interface HadithDao {
     @Query("SELECT * FROM hadith WHERE matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")
     suspend fun searchByCleanText(pattern: String): List<HadithWithFullSanad>
 
+    /** The hadiths of one curriculum [level], in curriculum order; emits again when the library changes. */
+    @Query("SELECT * FROM hadith WHERE level = :level ORDER BY id")
+    fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>>
+
+    @Query("SELECT COUNT(*) FROM hadith WHERE level = :level")
+    fun countHadithsByLevel(level: Int): Flow<Int>
+
+    /** [pattern] must already be normalized and LIKE-escaped (`\` is the escape character); prefer [searchInLevel]. */
+    @Query("SELECT * FROM hadith WHERE level = :level AND matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")
+    fun searchInLevelByCleanText(level: Int, pattern: String): Flow<List<HadithEntity>>
+
     /** Every Hadith whose chain passes through [narratorId], at any position. */
     @Transaction
     @Query(
@@ -74,10 +86,17 @@ interface HadithDao {
     suspend fun getHadithsByNarrator(narratorId: Long): List<HadithWithFullSanad>
 }
 
-/** Searches by Arabic text with or without tashkeel. */
-suspend fun HadithDao.search(query: String): List<HadithWithFullSanad> {
+/** [query] as a LIKE pattern over the clean text, or null when nothing searchable is left after normalizing. */
+private fun likePattern(query: String): String? {
     val normalized = ArabicNormalizer.normalize(query)
-    if (normalized.isEmpty()) return emptyList()
-    val escaped = normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-    return searchByCleanText(escaped)
+    if (normalized.isEmpty()) return null
+    return normalized.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 }
+
+/** Searches by Arabic text with or without tashkeel. */
+suspend fun HadithDao.search(query: String): List<HadithWithFullSanad> =
+    likePattern(query)?.let { searchByCleanText(it) } ?: emptyList()
+
+/** [search] within one curriculum [level]; a query with nothing searchable in it matches nothing. */
+fun HadithDao.searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> =
+    likePattern(query)?.let { searchInLevelByCleanText(level, it) } ?: flowOf(emptyList())
