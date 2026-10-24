@@ -20,11 +20,43 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing: the key is used only when KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD
+    // are set in the environment and a keystore is found, first of: $KEYSTORE_FILE,
+    // app/keystore/release.keystore, ~/.android/mutqan-hadith-release.keystore. Nothing secret
+    // lives in the repository. Otherwise the release build is signed with the debug key, so
+    // `assembleRelease` still yields an installable APK locally.
+    fun env(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() }
+    val releaseKeystore = listOfNotNull(
+        env("KEYSTORE_FILE")?.let { file(it) },
+        file("keystore/release.keystore"),
+        file(System.getProperty("user.home") + "/.android/mutqan-hadith-release.keystore"),
+    ).firstOrNull { it.exists() }.takeIf {
+        env("KEYSTORE_PASSWORD") != null && env("KEY_ALIAS") != null && env("KEY_PASSWORD") != null
+    }
+
+    if (releaseKeystore != null) {
+        signingConfigs {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = env("KEYSTORE_PASSWORD")
+                keyAlias = env("KEY_ALIAS")
+                keyPassword = env("KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = true
                 packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+            }
+            signingConfig = if (releaseKeystore != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
             }
         }
     }
