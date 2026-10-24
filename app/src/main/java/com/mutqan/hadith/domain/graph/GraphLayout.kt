@@ -140,8 +140,10 @@ class GraphLayoutEngine(
             val start = bandStart.getValue(r)
             val end = (if (bi + 1 < bandRanks.size) bandStart.getValue(bandRanks[bi + 1]) else levelCount) - 1
             val members = graph.nodes.filter { rank.getValue(it.id) == r }
+            // A band is named after the narrators whose tier says they belong to it, not after the ones that only follow.
+            val named = members.filter { TierRank.of(it.tier) == r }.ifEmpty { members }
             TierBand(
-                tier = members.groupingBy { it.tier }.eachCount().entries
+                tier = named.groupingBy { it.tier }.eachCount().entries
                     .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
                     .first().key,
                 top = levelY[start] - maxHeight / 2 - bandHeader,

@@ -68,28 +68,32 @@ class LevelsCatalogTest {
 
         assertEquals((1L..10L).toList(), bukhari.map { it.id })
         assertTrue(bukhari.all { it.level == HadithLevel.MUSNAD.value })
-        assertTrue(bukhari.all { it.takhrij == "متفق عليه" })
+        // Agreed upon where an-Nawawi cites al-Bukhari and Muslim for the same hadith (Bukhari 1, 54, 8, 13, 52), Bukhari's alone otherwise.
+        assertEquals(
+            listOf("متفق عليه", "متفق عليه", "متفق عليه", "متفق عليه", "متفق عليه", "رواه البخاري", "رواه البخاري", "رواه البخاري", "رواه البخاري", "رواه البخاري"),
+            bukhari.map { it.takhrij },
+        )
     }
 
     @Test
     fun theFoundationHadithsAreAnchoredToTheirCompanion() = runBlocking {
         val byNumber = dao.getHadithsByLevel(1).first().associateBy { it.hadithNumber }
 
-        assertEquals(setOf(1, 3, 7), byNumber.keys)
-        assertEquals("عمر بن الخطاب" to "متفق عليه", byNumber.getValue(1).let { it.sahabi to it.takhrij })
-        assertEquals("عبد الله بن عمر" to "متفق عليه", byNumber.getValue(3).let { it.sahabi to it.takhrij })
-        assertEquals("تميم الداري" to "رواه مسلم", byNumber.getValue(7).let { it.sahabi to it.takhrij })
+        assertEquals((1..42).toSet(), byNumber.keys)
+        // The Companion is named as an-Nawawi names him, and the takhrij is read from his own note.
+        assertEquals("أمير المؤمنين أبي حفص عمر بن الخطاب" to "متفق عليه", byNumber.getValue(1).let { it.sahabi to it.takhrij })
+        assertEquals("أبو عبد الرحمن عبد الله بن عمر بن الخطاب" to "متفق عليه", byNumber.getValue(3).let { it.sahabi to it.takhrij })
+        assertEquals("أبو رقية تميم بن أوس الداري" to "رواه مسلم", byNumber.getValue(7).let { it.sahabi to it.takhrij })
         assertTrue(byNumber.values.all { it.sourceBook == "الأربعون النووية" })
-        // «بني الإسلام على خمس» is the same hadith as Bukhari no. 8, told by the same Companion.
-        val bukhari8 = dao.getHadithWithSanad(3)!!.hadith
-        assertEquals(bukhari8.sahabi, byNumber.getValue(3).sahabi)
+        // «بني الإسلام على خمس» is the same hadith as Bukhari no. 8: both are agreed upon.
+        assertEquals(dao.getHadithWithSanad(3)!!.hadith.takhrij, byNumber.getValue(3).takhrij)
     }
 
     // -- Queries ----------------------------------------------------------------------------
 
     @Test
     fun getHadithsByLevel_returnsTheLevelInCurriculumOrder() = runBlocking {
-        assertEquals(listOf(11L, 12L, 13L), dao.getHadithsByLevel(1).first().map { it.id })
+        assertEquals((11L..52L).toList(), dao.getHadithsByLevel(1).first().map { it.id })
         assertEquals((1L..10L).toList(), dao.getHadithsByLevel(3).first().map { it.id })
         assertTrue(dao.getHadithsByLevel(2).first().isEmpty())
         assertTrue(dao.getHadithsByLevel(99).first().isEmpty())
@@ -97,7 +101,7 @@ class LevelsCatalogTest {
 
     @Test
     fun countHadithsByLevel_countsEachLevel() = runBlocking {
-        assertEquals(listOf(3, 0, 10), (1..3).map { dao.countHadithsByLevel(it).first() })
+        assertEquals(listOf(42, 0, 10), (1..3).map { dao.countHadithsByLevel(it).first() })
     }
 
     @Test
@@ -146,7 +150,7 @@ class LevelsCatalogTest {
     fun theRepositoryExposesTheLevelQueries() = runBlocking {
         val repository = RoomHadithRepository(db)
 
-        assertEquals(listOf(11L, 12L, 13L), repository.getHadithsByLevel(1).first().map { it.id })
+        assertEquals((11L..52L).toList(), repository.getHadithsByLevel(1).first().map { it.id })
         assertEquals(10, repository.countHadithsByLevel(3).first())
         assertEquals(listOf(13L), repository.searchInLevel(1, "النصيحة").first().map { it.id })
     }
@@ -157,8 +161,8 @@ class LevelsCatalogTest {
     fun theLibraryByLevel_listsTheSeededLevels() = runBlocking {
         val levels = GetLibraryByLevelUseCase(RoomHadithRepository(db), RoomReviewRepository(db), DualDecayScheduler()).invoke().first()
 
-        assertEquals(listOf(3, 0, 10), levels.map { it.hadiths.size })
-        assertEquals(listOf(3, 0, 10), levels.map { it.totalInLevel })
+        assertEquals(listOf(42, 0, 10), levels.map { it.hadiths.size })
+        assertEquals(listOf(42, 0, 10), levels.map { it.totalInLevel })
         assertTrue(levels.flatMap { it.hadiths }.all { it.progress == HadithProgress.NEW })
     }
 

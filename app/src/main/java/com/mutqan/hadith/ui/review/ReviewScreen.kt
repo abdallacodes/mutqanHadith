@@ -176,7 +176,9 @@ private fun CardPane(frame: CardFrame, onReveal: () -> Unit, onToggleMissed: (Lo
                 container = MaterialTheme.colorScheme.primaryContainer,
                 content = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            InfoChip(card.grade, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (card.grade.isNotBlank()) {
+                InfoChip(card.grade, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         Card(

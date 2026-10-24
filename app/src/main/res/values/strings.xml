@@ -26,6 +26,7 @@
     <string name="tier_successor">تابعي</string>
     <string name="tier_successor_followers">تابع التابعين</string>
     <string name="tier_collector_teacher">شيخ المصنف</string>
+    <string name="tier_narrator">راوٍ</string>
 
     <!-- Home -->
     <string name="home_title">متقن</string>

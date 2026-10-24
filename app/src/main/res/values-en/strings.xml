@@ -26,6 +26,7 @@
     <string name="tier_successor">Successor</string>
     <string name="tier_successor_followers">Successors\' followers</string>
     <string name="tier_collector_teacher">Collector\'s teacher</string>
+    <string name="tier_narrator">Narrator</string>
 
     <!-- Home -->
     <string name="home_title">Mutqan</string>

@@ -50,11 +50,12 @@ class HadithDaoTest {
     @Test
     fun seed_loadsEveryHadithWithItsSanad() = runBlocking {
         val all = hadithDao.getAllWithSanad()
-        assertEquals(13, all.size)
+        assertEquals(52, all.size)
         // The Bukhari hadiths carry their full chains; the Forty Hadith are anchored to their Companion alone.
+        assertEquals(10, all.count { it.hadith.level == 3 })
+        assertEquals(42, all.count { it.hadith.level == 1 })
         assertTrue(all.filter { it.hadith.level == 3 }.all { it.sanad.size >= 4 })
         assertTrue(all.filter { it.hadith.level == 1 }.all { it.sanad.size == 1 })
-        assertTrue(narratorDao.getPivots().size >= 2)
     }
 
     @Test
@@ -68,7 +69,7 @@ class HadithDaoTest {
         )
         val arbaIn = all.filter { it.level == 1 }
         assertTrue(arbaIn.all { it.sourceBook == "الأربعون النووية" })
-        assertEquals(setOf(1, 3, 7), arbaIn.map { it.hadithNumber }.toSet())
+        assertEquals((1..42).toSet(), arbaIn.map { it.hadithNumber }.toSet())
         // The Hadith about the Prophet's generosity is Bukhari no. 6.
         val generosity = hadithDao.search("أجود الناس").single().hadith
         assertEquals(6, generosity.hadithNumber)
@@ -76,16 +77,17 @@ class HadithDaoTest {
 
     @Test
     fun sanad_isReconstructedInChronologicalOrder() = runBlocking {
-        // Bukhari 1: al-Humaydi <- Sufyan <- Yahya al-Ansari <- Muhammad b. Ibrahim <- Alqama <- Umar.
+        // Bukhari 1: al-Humaydi <- Sufyan <- Yahya al-Ansari <- Muhammad b. Ibrahim <- Alqama <- Umar,
+        // each named as Sahih al-Bukhari names him.
         val bukhari1 = hadithDao.search("إنما الأعمال بالنيات").first { it.hadith.sourceBook == "صحيح البخاري" && it.hadith.hadithNumber == 1 }
         val chain = bukhari1.sanad
         assertEquals(
             listOf(
-                "الحميدي",
-                "سفيان بن عيينة",
+                "الحميدي عبد الله بن الزبير",
+                "سفيان",
                 "يحيى بن سعيد الأنصاري",
                 "محمد بن إبراهيم التيمي",
-                "علقمة بن وقاص",
+                "علقمة بن وقاص الليثي",
                 "عمر بن الخطاب",
             ),
             chain.map { it.narrator.primaryName },
@@ -116,33 +118,33 @@ class HadithDaoTest {
     }
 
     @Test
-    fun pivot_returnsAllLinkedHadiths() = runBlocking {
-        suspend fun nid(name: String) = narratorDao.getPivots().first { it.primaryName == name }.id
+    fun narrator_returnsAllLinkedHadiths() = runBlocking {
+        suspend fun hadithsOf(name: String) = hadithDao.getHadithsByNarrator(narratorDao.getAll().single { it.primaryName == name }.id)
 
-        val yahya = hadithDao.getHadithsByNarrator(nid("يحيى بن سعيد الأنصاري"))
-        assertEquals(2, yahya.size)
-        assertTrue(yahya.all { h -> h.sanad.any { it.narrator.primaryName == "يحيى بن سعيد الأنصاري" } })
+        // Malik appears in three Bukhari chains (Bukhari 54, 611 and 877), always as the second link.
+        val malik = hadithsOf("مالك")
+        assertEquals(listOf(2L, 6L, 8L), malik.map { it.hadith.id })
+        assertTrue(malik.all { h -> h.sanad.any { it.narrator.primaryName == "مالك" } })
 
-        val zuhri = hadithDao.getHadithsByNarrator(nid("ابن شهاب الزهري"))
-        assertEquals(2, zuhri.size)
+        // The Companion is reached from the Bukhari chains and from the Forty Hadith alike.
+        val abuHurayra = hadithsOf("أبو هريرة")
+        assertEquals(setOf(3, 1), abuHurayra.map { it.hadith.level }.toSet())
+        assertEquals(10, abuHurayra.size)
 
-        val malik = hadithDao.getHadithsByNarrator(nid("مالك بن أنس"))
-        assertEquals(3, malik.size)
-
-        // The two Yahyas must not be conflated: al-Qattan is a different narrator.
-        val qattan = narratorDao.observeAll().first().first { it.primaryName == "يحيى بن سعيد القطان" }
-        val viaQattan = hadithDao.getHadithsByNarrator(qattan.id)
-        assertEquals(1, viaQattan.size)
-        assertTrue(viaQattan.none { it in yahya })
+        // Narrators are kept apart by the name the source gives: «عمر» is not «عمر بن الخطاب».
+        assertTrue(hadithsOf("عمر").none { it in hadithsOf("عمر بن الخطاب") })
     }
 
     @Test
     fun search_withoutTashkeel_findsHadith() = runBlocking {
-        val results = hadithDao.search("الحلال بين والحرام بين")
-        assertEquals(1, results.size)
-        val hadith = results.single().hadith
-        assertTrue(hadith.matnClean.startsWith("الحلال بين"))
-        assertTrue(hadith.matnWithTashkeel.any { it in 'ً'..'ْ' })
+        // Bukhari no. 52 and Forty Hadith no. 6 are the same hadith, worded a little differently: one hit in each level.
+        val results = hadithDao.search("الحلال بين")
+        assertEquals(listOf(3, 1), results.map { it.hadith.level })
+        assertEquals(listOf(3), hadithDao.search("الحلال بين والحرام بين").map { it.hadith.level })
+        results.forEach {
+            assertTrue(it.hadith.matnClean.contains("الحلال بين"))
+            assertTrue(it.hadith.matnWithTashkeel.any { c -> c in 'ً'..'ْ' })
+        }
 
         // Orthographic variants: hamza-on-alif and ta marbuta vs ha.
         assertEquals(1, hadithDao.search("اذا سمعتم النداء").size)
@@ -194,7 +196,7 @@ class HadithDaoTest {
     fun seedParser_computesCleanMatnFromTashkeel() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val seed = SeedLoader.load(context)
-        assertEquals(13, seed.hadiths.size)
+        assertEquals(52, seed.hadiths.size)
         seed.hadiths.forEach {
             assertEquals(ArabicNormalizer.normalize(it.matnWithTashkeel), it.matnClean)
             assertNotNull(it.matnClean)

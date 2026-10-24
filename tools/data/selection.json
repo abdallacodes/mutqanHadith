@@ -1,0 +1,15 @@
+{
+  "bukhari": [
+    {"id": 1, "number": 1, "file": "Bukhari/Chapter1.csv"},
+    {"id": 2, "number": 54, "file": "Bukhari/Chapter2.csv"},
+    {"id": 3, "number": 8, "file": "Bukhari/Chapter2.csv"},
+    {"id": 4, "number": 13, "file": "Bukhari/Chapter2.csv"},
+    {"id": 5, "number": 52, "file": "Bukhari/Chapter2.csv"},
+    {"id": 6, "number": 611, "file": "Bukhari/Chapter10.csv"},
+    {"id": 7, "number": 135, "file": "Bukhari/Chapter4.csv"},
+    {"id": 8, "number": 877, "file": "Bukhari/Chapter11.csv"},
+    {"id": 9, "number": 6, "file": "Bukhari/Chapter1.csv"},
+    {"id": 10, "number": 50, "file": "Bukhari/Chapter2.csv"}
+  ],
+  "arbainKeepIds": {"1": 11, "3": 12, "7": 13}
+}
