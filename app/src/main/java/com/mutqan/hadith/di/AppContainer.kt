@@ -11,7 +11,9 @@ import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
+import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
+import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.ObserveStudyDashboardUseCase
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
@@ -34,4 +36,6 @@ class AppContainer(context: Context) {
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }
     val submitLinkDrill by lazy { SubmitLinkDrillUseCase(hadithRepository, reviewRepository, scheduler) }
     val getNarratorChainHeatmap by lazy { GetNarratorChainHeatmapUseCase(hadithRepository, reviewRepository) }
+    val getNarratorGraph by lazy { GetNarratorGraphUseCase(hadithRepository, reviewRepository) }
+    val getHadithsByNarrator by lazy { GetHadithsByNarratorUseCase(hadithRepository, reviewRepository) }
 }

@@ -4,6 +4,7 @@ import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import kotlinx.coroutines.flow.Flow
 
@@ -16,6 +17,11 @@ interface HadithRepository {
     suspend fun getUnseen(): List<HadithWithFullSanad>
 
     fun observeAll(): Flow<List<HadithWithFullSanad>>
+
+    suspend fun getAll(): List<HadithWithFullSanad>
+
+    /** Every Hadith whose chain passes through [narratorId], at any position, in curriculum order. */
+    suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad>
 }
 
 interface NarratorRepository {
@@ -39,4 +45,10 @@ interface ReviewRepository {
     fun observeAllMastery(): Flow<List<MasteryRecordEntity>>
 
     suspend fun getNarratorOutcomeCounts(hadithId: Long): List<NarratorOutcomeCount>
+
+    /** Per-narrator tallies over every Hadith and review. */
+    suspend fun getNarratorOutcomeTotals(): List<NarratorOutcomeCount>
+
+    /** One narrator's tally in each Hadith they appear in. */
+    suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount>
 }

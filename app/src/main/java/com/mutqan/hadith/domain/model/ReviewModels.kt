@@ -57,3 +57,10 @@ data class NarratorOutcomeCount(
     val errorCount: Int,
     val successCount: Int,
 )
+
+/** One narrator's tally within one Hadith, across every review of that Hadith. */
+data class HadithOutcomeCount(
+    val hadithId: Long,
+    val errorCount: Int,
+    val successCount: Int,
+)

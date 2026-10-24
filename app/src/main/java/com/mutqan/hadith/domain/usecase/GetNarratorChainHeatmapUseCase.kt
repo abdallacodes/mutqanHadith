@@ -10,12 +10,55 @@ data class NarratorHeat(
     val performance: NarratorChainPerformance,
     val heat: Float,
     val isWeakestLink: Boolean,
-)
+    val fullName: String,
+    val tier: String,
+    /** The term by which the previous link (the collector, for the first node) received from this narrator. */
+    val transmissionTerm: String,
+) {
+    val attempts: Int get() = performance.errorCount + performance.successCount
+
+    /** Colour class of the node; see [ChainHealth]. */
+    val health: ChainHealth get() = ChainHealth.of(performance.errorCount, performance.successCount, isWeakestLink)
+}
+
+/** How safe a link is to rely on, from its recall record. */
+enum class ChainHealth {
+    /** Never tested, so there is no record to judge by. */
+    UNTESTED,
+
+    /** Recalled more than 85% of the time. */
+    STRONG,
+
+    /** Recalled 60% to 85% of the time. */
+    FAIR,
+
+    /** Recalled under 60% of the time, or the chain's weakest link. */
+    FRAGILE;
+
+    companion object {
+        const val STRONG_ABOVE_PERCENT = 85
+        const val FRAGILE_BELOW_PERCENT = 60
+
+        /** Integer arithmetic keeps the 85% and 60% boundaries exact. */
+        fun of(errors: Int, successes: Int, isWeakestLink: Boolean = false): ChainHealth {
+            val attempts = errors + successes
+            return when {
+                isWeakestLink -> FRAGILE
+                attempts == 0 -> UNTESTED
+                successes * 100 < FRAGILE_BELOW_PERCENT * attempts -> FRAGILE
+                successes * 100 > STRONG_ABOVE_PERCENT * attempts -> STRONG
+                else -> FAIR
+            }
+        }
+    }
+}
 
 /** [nodes] follow chain order, collector's teacher first. */
 data class ChainHeatmap(
     val hadithId: Long,
     val nodes: List<NarratorHeat>,
+    /** The collector who received the chain's first link, e.g. "البخاري". */
+    val collector: String = "",
 ) {
     val weakestLink: NarratorHeat? get() = nodes.firstOrNull { it.isWeakestLink }
 }
@@ -47,6 +90,9 @@ class GetNarratorChainHeatmapUseCase(
                 ),
                 heat = 1f - retention,
                 isWeakestLink = false,
+                fullName = link.narrator.fullName,
+                tier = link.narrator.tier,
+                transmissionTerm = link.transmissionTerm,
             )
         }
 
@@ -58,6 +104,6 @@ class GetNarratorChainHeatmapUseCase(
                     .thenBy { it.performance.errorCount }
                     .thenByDescending { it.orderIndex },
             )
-        return ChainHeatmap(hadithId, nodes.map { it.copy(isWeakestLink = it === weakest) })
+        return ChainHeatmap(hadithId, nodes.map { it.copy(isWeakestLink = it === weakest) }, hadith.hadith.collector)
     }
 }

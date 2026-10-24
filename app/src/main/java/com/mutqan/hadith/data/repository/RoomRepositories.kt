@@ -6,6 +6,7 @@ import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
@@ -22,6 +23,11 @@ class RoomHadithRepository(private val db: MutqanDatabase) : HadithRepository {
     override suspend fun getUnseen(): List<HadithWithFullSanad> = db.hadithDao().getUnseenWithSanad()
 
     override fun observeAll(): Flow<List<HadithWithFullSanad>> = db.hadithDao().observeAllWithSanad()
+
+    override suspend fun getAll(): List<HadithWithFullSanad> = db.hadithDao().getAllWithSanad()
+
+    override suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad> =
+        db.hadithDao().getHadithsByNarrator(narratorId)
 }
 
 class RoomNarratorRepository(private val db: MutqanDatabase) : NarratorRepository {
@@ -52,4 +58,10 @@ class RoomReviewRepository(private val db: MutqanDatabase) : ReviewRepository {
 
     override suspend fun getNarratorOutcomeCounts(hadithId: Long): List<NarratorOutcomeCount> =
         db.reviewHistoryDao().getOutcomeCounts(hadithId)
+
+    override suspend fun getNarratorOutcomeTotals(): List<NarratorOutcomeCount> =
+        db.reviewHistoryDao().getOutcomeTotals()
+
+    override suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount> =
+        db.reviewHistoryDao().getOutcomeCountsByHadith(narratorId)
 }

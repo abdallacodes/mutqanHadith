@@ -7,6 +7,7 @@ import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadEdgeWithNarrator
+import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
@@ -42,6 +43,11 @@ class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepositor
     override suspend fun getUnseen() = all.filter { it.hadith.id !in seenIds() }
 
     override fun observeAll(): Flow<List<HadithWithFullSanad>> = flowOf(all)
+
+    override suspend fun getAll() = all
+
+    override suspend fun getThroughNarrator(narratorId: Long) =
+        all.filter { h -> h.edges.any { it.narrator.id == narratorId } }
 }
 
 class FakeNarratorRepository(private val narrators: List<NarratorEntity>) : NarratorRepository {
@@ -74,5 +80,18 @@ class FakeReviewRepository : ReviewRepository {
             .groupBy { it.narratorId }
             .map { (id, list) ->
                 NarratorOutcomeCount(id, errorCount = list.count { !it.succeeded }, successCount = list.count { it.succeeded })
+            }
+
+    override suspend fun getNarratorOutcomeTotals(): List<NarratorOutcomeCount> =
+        events.groupBy { it.narratorId }
+            .map { (id, list) ->
+                NarratorOutcomeCount(id, errorCount = list.count { !it.succeeded }, successCount = list.count { it.succeeded })
+            }
+
+    override suspend fun getOutcomeCountsByHadith(narratorId: Long): List<HadithOutcomeCount> =
+        events.filter { it.narratorId == narratorId }
+            .groupBy { it.hadithId }
+            .map { (id, list) ->
+                HadithOutcomeCount(id, errorCount = list.count { !it.succeeded }, successCount = list.count { it.succeeded })
             }
 }
