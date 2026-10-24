@@ -16,8 +16,8 @@ import com.mutqan.hadith.domain.repository.ReviewRepository
 
 const val DAY_MS = 86_400_000L
 
-fun narrator(id: Long, name: String = "راوي $id") =
-    NarratorEntity(id = id, primaryName = name, fullName = name, tier = "تابعي", isPivot = false)
+fun narrator(id: Long, name: String = "راوي $id", tier: String = "تابعي") =
+    NarratorEntity(id = id, primaryName = name, fullName = name, tier = tier, isPivot = false)
 
 /** A Hadith whose chain is [narrators] in order (index 0 = the collector's teacher). */
 fun hadith(id: Long, narrators: List<NarratorEntity>): HadithWithFullSanad =
