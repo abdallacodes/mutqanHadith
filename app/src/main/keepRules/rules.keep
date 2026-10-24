@@ -1,12 +1,26 @@
-# Add project specific R8 rules here.
-# AGP will combine all keep rule files in src/main/keepRules to pass to R8
-#
-# For more details, see
-#   https://d.android.com/r/tools/r8/keep-rules
+# R8 rules for the release build. AGP combines every file in src/main/keepRules and passes the
+# result to R8; consumer rules shipped inside the dependencies (Compose, Lifecycle, Navigation,
+# Room, Coroutines) are applied automatically on top of these.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room ----------------------------------------------------------------------------------------
+# MutqanDatabase_Impl and the generated DAO implementations are found by name at runtime
+# (Room.databaseBuilder -> Class.forName), so they must keep their names and constructors.
+# Room's own consumer rules keep the database subclass; these lines make the project's
+# dependency on that explicit and keep the entity classes (whose field names are the column
+# names the generated SQL refers to) intact, so renaming can never desynchronise the schema.
+-keep class * extends androidx.room.RoomDatabase
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao interface *
+-dontwarn androidx.room.paging.**
+
+# Backup and restore --------------------------------------------------------------------------
+# The backup file is written and read by hand with the platform's org.json (BackupCodec); no
+# serialization library or reflection is involved, so there is nothing to keep for it. Field
+# names in the JSON are string literals in the codec and are unaffected by obfuscation.
+
+# Seed data -----------------------------------------------------------------------------------
+# assets/seed_hadiths.json is parsed with org.json in SeedLoader; same reasoning: no reflection.
+
+# Crash reports stay readable.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

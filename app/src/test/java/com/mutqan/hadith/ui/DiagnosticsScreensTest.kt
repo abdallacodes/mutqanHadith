@@ -329,6 +329,8 @@ class DiagnosticsScreensTest {
             onStartDueReview = {}, onLearnNew = {}, onReviewHadith = {}, onSanadBuilder = {}, onMissingLink = {},
             onOpenDetails = { calls += "details$it" },
             onOpenGraph = { calls += "graph" },
+            onOpenAnalytics = { calls += "analytics" },
+            onOpenSettings = { calls += "settings" },
         )
         val dashboard = StudyDashboard(
             dueCount = 1,
@@ -340,11 +342,13 @@ class DiagnosticsScreensTest {
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
 
         compose.onNodeWithContentDescription("شبكة الأسانيد").performClick()
-        assertEquals(listOf("graph"), calls)
+        compose.onNodeWithContentDescription("الإحصائيات").performClick()
+        compose.onNodeWithContentDescription("الإعدادات").performClick()
+        assertEquals(listOf("graph", "analytics", "settings"), calls)
 
         compose.onNodeWithText("الصحابي: أبو هريرة").performClick()
         compose.onNodeWithText("تفاصيل الحديث وصحة السند").performClick()
-        assertEquals(listOf("graph", "details1"), calls)
+        assertEquals(listOf("graph", "analytics", "settings", "details1"), calls)
     }
 
     // -- Review of a narrator's hadiths ----------------------------------------------------

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">متقن حديث</string>
+    <string name="app_name">متقن - حديث</string>
 
     <!-- Common -->
     <string name="action_back">رجوع</string>
@@ -142,4 +142,91 @@
     <string name="details_title">تفاصيل الحديث</string>
     <string name="details_close">إغلاق</string>
     <string name="sheet_details">تفاصيل الحديث وصحة السند</string>
+    <!-- Analytics -->
+    <string name="analytics_open">الإحصائيات</string>
+    <string name="analytics_title">إحصائيات الإتقان</string>
+    <string name="analytics_empty_banner">ابدأ أول مراجعة لتظهر هنا إحصائياتك</string>
+    <string name="analytics_streak_title">سلسلة المراجعة</string>
+    <string name="analytics_streak_unit">أيام متتالية</string>
+    <string name="analytics_streak_start">ابدأ سلسلتك اليوم</string>
+    <string name="analytics_streak_today_done">راجعت اليوم، أحسنت</string>
+    <string name="analytics_streak_today_pending">راجع اليوم لتحافظ على سلسلتك</string>
+    <string name="analytics_streak_best">أطول سلسلة: %1$d</string>
+    <string name="analytics_streak_total">أيام المراجعة: %1$d</string>
+    <string name="analytics_week_title">آخر 7 أيام</string>
+    <string name="analytics_day_studied">راجعت</string>
+    <string name="analytics_day_missed">لم تراجع</string>
+    <string name="analytics_dual_title">مؤشر الإتقان المزدوج</string>
+    <string name="analytics_dual_hint">متوسط احتمال تذكّرك الآن لكل مكوّن</string>
+    <string name="analytics_dual_stability">متوسط الثبات: %1$s يوم</string>
+    <string name="analytics_dual_unstudied">لم يُراجع بعد</string>
+    <string name="analytics_dual_cd">%1$s: %2$s</string>
+    <string name="analytics_insight_sanad">سندك أضعف من متنك، فخصّص وقتًا لتدريبات السند</string>
+    <string name="analytics_insight_matn">متنك أضعف من سندك، فأعد استحضار المتون</string>
+    <string name="analytics_insight_balanced">المتن والسند متقاربان في الثبات</string>
+    <string name="analytics_status_title">حالة المحفوظات</string>
+    <string name="analytics_status_summary">%1$d من %2$d متقن</string>
+    <string name="analytics_status_mastered">متقن</string>
+    <string name="analytics_status_learning">قيد التثبيت</string>
+    <string name="analytics_status_unseen">جديد</string>
+    <string name="analytics_weak_title">أكثر الرواة تفلّتًا</string>
+    <string name="analytics_weak_hint">أعلى الرواة نسبة خطأ في مراجعاتك، اضغط على أحدهم للتدرّب على أحاديثه</string>
+    <string name="analytics_weak_empty">لا يوجد بعد راوٍ تكرّر خطؤك فيه. ستظهر هنا أكثر الأسماء تفلّتًا من ذاكرتك بعد بضع مراجعات.</string>
+    <string name="analytics_weak_drill">تدرّب</string>
+    <string name="analytics_weak_cd">%1$s، نسبة الخطأ %2$d٪، اضغط للتدرّب على أحاديثه</string>
+
+    <!-- Settings -->
+    <string name="settings_open">الإعدادات</string>
+    <string name="settings_title">الإعدادات</string>
+    <string name="settings_busy">جارٍ المعالجة…</string>
+    <string name="settings_section_backup">النسخ الاحتياطي</string>
+    <string name="settings_export">تصدير نسخة احتياطية</string>
+    <string name="settings_export_hint">احفظ تقدمك في ملف JSON على جهازك</string>
+    <string name="settings_import">استعادة نسخة احتياطية</string>
+    <string name="settings_import_hint">استبدل تقدمك الحالي بما في ملف نسخة سابقة</string>
+    <string name="settings_section_data">البيانات</string>
+    <string name="settings_reset">إعادة تعيين التقدم</string>
+    <string name="settings_reset_hint">امسح كل المراجعات وأعد الأحاديث جديدة</string>
+    <string name="settings_section_about">حول التطبيق</string>
+    <string name="settings_about">عن متقن - حديث</string>
+    <string name="settings_about_hint">الإصدار %1$s</string>
+    <string name="settings_cancel">إلغاء</string>
+    <string name="settings_reset_title">إعادة تعيين التقدم؟</string>
+    <string name="settings_reset_body">سيُمسح سجلّ مراجعاتك وحالة الحفظ لكل الأحاديث، وتعود الأحاديث كلها جديدة. لا يمكن التراجع عن ذلك.
+
+يُنصح بتصدير نسخة احتياطية أولًا.</string>
+    <string name="settings_reset_confirm">إعادة التعيين</string>
+    <string name="settings_import_title">استعادة النسخة؟</string>
+    <string name="settings_import_body">محتوى النسخة:
+• أحاديث بدأ حفظها: %1$d
+• سجلّات الرواة: %2$d
+• تاريخ النسخة: %3$s
+
+سيحلّ هذا محلّ تقدمك الحالي كله.</string>
+    <string name="settings_import_confirm">استعادة</string>
+    <string name="settings_msg_exported">تم حفظ النسخة الاحتياطية</string>
+    <string name="settings_msg_export_failed">تعذّر حفظ الملف، جرّب موقعًا آخر</string>
+    <string name="settings_msg_imported">تمت استعادة تقدمك بنجاح</string>
+    <string name="settings_msg_reset">أُعيد تعيين التقدم</string>
+    <string name="settings_msg_reset_failed">تعذّرت إعادة التعيين</string>
+    <string name="settings_err_not_backup">هذا الملف ليس نسخة احتياطية من متقن - حديث</string>
+    <string name="settings_err_corrupt">ملف النسخة تالف أو معدَّل ولا يمكن قراءته</string>
+    <string name="settings_err_newer">أُنشئت هذه النسخة بإصدار أحدث من التطبيق (الصيغة %1$d)، حدّث التطبيق ثم أعد المحاولة</string>
+    <string name="settings_err_unknown">تشير النسخة إلى أحاديث أو رواة غير موجودين في هذا الإصدار، حدّث التطبيق إلى أحدث إصدار</string>
+    <string name="settings_err_too_large">الملف أكبر من أن يكون نسخة احتياطية</string>
+    <string name="settings_err_unreadable">تعذّرت قراءة الملف</string>
+    <string name="settings_err_restore_failed">تعذّرت الاستعادة، ولم يتغيّر شيء من بياناتك</string>
+
+    <!-- About -->
+    <string name="about_suite">ضمن سلسلة متقن · Mutqan Suite</string>
+    <string name="about_version">الإصدار %1$s</string>
+    <string name="about_vision_title">رؤية السلسلة</string>
+    <string name="about_vision_body">«متقن» سلسلة تطبيقات تعين على إتقان العلم بالمنهج الذي ضبط به أهله محفوظاتهم: تفكيك المحفوظ إلى طبقاته، والتثبّت منه بالمذاكرة، ومراجعته على فترات متباعدة. وهذا التطبيق يخدم حفظ الحديث النبوي متنًا وسندًا.</string>
+    <string name="about_method_title">المنهج</string>
+    <string name="about_method_layers">• طبقات الحفظ: المتن أولًا، ثم السند علاقةً بين شيخ وتلميذ لا نصًّا مسرودًا.</string>
+    <string name="about_method_recall">• المذاكرة: استحضر من ذاكرتك قبل أن ترى الجواب، فالتذكّر النشط أبلغ أثرًا من إعادة القراءة.</string>
+    <string name="about_method_decay">• تكرار متباعد بمنحنيين: يُحسب نسيان المتن والسند كلٌّ على حدة، والسند أسرع تفلّتًا، وخطأ في راوٍ واحد يُضعف السند كله.</string>
+    <string name="about_method_pivots">• المدارات والرواة: شبكة الأسانيد وقائمة أكثر الرواة تفلّتًا توجّه مراجعتك إلى مواضع الضعف.</string>
+    <string name="about_method_privacy">• بياناتك لك: كل شيء يعمل دون إنترنت، ونسخك الاحتياطية ملف JSON بيدك.</string>
+    <string name="about_ok">حسنًا</string>
 </resources>

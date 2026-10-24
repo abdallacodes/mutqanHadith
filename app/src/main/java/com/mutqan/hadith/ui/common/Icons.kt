@@ -29,3 +29,23 @@ fun NetworkIcon(modifier: Modifier = Modifier, tint: Color = LocalContentColor.c
         drawCircle(tint, radius = w * 0.12f, center = right)
     }
 }
+
+/** Three rising bars: the "statistics" glyph, which the core icon set lacks. */
+@Composable
+fun AnalyticsIcon(modifier: Modifier = Modifier, tint: Color = LocalContentColor.current, size: Dp = 24.dp) {
+    Canvas(modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val barWidth = w * 0.2f
+        val corner = androidx.compose.ui.geometry.CornerRadius(barWidth * 0.3f)
+        // Left to right: short, medium, tall, all standing on the same baseline.
+        listOf(0.5f to 0.15f, 0.7f to 0.4f, 0.95f to 0.65f).forEach { (height, start) ->
+            drawRoundRect(
+                color = tint,
+                topLeft = Offset(w * start, h * (0.9f - height * 0.8f)),
+                size = androidx.compose.ui.geometry.Size(barWidth, h * height * 0.8f),
+                cornerRadius = corner,
+            )
+        }
+    }
+}

@@ -40,6 +40,10 @@ private val LightColors = lightColorScheme(
     error = WrongLight,
     errorContainer = WrongContainerLight,
     onErrorContainer = Color(0xFF410002),
+    // Snackbars: ink on parchment inverted, with a bright emerald action.
+    inverseSurface = Ink,
+    inverseOnSurface = Parchment,
+    inversePrimary = EmeraldLight,
 )
 
 private val DarkColors = darkColorScheme(
@@ -68,6 +72,9 @@ private val DarkColors = darkColorScheme(
     error = WrongDark,
     errorContainer = WrongContainerDark,
     onErrorContainer = Color(0xFFFFDAD6),
+    inverseSurface = NightInk,
+    inverseOnSurface = NightSurface,
+    inversePrimary = Emerald,
 )
 
 /** Colors the Material scheme has no slot for: drill feedback and the mastery scale. */

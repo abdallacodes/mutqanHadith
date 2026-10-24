@@ -14,12 +14,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -48,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.usecase.DashboardItem
 import com.mutqan.hadith.domain.usecase.StudyDashboard
+import com.mutqan.hadith.ui.common.AnalyticsIcon
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.MasteryBadge
 import com.mutqan.hadith.ui.common.MasteryRing
@@ -68,6 +72,8 @@ data class HomeActions(
     val onMissingLink: (Long) -> Unit,
     val onOpenDetails: (Long) -> Unit,
     val onOpenGraph: () -> Unit,
+    val onOpenAnalytics: () -> Unit,
+    val onOpenSettings: () -> Unit,
 )
 
 @Composable
@@ -83,13 +89,21 @@ fun HomeScreen(state: UiState<StudyDashboard>, actions: HomeActions, onRetry: ()
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
+            val analyticsLabel = stringResource(R.string.analytics_open)
             val graphLabel = stringResource(R.string.graph_open)
+            val settingsLabel = stringResource(R.string.settings_open)
             MutqanTopBar(
                 title = stringResource(R.string.home_title),
                 onBack = null,
                 actions = {
+                    IconButton(onClick = actions.onOpenAnalytics, modifier = Modifier.semantics { contentDescription = analyticsLabel }) {
+                        AnalyticsIcon()
+                    }
                     IconButton(onClick = actions.onOpenGraph, modifier = Modifier.semantics { contentDescription = graphLabel }) {
                         NetworkIcon()
+                    }
+                    IconButton(onClick = actions.onOpenSettings) {
+                        Icon(Icons.Filled.Settings, contentDescription = settingsLabel)
                     }
                 },
             )

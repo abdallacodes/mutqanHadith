@@ -103,6 +103,8 @@ class ScreensTest {
             onMissingLink = { calls += "link$it" },
             onOpenDetails = { calls += "details$it" },
             onOpenGraph = { calls += "graph" },
+            onOpenAnalytics = { calls += "analytics" },
+            onOpenSettings = { calls += "settings" },
         )
         val dashboard = StudyDashboard(
             dueCount = 1,
@@ -131,7 +133,7 @@ class ScreensTest {
     @Test
     fun home_disables_review_when_nothing_is_due() {
         val dashboard = StudyDashboard(0, 0, 1f, emptyList(), drillSuggestionId = null)
-        val actions = HomeActions({}, {}, {}, {}, {}, {}, {})
+        val actions = HomeActions({}, {}, {}, {}, {}, {}, {}, {}, {})
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
 
         compose.onNodeWithText("ورد المراجعة (0)").assertIsNotEnabled()

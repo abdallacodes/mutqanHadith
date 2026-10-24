@@ -17,6 +17,9 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.mutqan.hadith.di.AppContainer
+import com.mutqan.hadith.ui.analytics.AnalyticsRoute
+import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
+import com.mutqan.hadith.ui.analyticsViewModelFactory
 import com.mutqan.hadith.ui.details.HadithDetailsRoute
 import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphRoute
@@ -37,6 +40,9 @@ import com.mutqan.hadith.ui.reviewViewModelFactory
 import com.mutqan.hadith.ui.sanadBuilderViewModelFactory
 import com.mutqan.hadith.ui.sanadbuilder.SanadBuilderRoute
 import com.mutqan.hadith.ui.sanadbuilder.SanadBuilderViewModel
+import com.mutqan.hadith.ui.settings.SettingsRoute
+import com.mutqan.hadith.ui.settings.SettingsViewModel
+import com.mutqan.hadith.ui.settingsViewModelFactory
 
 object Routes {
     const val HOME = "home"
@@ -51,6 +57,8 @@ object Routes {
     const val SANAD_BUILDER = "sanad_builder/{$ARG_HADITH_ID}"
     const val MISSING_LINK = "missing_link/{$ARG_HADITH_ID}"
     const val NARRATOR_GRAPH = "narrator_graph"
+    const val ANALYTICS = "analytics"
+    const val SETTINGS = "settings"
     const val HADITH_DETAILS = "hadith_details/{$ARG_HADITH_ID}"
 
     fun review(mode: ReviewMode, id: Long? = null): String =
@@ -111,6 +119,8 @@ fun MutqanNavHost(
                     onMissingLink = { navController.navigate(Routes.missingLink(it)) },
                     onOpenDetails = { navController.navigate(Routes.hadithDetails(it)) },
                     onOpenGraph = { navController.navigate(Routes.NARRATOR_GRAPH) },
+                    onOpenAnalytics = { navController.navigate(Routes.ANALYTICS) },
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 ),
             )
         }
@@ -154,6 +164,20 @@ fun MutqanNavHost(
                 onReviewNarrator = { navController.navigate(Routes.review(ReviewMode.NARRATOR, it)) },
                 onOpenHadith = { navController.navigate(Routes.hadithDetails(it)) },
             )
+        }
+
+        composable(Routes.ANALYTICS) {
+            val viewModel: AnalyticsViewModel = viewModel(factory = container.analyticsViewModelFactory())
+            AnalyticsRoute(
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() },
+                onDrillNarrator = { navController.navigate(Routes.review(ReviewMode.NARRATOR, it)) },
+            )
+        }
+
+        composable(Routes.SETTINGS) {
+            val viewModel: SettingsViewModel = viewModel(factory = container.settingsViewModelFactory())
+            SettingsRoute(viewModel, onClose = { navController.popBackStack() })
         }
 
         dialog(
