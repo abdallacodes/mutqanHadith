@@ -6,7 +6,6 @@ import com.mutqan.hadith.domain.model.ReviewRating.EASY
 import com.mutqan.hadith.domain.model.ReviewRating.GOOD
 import com.mutqan.hadith.domain.model.ReviewRating.HARD
 import com.mutqan.hadith.domain.model.ReviewRating
-import com.mutqan.hadith.domain.model.ReviewTarget
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.scheduler.ScheduleRequest
 import com.mutqan.hadith.domain.scheduler.ScheduleResult
@@ -14,6 +13,7 @@ import com.mutqan.hadith.domain.scheduler.SchedulerConfig
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.roundToLong
 import kotlin.time.Duration.Companion.days
 
 class DualDecaySchedulerTest {
@@ -23,18 +23,23 @@ class DualDecaySchedulerTest {
 
     private fun review(
         previous: MasteryRecordEntity?,
-        matn: ReviewRating,
-        sanad: ReviewRating,
+        matn: ReviewRating?,
+        sanad: ReviewRating?,
         now: Long,
-        target: ReviewTarget = ReviewTarget.DUAL,
         brokenLinks: Int = 0,
         chainLength: Int = 0,
     ): ScheduleResult = scheduler.schedule(
-        ScheduleRequest(1, previous, matn, sanad, now, target, brokenLinks, chainLength),
+        ScheduleRequest(1, previous, matn, sanad, now, brokenLinks, chainLength),
     )
 
-    private fun record(matn: Float, sanad: Float, reviewedAt: Long = t0, due: Long = t0 + DAY_MS, count: Int = 3) =
-        MasteryRecordEntity(1, matn, sanad, reviewedAt, due, count)
+    private fun record(
+        matn: Float,
+        sanad: Float,
+        matnAt: Long? = t0,
+        sanadAt: Long? = t0,
+        due: Long = t0 + DAY_MS,
+        count: Int = 3,
+    ) = MasteryRecordEntity(1, matn, sanad, matnAt, sanadAt, due, count)
 
     // -- min(matnDue, sanadDue) ------------------------------------------------------------
 
@@ -183,25 +188,63 @@ class DualDecaySchedulerTest {
     // -- single-target reviews -------------------------------------------------------------
 
     @Test
-    fun matnOnlyReview_leavesSanadStateAlone() {
-        val prev = record(10f, 6f, reviewedAt = t0, due = t0 + 3 * DAY_MS)
+    fun matnOnlyReview_advancesOnlyTheMatnClock() {
+        val prev = record(10f, 6f)
         val now = t0 + 10 * DAY_MS
-        val result = review(prev, GOOD, AGAIN, now, target = ReviewTarget.MATN)
+        val result = review(prev, GOOD, null, now)
 
         assertEquals(6f, result.record.sanadStability, 0f)
-        assertEquals(t0, result.record.lastReviewedAt) // the Sanad's clock must not be reset
+        assertEquals(now, result.record.matnLastReviewedAt)
+        assertEquals(t0, result.record.sanadLastReviewedAt) // the Sanad's clock must not be reset
         assertTrue(result.record.matnStability > prev.matnStability)
-        // The untouched Sanad is still due where it was, so the Hadith is still due.
-        assertEquals(prev.nextReviewDue, result.record.nextReviewDue)
         assertEquals(4, result.record.repetitionCount)
     }
 
     @Test
+    fun matnOnlyReview_leavesTheSanadDueExactlyWhereItWas() {
+        val prev = record(10f, 6f)
+        val now = t0 + 1 * DAY_MS
+        val result = review(prev, GOOD, null, now)
+
+        // Sanad (S = 6, clock 1.75x) fell due at t0 + 6/1.75 days, long before the new Matn interval.
+        val sanadDue = t0 + (6.0 / 1.75 * DAY_MS).roundToLong()
+        assertEquals(sanadDue, result.record.nextReviewDue)
+        assertTrue(result.record.nextReviewDue < now + result.matnInterval.inWholeMilliseconds)
+    }
+
+    @Test
+    fun sanadOnlyReview_doesNotSkewTheMatnElapsedTime() {
+        val prev = record(10f, 10f)
+        val later = t0 + 10 * DAY_MS
+
+        // A Sanad drill happens in between; Matn must still be measured from its own last review.
+        val afterSanadDrill = review(prev, null, GOOD, later - 1000).record
+        val viaDrill = review(afterSanadDrill, GOOD, null, later)
+        val direct = review(prev, GOOD, null, later)
+
+        assertEquals(direct.record.matnStability, viaDrill.record.matnStability, 1e-6f)
+        assertEquals(later - 1000, afterSanadDrill.sanadLastReviewedAt)
+        assertEquals(t0, afterSanadDrill.matnLastReviewedAt)
+        assertTrue(
+            scheduler.retrievability(afterSanadDrill, later).matn <
+                scheduler.retrievability(afterSanadDrill, later).sanad,
+        )
+    }
+
+    @Test
     fun matnOnlyFirstReview_keepsTheHadithDueUntilSanadIsLearned() {
-        val result = review(null, EASY, EASY, t0, target = ReviewTarget.MATN)
+        val result = review(null, EASY, null, t0)
         assertEquals(0f, result.record.sanadStability, 0f)
+        assertEquals(null, result.record.sanadLastReviewedAt)
         assertEquals(t0, result.record.nextReviewDue)
+        assertEquals(t0, result.record.matnLastReviewedAt)
         assertTrue(result.record.matnStability > 0f)
+        assertEquals(0f, scheduler.retrievability(result.record, t0 + DAY_MS).sanad, 0f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun aReviewMustTestSomething() {
+        review(null, null, null, t0)
     }
 
     // -- metrics ---------------------------------------------------------------------------

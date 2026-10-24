@@ -9,6 +9,9 @@ import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadEdgeWithNarrator
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import com.mutqan.hadith.domain.repository.HadithRepository
+import com.mutqan.hadith.domain.repository.NarratorRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import com.mutqan.hadith.domain.repository.ReviewRepository
 
 const val DAY_MS = 86_400_000L
@@ -26,11 +29,23 @@ fun hadith(id: Long, narrators: List<NarratorEntity>): HadithWithFullSanad =
     )
 
 class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepository {
-    private val byId = hadiths.associateBy { it.hadith.id }
+    private val all = hadiths.sortedBy { it.hadith.id }
+    private val byId = all.associateBy { it.hadith.id }
+
+    /** Ids that already have a mastery record; wired to [FakeReviewRepository] by the tests. */
+    var seenIds: () -> Set<Long> = { emptySet() }
 
     override suspend fun getWithSanad(id: Long) = byId[id]
 
     override suspend fun getWithSanad(ids: Collection<Long>) = ids.mapNotNull { byId[it] }
+
+    override suspend fun getUnseen() = all.filter { it.hadith.id !in seenIds() }
+
+    override fun observeAll(): Flow<List<HadithWithFullSanad>> = flowOf(all)
+}
+
+class FakeNarratorRepository(private val narrators: List<NarratorEntity>) : NarratorRepository {
+    override suspend fun getAll() = narrators
 }
 
 class FakeReviewRepository : ReviewRepository {
@@ -45,6 +60,14 @@ class FakeReviewRepository : ReviewRepository {
         mastery[record.hadithId] = record
         events += narratorEvents
     }
+
+    override suspend fun logNarratorEvents(narratorEvents: List<NarratorReviewEventEntity>) {
+        events += narratorEvents
+    }
+
+    override suspend fun getAllMastery() = mastery.values.toList()
+
+    override fun observeAllMastery(): Flow<List<MasteryRecordEntity>> = flowOf(mastery.values.toList())
 
     override suspend fun getNarratorOutcomeCounts(hadithId: Long): List<NarratorOutcomeCount> =
         events.filter { it.hadithId == hadithId }

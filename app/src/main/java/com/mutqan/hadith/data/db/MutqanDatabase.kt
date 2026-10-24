@@ -24,7 +24,7 @@ import com.mutqan.hadith.data.seed.SeedLoader
         NarratorReviewEventEntity::class,
         MasteryRecordEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {
@@ -58,9 +58,21 @@ abstract class MutqanDatabase : RoomDatabase() {
         }
     }
 
+    /**
+     * Seeds whenever an opened database has no Hadiths: on first creation, after a destructive
+     * migration recreated the tables, or if an earlier seed was interrupted. Runs on every open
+     * but costs one `COUNT(*)` once seeded.
+     */
     private class PrepopulateCallback(private val context: Context) : Callback() {
-        override fun onCreate(db: SupportSQLiteDatabase) {
-            SeedLoader.write(db, SeedLoader.load(context))
+        override fun onOpen(db: SupportSQLiteDatabase) {
+            if (db.isReadOnly || !SeedLoader.isEmpty(db)) return
+            db.beginTransaction()
+            try {
+                SeedLoader.write(db, SeedLoader.load(context))
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
         }
     }
 }

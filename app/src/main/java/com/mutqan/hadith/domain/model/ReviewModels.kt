@@ -24,12 +24,15 @@ enum class ReviewTarget(val includesMatn: Boolean, val includesSanad: Boolean) {
 
 /**
  * [matnStability] and [sanadStability] are the stored stabilities in days (0 = never learned).
- * [overallMastery] is in 0..1 and collapses when either side is weak.
+ * [matnMastery] and [sanadMastery] normalize each to 0..1 (Sanad measured on its faster clock);
+ * [overallMastery] is their geometric mean, so it collapses when either side is weak.
  */
 data class StabilityMetrics(
     val matnStability: Float,
     val sanadStability: Float,
     val overallMastery: Float,
+    val matnMastery: Float = 0f,
+    val sanadMastery: Float = 0f,
 )
 
 /** Probability of recall right now, per component, in 0..1. */

@@ -71,7 +71,10 @@ object SeedLoader {
         return SeedData(narrators, hadiths, edges)
     }
 
-    /** Inserts in FK order; call inside the open transaction of `RoomDatabase.Callback.onCreate`. */
+    fun isEmpty(db: SupportSQLiteDatabase): Boolean =
+        db.query("SELECT COUNT(*) FROM hadith").use { it.moveToFirst() && it.getInt(0) == 0 }
+
+    /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
     fun write(db: SupportSQLiteDatabase, data: SeedData) {
         data.narrators.forEach {
             db.insert("narrator", CONFLICT_REPLACE, ContentValues().apply {

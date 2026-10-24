@@ -5,10 +5,10 @@ import com.mutqan.hadith.domain.model.ReviewRating.AGAIN
 import com.mutqan.hadith.domain.model.ReviewRating.EASY
 import com.mutqan.hadith.domain.model.ReviewRating.GOOD
 import com.mutqan.hadith.domain.model.ReviewRating.HARD
-import com.mutqan.hadith.domain.model.ReviewTarget
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
+import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -26,11 +26,12 @@ class UseCasesTest {
 
     private val chain = (1L..4L).map { narrator(it) }
     private val hadiths = FakeHadithRepository(listOf(hadith(1, chain), hadith(2, chain.take(2)), hadith(3, chain.take(3))))
-    private val reviews = FakeReviewRepository()
+    private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
 
     private val submit = SubmitReviewUseCase(hadiths, reviews, scheduler) { clock }
     private val getDue = GetDueHadithsUseCase(hadiths, reviews, scheduler) { clock }
     private val heatmap = GetNarratorChainHeatmapUseCase(hadiths, reviews)
+    private val getUnseen = GetUnseenHadithsUseCase(hadiths)
 
     // -- SubmitReviewUseCase ---------------------------------------------------------------
 
@@ -39,7 +40,8 @@ class UseCasesTest {
         val outcome = submit(1, GOOD, EASY)
 
         assertEquals(outcome.record, reviews.mastery[1])
-        assertEquals(now, outcome.record.lastReviewedAt)
+        assertEquals(now, outcome.record.matnLastReviewedAt)
+        assertEquals(now, outcome.record.sanadLastReviewedAt)
         assertEquals(1, outcome.record.repetitionCount)
         assertTrue(outcome.metrics.overallMastery > 0f)
         assertEquals(outcome.record.nextReviewDue, outcome.nextReviewDue)
@@ -82,10 +84,28 @@ class UseCasesTest {
 
     @Test
     fun submit_matnOnlyReview_ignoresFailedNarratorsAndSanad() = runBlocking {
-        val outcome = submit(1, GOOD, AGAIN, failedNarratorIds = setOf(2L), target = ReviewTarget.MATN)
+        val outcome = submit(1, GOOD, null, failedNarratorIds = setOf(2L))
         assertTrue(reviews.events.isEmpty())
         assertEquals(0f, outcome.record.sanadStability, 0f)
+        assertNull(outcome.record.sanadLastReviewedAt)
+        assertEquals(now, outcome.record.matnLastReviewedAt)
     }
+
+    @Test
+    fun submit_sanadOnlyReview_leavesTheMatnClockAlone() = runBlocking {
+        val first = submit(1, EASY, EASY)
+        clock += 5 * DAY_MS
+        val sanadOnly = submit(1, null, GOOD)
+
+        assertEquals(first.record.matnLastReviewedAt, sanadOnly.record.matnLastReviewedAt)
+        assertEquals(first.record.matnStability, sanadOnly.record.matnStability, 0f)
+        assertEquals(clock, sanadOnly.record.sanadLastReviewedAt)
+        assertEquals(8, reviews.events.size) // 4 narrators per Sanad review
+        assertEquals(2, sanadOnly.record.repetitionCount)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun submit_requiresAtLeastOneRating(): Unit = runBlocking { submit(1, null, null); Unit }
 
     @Test
     fun submit_rejectsUnknownHadithAndForeignNarrators() = runBlocking {
@@ -106,8 +126,9 @@ class UseCasesTest {
     // -- GetDueHadithsUseCase --------------------------------------------------------------
 
     private fun seedMastery(id: Long, stability: Float, reviewedDaysAgo: Int, dueInDays: Int) {
+        val reviewedAt = now - reviewedDaysAgo * DAY_MS
         reviews.mastery[id] = MasteryRecordEntity(
-            id, stability, stability, now - reviewedDaysAgo * DAY_MS, now + dueInDays * DAY_MS, 3,
+            id, stability, stability, reviewedAt, reviewedAt, now + dueInDays * DAY_MS, 3,
         )
     }
 
@@ -143,6 +164,26 @@ class UseCasesTest {
         assertTrue(1L in before)
         assertTrue(outcome.sanadInterval < outcome.matnInterval)
         assertEquals(listOf(1L), getDue().map { it.hadith.hadith.id })
+    }
+
+    // -- GetUnseenHadithsUseCase -----------------------------------------------------------
+
+    @Test
+    fun unseen_listsHadithsWithoutMasteryInCurriculumOrder() = runBlocking {
+        assertEquals(listOf(1L, 2L, 3L), getUnseen().map { it.hadith.id })
+
+        submit(2, GOOD, GOOD)
+
+        assertEquals(listOf(1L, 3L), getUnseen().map { it.hadith.id })
+        assertEquals(listOf(1L), getUnseen(limit = 1).map { it.hadith.id })
+    }
+
+    @Test
+    fun unseen_aHadithStudiedOnlyByMatnIsNoLongerNewButStaysDue() = runBlocking {
+        submit(1, GOOD, null)
+
+        assertEquals(listOf(2L, 3L), getUnseen().map { it.hadith.id })
+        assertEquals(listOf(1L), getDue().map { it.hadith.hadith.id }) // the Sanad was never learned
     }
 
     // -- GetNarratorChainHeatmapUseCase ----------------------------------------------------

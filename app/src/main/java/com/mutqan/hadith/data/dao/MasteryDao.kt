@@ -21,6 +21,12 @@ interface MasteryDao {
     @Query("SELECT * FROM mastery_record WHERE nextReviewDue <= :now ORDER BY nextReviewDue")
     suspend fun getDue(now: Long): List<MasteryRecordEntity>
 
+    @Query("SELECT * FROM mastery_record")
+    suspend fun getAll(): List<MasteryRecordEntity>
+
+    @Query("SELECT * FROM mastery_record")
+    fun observeAll(): Flow<List<MasteryRecordEntity>>
+
     @Query("DELETE FROM mastery_record WHERE hadithId = :hadithId")
     suspend fun delete(hadithId: Long)
 }

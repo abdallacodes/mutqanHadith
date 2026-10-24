@@ -3,7 +3,6 @@ package com.mutqan.hadith.domain.usecase
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.domain.model.ReviewRating
-import com.mutqan.hadith.domain.model.ReviewTarget
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -27,22 +26,26 @@ class SubmitReviewUseCase(
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     /**
+     * Records a review of the Matn ([matnRating]), the Sanad ([sanadRating]) or both; a null rating
+     * means that component was not tested and its state and clock are left untouched.
+     *
      * @param failedNarratorIds narrators the user dropped or misplaced; they drive the weakest-link
-     * penalty and the chain heatmap. Ignored unless [target] includes the Sanad.
+     * penalty and the chain heatmap. Ignored when [sanadRating] is null.
      * @throws NoSuchElementException if the Hadith does not exist.
-     * @throws IllegalArgumentException if a failed narrator is not part of the Hadith's chain.
+     * @throws IllegalArgumentException if both ratings are null, or a failed narrator is not part
+     * of the Hadith's chain.
      */
     suspend operator fun invoke(
         hadithId: Long,
-        matnRating: ReviewRating,
-        sanadRating: ReviewRating,
+        matnRating: ReviewRating?,
+        sanadRating: ReviewRating?,
         failedNarratorIds: Set<Long> = emptySet(),
-        target: ReviewTarget = ReviewTarget.DUAL,
     ): ReviewOutcome {
+        require(matnRating != null || sanadRating != null) { "A review must test the Matn, the Sanad, or both" }
         val hadith = hadiths.getWithSanad(hadithId)
             ?: throw NoSuchElementException("No Hadith with id $hadithId")
         val chainIds = hadith.edges.map { it.edge.narratorId }.toSet()
-        val failed = if (target.includesSanad) failedNarratorIds else emptySet()
+        val failed = if (sanadRating != null) failedNarratorIds else emptySet()
         require(chainIds.containsAll(failed)) {
             "Narrators ${failed - chainIds} are not in the chain of Hadith $hadithId"
         }
@@ -55,7 +58,6 @@ class SubmitReviewUseCase(
                 matnRating = matnRating,
                 sanadRating = sanadRating,
                 now = reviewedAt,
-                target = target,
                 brokenLinks = failed.size,
                 chainLength = chainIds.size,
             ),
@@ -63,7 +65,7 @@ class SubmitReviewUseCase(
 
         // Per-narrator outcomes are only known when the user named the failures or recalled the
         // whole chain (GOOD/EASY). A bare HARD/AGAIN says nothing about which link broke.
-        val attributable = target.includesSanad && (failed.isNotEmpty() || sanadRating >= ReviewRating.GOOD)
+        val attributable = sanadRating != null && (failed.isNotEmpty() || sanadRating >= ReviewRating.GOOD)
         val events = if (attributable) {
             chainIds.map { NarratorReviewEventEntity(hadithId = hadithId, narratorId = it, reviewedAt = reviewedAt, succeeded = it !in failed) }
         } else {

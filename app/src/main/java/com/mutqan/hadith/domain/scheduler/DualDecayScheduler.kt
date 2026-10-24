@@ -3,7 +3,6 @@ package com.mutqan.hadith.domain.scheduler
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
-import com.mutqan.hadith.domain.model.ReviewTarget
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import kotlin.math.ln
 import kotlin.math.max
@@ -38,19 +37,16 @@ data class SchedulerConfig(
 
 /**
  * Forgetting follows the FSRS power curve `R(t) = (1 + F·t/S)^-0.5` with `F = 19/81`, so that
- * `R(S) = 0.9`. Matn and Sanad each carry their own stability `S` (days):
+ * `R(S) = 0.9`. Matn and Sanad each carry their own stability `S` (days) and their own
+ * last-review timestamp:
  *
  * - **Decay asymmetry:** for Sanad the clock runs [SchedulerConfig.sanadDecayMultiplier] times
  *   faster, so equal stabilities give a Sanad interval that many times shorter.
  * - **Weakest link:** one dropped narrator caps the Sanad rating at HARD and cuts its stability
  *   to 30..60% of what it was, however well the rest of the chain went.
- * - **Next due** is `min(matnDue, sanadDue)`.
- *
- * Single-target reviews ([com.mutqan.hadith.domain.model.ReviewTarget.MATN] / `SANAD`) update only
- * the tested component. Because a record has one `lastReviewedAt`, it is advanced only by DUAL
- * reviews, which keeps the untested component's elapsed time honest at the cost of slightly
- * overstating the tested component's elapsed time at its next review. The untested component's
- * due date is carried over from the previous record (or "now" if it was never learned).
+ * - **Next due** is `min(matnDue, sanadDue)`, where each component is due at its own last review
+ *   plus its own interval, so a Matn-only or Sanad-only review never disturbs the other clock.
+ *   A component that was never learned is due immediately.
  */
 class DualDecayScheduler(
     private val config: SchedulerConfig = SchedulerConfig(),
@@ -59,46 +55,43 @@ class DualDecayScheduler(
     override fun schedule(request: ScheduleRequest): ScheduleResult {
         val prev = request.previous
         val now = request.now
-        val elapsedDays = if (prev == null) 0.0 else max(0L, now - prev.lastReviewedAt) / DAY_MS
         val prevMatn = prev?.matnStability?.toDouble() ?: 0.0
         val prevSanad = prev?.sanadStability?.toDouble() ?: 0.0
 
-        val matnStability = if (request.target.includesMatn) {
-            nextMatnStability(prevMatn, request.matnRating, elapsedDays)
-        } else {
-            prevMatn
-        }
-        val sanadStability = if (request.target.includesSanad) {
-            nextSanadStability(prevSanad, request.sanadRating, elapsedDays, request.brokenLinks, request.chainLength)
-        } else {
-            prevSanad
-        }
+        val matnStability = request.matnRating?.let {
+            nextMatnStability(prevMatn, it, elapsedDays(prev?.matnLastReviewedAt, now))
+        } ?: prevMatn
+        val sanadStability = request.sanadRating?.let {
+            nextSanadStability(
+                prevSanad, it, elapsedDays(prev?.sanadLastReviewedAt, now), request.brokenLinks, request.chainLength,
+            )
+        } ?: prevSanad
+
+        val matnLastReviewedAt = if (request.matnRating != null) now else prev?.matnLastReviewedAt
+        val sanadLastReviewedAt = if (request.sanadRating != null) now else prev?.sanadLastReviewedAt
 
         val matnInterval = intervalFor(matnStability, decay = 1.0)
         val sanadInterval = intervalFor(sanadStability, decay = config.sanadDecayMultiplier)
-
-        val carriedDue = prev?.nextReviewDue ?: now
-        val matnDue = if (request.target.includesMatn) now + matnInterval.inWholeMilliseconds else carriedDue
-        val sanadDue = if (request.target.includesSanad) now + sanadInterval.inWholeMilliseconds else carriedDue
+        val matnDue = dueAt(matnLastReviewedAt, matnInterval, matnStability, now)
+        val sanadDue = dueAt(sanadLastReviewedAt, sanadInterval, sanadStability, now)
 
         val record = MasteryRecordEntity(
             hadithId = request.hadithId,
             matnStability = matnStability.toFloat(),
             sanadStability = sanadStability.toFloat(),
-            lastReviewedAt = if (prev == null || request.target == ReviewTarget.DUAL) now else prev.lastReviewedAt,
+            matnLastReviewedAt = matnLastReviewedAt,
+            sanadLastReviewedAt = sanadLastReviewedAt,
             nextReviewDue = minOf(matnDue, sanadDue),
             repetitionCount = (prev?.repetitionCount ?: 0) + 1,
         )
         return ScheduleResult(record, matnInterval, sanadInterval)
     }
 
-    override fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability {
-        val elapsedDays = max(0L, now - record.lastReviewedAt) / DAY_MS
-        return Retrievability(
-            matn = recall(elapsedDays, record.matnStability.toDouble()).toFloat(),
-            sanad = recall(elapsedDays * config.sanadDecayMultiplier, record.sanadStability.toDouble()).toFloat(),
+    override fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability =
+        Retrievability(
+            matn = recallSince(record.matnLastReviewedAt, now, record.matnStability, decay = 1.0),
+            sanad = recallSince(record.sanadLastReviewedAt, now, record.sanadStability, config.sanadDecayMultiplier),
         )
-    }
 
     override fun metrics(record: MasteryRecordEntity): StabilityMetrics {
         val matn = mastery(record.matnStability.toDouble(), decay = 1.0)
@@ -108,8 +101,20 @@ class DualDecayScheduler(
             sanadStability = record.sanadStability,
             // Geometric mean: a collapse of either side drags the whole Hadith down.
             overallMastery = sqrt(matn * sanad).toFloat(),
+            matnMastery = matn.toFloat(),
+            sanadMastery = sanad.toFloat(),
         )
     }
+
+    private fun elapsedDays(lastReviewedAt: Long?, now: Long): Double =
+        if (lastReviewedAt == null) 0.0 else max(0L, now - lastReviewedAt) / DAY_MS
+
+    /** A component that was never learned has no clock: it is due right away. */
+    private fun dueAt(lastReviewedAt: Long?, interval: Duration, stability: Double, now: Long): Long =
+        if (lastReviewedAt == null || stability <= 0.0) now else lastReviewedAt + interval.inWholeMilliseconds
+
+    private fun recallSince(lastReviewedAt: Long?, now: Long, stability: Float, decay: Double): Float =
+        if (lastReviewedAt == null) 0f else recall(elapsedDays(lastReviewedAt, now) * decay, stability.toDouble()).toFloat()
 
     private fun nextMatnStability(prev: Double, rating: ReviewRating, elapsedDays: Double): Double {
         if (prev <= 0.0) return clamp(initialStability(rating))

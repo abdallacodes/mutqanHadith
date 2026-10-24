@@ -153,7 +153,7 @@ class HadithDaoTest {
 
     @Test
     fun mastery_upsertAndDueQuery() = runBlocking {
-        val record = MasteryRecordEntity(1, 2.5f, 1.0f, lastReviewedAt = 1_000, nextReviewDue = 5_000, repetitionCount = 1)
+        val record = MasteryRecordEntity(1, 2.5f, 1.0f, matnLastReviewedAt = 1_000, sanadLastReviewedAt = 1_000, nextReviewDue = 5_000, repetitionCount = 1)
         masteryDao.upsert(record)
         assertEquals(record, masteryDao.getByHadithId(1))
 
@@ -172,7 +172,7 @@ class HadithDaoTest {
 
     @Test
     fun deletingHadith_cascadesToSanadAndMastery() = runBlocking {
-        masteryDao.upsert(MasteryRecordEntity(2, 1f, 1f, 0, 0, 0))
+        masteryDao.upsert(MasteryRecordEntity(2, 1f, 1f, 0, 0, 0, 0))
         db.openHelper.writableDatabase.execSQL("DELETE FROM hadith WHERE id = 2")
         assertNull(hadithDao.getHadithWithSanad(2))
         assertNull(masteryDao.getByHadithId(2))

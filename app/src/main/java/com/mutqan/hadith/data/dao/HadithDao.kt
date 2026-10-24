@@ -44,6 +44,18 @@ interface HadithDao {
     @Query("SELECT * FROM hadith ORDER BY id")
     suspend fun getAllWithSanad(): List<HadithWithFullSanad>
 
+    @Transaction
+    @Query("SELECT * FROM hadith ORDER BY id")
+    fun observeAllWithSanad(): Flow<List<HadithWithFullSanad>>
+
+    /** Hadiths that were never reviewed (no mastery record), in curriculum order. */
+    @Transaction
+    @Query(
+        "SELECT * FROM hadith h WHERE NOT EXISTS " +
+            "(SELECT 1 FROM mastery_record m WHERE m.hadithId = h.id) ORDER BY h.id"
+    )
+    suspend fun getUnseenWithSanad(): List<HadithWithFullSanad>
+
     /** [pattern] must already be normalized and LIKE-escaped (`\` is the escape character); prefer [search]. */
     @Transaction
     @Query("SELECT * FROM hadith WHERE matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")

@@ -9,19 +9,31 @@ import kotlin.time.Duration
 
 /**
  * @property previous the stored state, or null for a Hadith that was never reviewed.
+ * @property matnRating null when the Matn was not tested in this review.
+ * @property sanadRating null when the Sanad was not tested in this review.
  * @property brokenLinks narrators in the chain that were dropped or misplaced during this review.
  * @property chainLength number of narrators in the chain; scales the weakest-link penalty.
  */
 data class ScheduleRequest(
     val hadithId: Long,
     val previous: MasteryRecordEntity?,
-    val matnRating: ReviewRating,
-    val sanadRating: ReviewRating,
+    val matnRating: ReviewRating?,
+    val sanadRating: ReviewRating?,
     val now: Long,
-    val target: ReviewTarget = ReviewTarget.DUAL,
     val brokenLinks: Int = 0,
     val chainLength: Int = 0,
-)
+) {
+    init {
+        require(matnRating != null || sanadRating != null) { "A review must test the Matn, the Sanad, or both" }
+    }
+
+    val target: ReviewTarget
+        get() = when {
+            matnRating != null && sanadRating != null -> ReviewTarget.DUAL
+            matnRating != null -> ReviewTarget.MATN
+            else -> ReviewTarget.SANAD
+        }
+}
 
 /** [record] is the new state to persist; its `nextReviewDue` is the earlier of the two component dues. */
 data class ScheduleResult(

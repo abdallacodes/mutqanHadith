@@ -1,14 +1,25 @@
 package com.mutqan.hadith.domain.repository
 
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
+import kotlinx.coroutines.flow.Flow
 
 interface HadithRepository {
     suspend fun getWithSanad(id: Long): HadithWithFullSanad?
 
     suspend fun getWithSanad(ids: Collection<Long>): List<HadithWithFullSanad>
+
+    /** Hadiths with no mastery record yet, in curriculum order. */
+    suspend fun getUnseen(): List<HadithWithFullSanad>
+
+    fun observeAll(): Flow<List<HadithWithFullSanad>>
+}
+
+interface NarratorRepository {
+    suspend fun getAll(): List<NarratorEntity>
 }
 
 interface ReviewRepository {
@@ -19,6 +30,13 @@ interface ReviewRepository {
 
     /** Persists the new mastery state and the per-narrator outcomes of the same review atomically. */
     suspend fun saveReview(record: MasteryRecordEntity, narratorEvents: List<NarratorReviewEventEntity>)
+
+    /** Records narrator outcomes without touching the Hadith's mastery state. */
+    suspend fun logNarratorEvents(narratorEvents: List<NarratorReviewEventEntity>)
+
+    suspend fun getAllMastery(): List<MasteryRecordEntity>
+
+    fun observeAllMastery(): Flow<List<MasteryRecordEntity>>
 
     suspend fun getNarratorOutcomeCounts(hadithId: Long): List<NarratorOutcomeCount>
 }
