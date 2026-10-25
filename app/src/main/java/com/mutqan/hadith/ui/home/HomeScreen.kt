@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.analytics.StudyStreak
+import com.mutqan.hadith.domain.model.ReviewBatching
 import com.mutqan.hadith.domain.usecase.NextToLearn
 import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.ui.common.InfoChip
@@ -167,10 +168,22 @@ private fun DailyReviewSection(dashboard: StudyDashboard, onStart: () -> Unit) {
                 ),
             ) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text(
-                        pluralStringResource(R.plurals.home_review_due, dashboard.dueCount, dashboard.dueCount),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                    if (ReviewBatching.isBacklog(dashboard.dueCount)) {
+                        val batch = ReviewBatching.nextBatchSize(dashboard.dueCount)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                pluralStringResource(R.plurals.home_review_batch, batch, batch, dashboard.dueCount),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(stringResource(R.string.home_review_backlog_note), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    } else {
+                        Text(
+                            pluralStringResource(R.plurals.home_review_due, dashboard.dueCount, dashboard.dueCount),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                    SessionEstimate(dashboard.dueCount)
                     Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                         Text(stringResource(R.string.home_review_start), style = MaterialTheme.typography.titleMedium)
                     }
@@ -184,6 +197,23 @@ private fun DailyReviewSection(dashboard: StudyDashboard, onStart: () -> Unit) {
             )
         }
     }
+}
+
+/** How long the next sitting takes, so that five free minutes can be matched to it: "3 hadiths · ~4 mins". */
+@Composable
+private fun SessionEstimate(dueCount: Int) {
+    val hadiths = ReviewBatching.nextBatchSize(dueCount)
+    val minutes = ReviewBatching.estimatedMinutes(dueCount)
+    Text(
+        stringResource(
+            R.string.home_review_estimate,
+            pluralStringResource(R.plurals.hadith_count, hadiths, hadiths),
+            pluralStringResource(R.plurals.home_review_minutes, minutes, minutes),
+        ),
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center,
+    )
 }
 
 /** Calm, not celebratory: today's reviews are done, and nothing more is asked of the user. */

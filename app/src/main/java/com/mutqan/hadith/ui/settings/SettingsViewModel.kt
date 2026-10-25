@@ -8,6 +8,8 @@ import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.PreparedBackup
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
+import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
+import com.mutqan.hadith.domain.settings.StudyPreferences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +45,8 @@ data class SettingsUi(
     val message: SettingsMessage? = null,
     /** A backup that was read and checked and now waits for the user to confirm replacing their data. */
     val pendingImport: PreparedBackup? = null,
+    /** The "advanced student" choice: every layer open on every hadith. */
+    val unlockAllLayers: Boolean = false,
 )
 
 class SettingsViewModel(
@@ -50,9 +54,10 @@ class SettingsViewModel(
     private val importUserData: ImportUserDataUseCase,
     private val resetProgress: ResetProgressUseCase,
     private val files: BackupFileStore,
+    private val studyPreferences: StudyPreferences = InMemoryStudyPreferences(),
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(SettingsUi())
+    private val _state = MutableStateFlow(SettingsUi(unlockAllLayers = studyPreferences.unlockAllLayers.value))
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
 
     /** The name the file picker offers for a new backup. */
@@ -121,6 +126,12 @@ class SettingsViewModel(
             SettingsMessage.ResetFailed
         }
         _state.update { it.copy(message = message) }
+    }
+
+    /** Opens all the layers of every hadith, or goes back to opening them as the memory holds. */
+    fun setUnlockAllLayers(enabled: Boolean) {
+        studyPreferences.setUnlockAllLayers(enabled)
+        _state.update { it.copy(unlockAllLayers = enabled) }
     }
 
     fun messageShown() = _state.update { it.copy(message = null) }

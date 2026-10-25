@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,6 +32,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -87,6 +89,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit) {
             onMessageShown = viewModel::messageShown,
             // The activity is recreated by the change, which re-reads every string and the layout direction.
             onLanguageSelected = languages::select,
+            onUnlockAllLayersChanged = viewModel::setUnlockAllLayers,
         ),
     )
 }
@@ -101,6 +104,7 @@ data class SettingsActions(
     val onConfirmReset: () -> Unit,
     val onMessageShown: () -> Unit,
     val onLanguageSelected: (AppLanguage) -> Unit = {},
+    val onUnlockAllLayersChanged: (Boolean) -> Unit = {},
 )
 
 @Composable
@@ -137,6 +141,14 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                         title = stringResource(R.string.settings_language),
                         supporting = stringResource(language.nameRes),
                         onClick = { choosingLanguage = true },
+                    )
+                }
+                SettingsGroup(stringResource(R.string.settings_section_study)) {
+                    SettingsSwitchRow(
+                        title = stringResource(R.string.settings_unlock_all),
+                        supporting = stringResource(R.string.settings_unlock_all_hint),
+                        checked = ui.unlockAllLayers,
+                        onCheckedChange = actions.onUnlockAllLayersChanged,
                     )
                 }
                 SettingsGroup(stringResource(R.string.settings_section_backup)) {
@@ -272,6 +284,26 @@ private fun SettingsRow(
             tint = scheme.outline,
             modifier = Modifier.size(22.dp),
         )
+    }
+}
+
+/** A setting that is on or off: the whole row is the switch, so it is easy to hit and reads as one control. */
+@Composable
+private fun SettingsSwitchRow(title: String, supporting: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 18.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = scheme.onSurface)
+            Text(supporting, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

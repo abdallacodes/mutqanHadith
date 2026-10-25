@@ -7,16 +7,19 @@ import com.mutqan.hadith.data.repository.RoomBackupRepository
 import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomNarratorRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
+import com.mutqan.hadith.data.settings.SharedPreferencesStudyPreferences
 import com.mutqan.hadith.domain.backup.BackupFileStore
 import com.mutqan.hadith.domain.backup.BackupRepository
 import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
+import com.mutqan.hadith.domain.pacing.DailyPacing
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
+import com.mutqan.hadith.domain.settings.StudyPreferences
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
@@ -48,7 +51,9 @@ class AppContainer(
     val narratorRepository: NarratorRepository by lazy { RoomNarratorRepository(database) }
     val backupRepository: BackupRepository by lazy { RoomBackupRepository(database) }
     val backupFiles: BackupFileStore by lazy { ContentResolverBackupFileStore(appContext.contentResolver) }
-    val scheduler: SpacedRepetitionScheduler = DualDecayScheduler()
+    val studyPreferences: StudyPreferences by lazy { SharedPreferencesStudyPreferences(appContext) }
+    val dailyPacing: DailyPacing by lazy { DailyPacing(studyPreferences) }
+    val scheduler: SpacedRepetitionScheduler by lazy { DualDecayScheduler(unlockAllLayers = studyPreferences.unlockAllLayers) }
     val readerSettings: ReaderSettings by lazy { SharedPreferencesReaderSettings(appContext) }
 
     val observeStudyDashboard by lazy { ObserveStudyDashboardUseCase(hadithRepository, reviewRepository, scheduler) }
@@ -56,7 +61,7 @@ class AppContainer(
     val getUnseenHadiths by lazy { GetUnseenHadithsUseCase(hadithRepository) }
     val getLibraryByLevel by lazy { GetLibraryByLevelUseCase(hadithRepository, reviewRepository, scheduler) }
     val getHadithStudy by lazy { GetHadithStudyUseCase(hadithRepository, reviewRepository, scheduler) }
-    val startMemorizing by lazy { StartMemorizingUseCase(hadithRepository, reviewRepository) }
+    val startMemorizing by lazy { StartMemorizingUseCase(hadithRepository, reviewRepository, dailyPacing) }
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }
     val submitLinkDrill by lazy { SubmitLinkDrillUseCase(hadithRepository, reviewRepository, scheduler) }
     val getNarratorChainHeatmap by lazy { GetNarratorChainHeatmapUseCase(hadithRepository, reviewRepository) }

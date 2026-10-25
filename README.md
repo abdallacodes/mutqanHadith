@@ -83,18 +83,23 @@ seed catalog was typed in by hand or produced by a language model. The catalog h
 
 The app has three tabs — **Home**, **Library** and **Insights** — and these screens:
 
-- **Home (daily study):** your streak, the reviews that are due, and the next new hadith to learn.
+- **Home (daily study):** your streak, the reviews that are due with an estimate of the sitting ("3 hadiths · ~4 mins"),
+  and the next new hadith to learn. A backlog is offered five at a time rather than as one long list.
 - **Library:** the hadiths by level and chapter; open any of them to read, study or review.
 - **Hadith reader:** adjustable text size, a transient Tashkeel on/off toggle, and copy (copies exactly the text
   being displayed).
 - **Review:** spaced-repetition sessions scheduled by the dual-decay engine, with a per-narrator chain heatmap that
-  shows which links of a chain are holding.
+  shows which links of a chain are holding. A long backlog is worked through in batches of five with a pause between
+  them, and a stuck layer-1 card can give hints (the Companion's first letter, then the takhrij) without revealing the
+  matn. Tapping a locked Sanad explains why the chain waits for the matn.
 - **Chain drills:** *Sanad Builder* (assemble the chain in order) and *Missing Link* (find the narrator that was
   removed).
 - **Insights:** the *Narrator Network* graph (narrators your chains share and where each stands), *Mastery Analytics*
   (how well the matn and the sanad hold right now), and *Memory Clocks* (how long your memory holds before a review).
-- **Settings** (opened from Insights): language (Arabic / English, switched at runtime and persisted), JSON **backup
-  export and restore** through the system file picker, reset, and an About page.
+- **Settings** (opened from Insights): language (Arabic / English, switched at runtime and persisted), *Unlock All
+  Layers* for advanced students (opens the Sanad tree and transmission terms on every hadith), JSON **backup export
+  and restore** through the system file picker, reset, and an About page.
+- **Pacing guardrail:** the third new hadith of a day asks first ("Consistency Over Volume"); the choice stays yours.
 
 ---
 

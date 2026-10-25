@@ -344,4 +344,41 @@
     <string name="study_drills_locked">This hadith\'s drills unlock once you master its core</string>
     <string name="study_retention_detail_matn">Matn %1$d%%</string>
     <string name="home_drills_locked">Sanad drills unlock once you master the core of your first hadith</string>
+
+    <!-- Pacing, backlog batches, hints, layer explainer and the advanced-student switch -->
+    <string name="pacing_title">Consistency Over Volume</string>
+    <string name="pacing_body">Mastering one or two hadiths a day keeps what you learn for the long term and stops reviews from piling up on you. You have reached today\'s comfortable amount of new hadiths.</string>
+    <string name="pacing_proceed">Proceed anyway</string>
+    <string name="pacing_defer">Save for tomorrow</string>
+    <plurals name="hadith_count">
+        <item quantity="one">%1$d hadith</item>
+        <item quantity="other">%1$d hadiths</item>
+    </plurals>
+    <string name="review_batch_label">Batch %1$d of %2$d · %3$s</string>
+    <string name="review_batch_done_title">Batch %1$d of %2$d complete</string>
+    <string name="review_batch_done_body">What you just reviewed is now firmer in your memory. The rest will wait for you whenever you are ready.</string>
+    <string name="review_batch_left">Still waiting: %1$s</string>
+    <string name="review_batch_next">Continue to the next batch (%1$s)</string>
+    <string name="review_batch_stop">That is enough for today</string>
+    <plurals name="home_review_batch">
+        <item quantity="one">Today\'s review (%1$d hadith out of %2$d overdue)</item>
+        <item quantity="other">Today\'s review (%1$d hadiths out of %2$d overdue)</item>
+    </plurals>
+    <string name="home_review_backlog_note">We will catch up on what you missed step by step, without strain</string>
+    <string name="home_review_estimate">%1$s · %2$s</string>
+    <plurals name="home_review_minutes">
+        <item quantity="one">~%1$d min</item>
+        <item quantity="other">~%1$d mins</item>
+    </plurals>
+    <string name="review_hint">Hint</string>
+    <string name="review_hint_description">A hint about the Companion, then the takhrij, without showing the matn</string>
+    <string name="review_hint_prompt">Stuck? Ask for a hint: the Companion first, then the takhrij</string>
+    <string name="layer_lock_title">The method of mastery</string>
+    <string name="layer_lock_body">The chain is not built until the matn has settled in your memory, to keep your mind from scattering. Once the matn is stable, the Sanad tree and the narrator drills open on their own, and the transmission terms follow when the chain is stable too.</string>
+    <string name="layer_lock_advanced">An advanced student? You can open every layer in Settings, under Unlock All Layers.</string>
+    <string name="layer_lock_close">Got it</string>
+    <string name="layer_lock_tap_label">Why the Sanad is locked</string>
+    <string name="settings_section_study">Study</string>
+    <string name="settings_unlock_all">Unlock All Layers (Advanced)</string>
+    <string name="settings_unlock_all_hint">Opens the Sanad tree and the transmission terms on every hadith right away, without waiting for the matn to settle. For students who already know the material.</string>
 </resources>

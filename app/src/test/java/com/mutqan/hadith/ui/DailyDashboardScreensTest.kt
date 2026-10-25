@@ -105,13 +105,14 @@ class DailyDashboardScreensTest {
         var due by mutableIntStateOf(1)
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(due = due)), actions) {} } }
 
-        // Arabic has a word form for one, two, a few, many and the rest.
+        // Arabic has a word form for one, two and a few; a longer list is a backlog and is worded as one (see the backlog tests).
         listOf(
             1 to "لديك حديث واحد مستحق للمراجعة",
             2 to "لديك حديثان مستحقان للمراجعة",
             3 to "لديك 3 أحاديث مستحقة للمراجعة",
-            11 to "لديك 11 حديثًا مستحقًا للمراجعة",
-            100 to "لديك 100 حديث مستحق للمراجعة",
+            5 to "لديك 5 أحاديث مستحقة للمراجعة",
+            11 to "مراجعة اليوم (5 أحاديث من أصل 11 متأخرة)",
+            100 to "مراجعة اليوم (5 أحاديث من أصل 100 متأخرة)",
         ).forEach { (count, text) ->
             compose.runOnIdle { due = count }
             compose.onNodeWithText(text).assertExists()

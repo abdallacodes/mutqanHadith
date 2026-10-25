@@ -48,7 +48,7 @@ fun AppContainer.libraryViewModelFactory(): ViewModelProvider.Factory = viewMode
 }
 
 fun AppContainer.hadithStudyViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
-    initializer { HadithStudyViewModel(hadithId, getHadithStudy, startMemorizing, readerSettings) }
+    initializer { HadithStudyViewModel(hadithId, getHadithStudy, startMemorizing, readerSettings, dailyPacing) }
 }
 
 fun AppContainer.analyticsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
@@ -60,5 +60,5 @@ fun AppContainer.insightsViewModelFactory(): ViewModelProvider.Factory = viewMod
 }
 
 fun AppContainer.settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-    initializer { SettingsViewModel(exportUserData, importUserData, resetProgress, backupFiles) }
+    initializer { SettingsViewModel(exportUserData, importUserData, resetProgress, backupFiles, studyPreferences) }
 }

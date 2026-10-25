@@ -362,4 +362,53 @@
     <string name="study_drills_locked">تُفتح تدريبات هذا الحديث بعد أن تُتقن لبّه</string>
     <string name="study_retention_detail_matn">المتن %1$d٪</string>
     <string name="home_drills_locked">تُفتح تدريبات السند حين تُتقن لبّ أول حديث لك</string>
+
+    <!-- Pacing, backlog batches, hints, layer explainer and the advanced-student switch -->
+    <string name="pacing_title">قليل دائم خير من كثير منقطع</string>
+    <string name="pacing_body">إتقان حديث أو حديثين كل يوم يُثبّت المحفوظ على المدى البعيد، ويمنع تراكم المراجعات حتى لا تثقل عليك. وقد بلغتَ اليوم القدر المريح من الأحاديث الجديدة.</string>
+    <string name="pacing_proceed">متابعة الحفظ</string>
+    <string name="pacing_defer">الاكتفاء بما سبق</string>
+    <plurals name="hadith_count">
+        <item quantity="zero">لا أحاديث</item>
+        <item quantity="one">حديث واحد</item>
+        <item quantity="two">حديثان</item>
+        <item quantity="few">%1$d أحاديث</item>
+        <item quantity="many">%1$d حديثًا</item>
+        <item quantity="other">%1$d حديث</item>
+    </plurals>
+    <string name="review_batch_label">دفعة %1$d من %2$d · %3$s</string>
+    <string name="review_batch_done_title">أتممت الدفعة %1$d من %2$d</string>
+    <string name="review_batch_done_body">ما راجعته الآن صار أثبت في ذاكرتك، والباقي ينتظرك متى شئت دون استعجال.</string>
+    <string name="review_batch_left">المتبقي: %1$s</string>
+    <string name="review_batch_next">متابعة الدفعة التالية (%1$s)</string>
+    <string name="review_batch_stop">الاكتفاء بهذا الورد اليوم</string>
+    <plurals name="home_review_batch">
+        <item quantity="zero">مراجعة اليوم (لا شيء من أصل %2$d متأخرة)</item>
+        <item quantity="one">مراجعة اليوم (حديث واحد من أصل %2$d متأخرة)</item>
+        <item quantity="two">مراجعة اليوم (حديثان من أصل %2$d متأخرة)</item>
+        <item quantity="few">مراجعة اليوم (%1$d أحاديث من أصل %2$d متأخرة)</item>
+        <item quantity="many">مراجعة اليوم (%1$d حديثًا من أصل %2$d متأخرة)</item>
+        <item quantity="other">مراجعة اليوم (%1$d حديث من أصل %2$d متأخرة)</item>
+    </plurals>
+    <string name="home_review_backlog_note">سنثبت ما فاتك خطوة بخطوة دون إجهاد</string>
+    <string name="home_review_estimate">%1$s · %2$s</string>
+    <plurals name="home_review_minutes">
+        <item quantity="zero">أقل من دقيقة</item>
+        <item quantity="one">~دقيقة واحدة</item>
+        <item quantity="two">~دقيقتان</item>
+        <item quantity="few">~%1$d دقائق</item>
+        <item quantity="many">~%1$d دقيقة</item>
+        <item quantity="other">~%1$d دقيقة</item>
+    </plurals>
+    <string name="review_hint">تلميح</string>
+    <string name="review_hint_description">تلميح عن الصحابي ثم عن التخريج، دون كشف المتن</string>
+    <string name="review_hint_prompt">تعثّرت؟ اطلب تلميحًا عن الصحابي ثم عن التخريج</string>
+    <string name="layer_lock_title">منهجية الإتقان</string>
+    <string name="layer_lock_body">لا يُبنى السند حتى يثبت المتن في ذاكرتك، حمايةً للذهن من التشتت. بمجرد استقرار المتن تُفتح شجرة السند وتمارين الرواة تلقائيًا، ثم تُفتح صيغ الأداء حين يثبت السند.</string>
+    <string name="layer_lock_advanced">طالب علم متقدم؟ يمكنك فتح كل الطبقات من الإعدادات، عند «تجاوز التدرج».</string>
+    <string name="layer_lock_close">فهمت</string>
+    <string name="layer_lock_tap_label">اعرف لماذا السند مقفل</string>
+    <string name="settings_section_study">الدراسة</string>
+    <string name="settings_unlock_all">تجاوز التدرج (طالب علم متقدم)</string>
+    <string name="settings_unlock_all_hint">تُفتح شجرة السند وصيغ الأداء على كل الأحاديث فورًا دون انتظار ثبات المتن. يناسب من تمرّس بالحديث.</string>
 </resources>

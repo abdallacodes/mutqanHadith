@@ -7,6 +7,8 @@ import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.ReviewTarget
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import kotlin.time.Duration
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 /**
  * @property previous the stored state, or null for a Hadith that was never reviewed.
@@ -57,4 +59,10 @@ interface SpacedRepetitionScheduler {
      * certain right after any review: the layer does not move with the clock.
      */
     fun layerStatus(record: MasteryRecordEntity?): LayerStatus
+
+    /**
+     * Emits whenever what decides the layers changes (the learner opting in or out of the gradual opening), so that
+     * a screen showing layers can look again without waiting for a review. Never emits for the passing of time.
+     */
+    val layerRules: Flow<Boolean> get() = flowOf(false)
 }

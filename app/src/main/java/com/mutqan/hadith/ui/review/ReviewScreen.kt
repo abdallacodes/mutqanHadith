@@ -42,12 +42,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -61,6 +67,7 @@ import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
+import com.mutqan.hadith.ui.common.LayerLockSheet
 import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.SanadDrillButtons
@@ -149,6 +156,9 @@ private data class CardFrame(
     val heatmap: ChainHeatmap?,
     val hideTashkeel: Boolean,
     val termsRevealed: Boolean,
+    /** The hints given so far for a layer 1 card, and whether another can be asked for. */
+    val hints: List<HintKind>,
+    val canHint: Boolean,
 )
 
 @Composable
@@ -162,10 +172,13 @@ fun ReviewContent(
 ) {
     val card = session.current
     if (card == null) {
-        FinishedPanel(session, onClose, modifier)
+        if (session.isBatchBreak) BatchBreakPanel(session, onEvent, onClose, modifier) else FinishedPanel(session, onClose, modifier)
         return
     }
+    var explainingLock by rememberSaveable { mutableStateOf(false) }
+    if (explainingLock) LayerLockSheet(onDismiss = { explainingLock = false })
     Column(modifier.fillMaxSize()) {
+        if (session.isBatched) BatchLabel(session)
         LinearProgressIndicator(
             progress = { session.index.toFloat() / session.queue.size },
             modifier = Modifier.fillMaxWidth(),
@@ -176,6 +189,7 @@ fun ReviewContent(
             AnimatedContent(
                 targetState = CardFrame(
                     card, session.stage, session.missedNarratorIds, session.heatmaps[card.hadithId], session.hideTashkeel, session.termsRevealed,
+                    session.shownHints, session.canHint,
                 ),
                 contentKey = { it.card.hadithId },
                 transitionSpec = {
@@ -190,6 +204,8 @@ fun ReviewContent(
                     onToggleMissed = { onEvent(ReviewEvent.ToggleMissed(it)) },
                     onToggleTashkeel = { onEvent(ReviewEvent.ToggleTashkeel) },
                     onRevealTerms = { onEvent(ReviewEvent.RevealTerms) },
+                    onHint = { onEvent(ReviewEvent.Hint) },
+                    onExplainLock = { explainingLock = true },
                     onSanadBuilder = onSanadBuilder,
                     onMissingLink = onMissingLink,
                 )
@@ -246,6 +262,8 @@ private fun CardPane(
     onToggleMissed: (Long) -> Unit,
     onToggleTashkeel: () -> Unit,
     onRevealTerms: () -> Unit,
+    onHint: () -> Unit,
+    onExplainLock: () -> Unit,
     onSanadBuilder: (Long) -> Unit,
     onMissingLink: (Long) -> Unit,
 ) {
@@ -270,8 +288,9 @@ private fun CardPane(
             }
         }
         LayerBadge(card.layer)
-        // At layer 1 the Companion and the takhrij are the cues the matn is recalled by, so they stay in front of the user.
-        if (core) CoreCues(card)
+        // At layer 1 the Companion and the takhrij are cues for the matn: given as hints while it is being recalled,
+        // and in full once it is on screen.
+        if (core) CoreCues(card, stage, frame.hints, frame.canHint, onHint)
 
         Card(
             modifier = Modifier
@@ -320,7 +339,7 @@ private fun CardPane(
 
         if (core) {
             if (stage != CardStage.RECALL) TashkeelToggle(frame.hideTashkeel, onToggleTashkeel)
-            SanadLockedPanel()
+            SanadLockedPanel(onExplainLock)
         } else if (stage == CardStage.SANAD) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
@@ -335,9 +354,17 @@ private fun CardPane(
     }
 }
 
-/** The Companion and the takhrij of a hadith, in front of the matn that is being recalled. */
+/**
+ * The Companion and the takhrij of a hadith. While the matn is being recalled they are held back and given one hint at
+ * a time, the Companion's first letter and then the takhrij, without turning the card over; once the matn is on screen
+ * they are shown in full, to check against.
+ */
 @Composable
-private fun CoreCues(card: ReviewCard) {
+private fun CoreCues(card: ReviewCard, stage: CardStage, hints: List<HintKind>, canHint: Boolean, onHint: () -> Unit) {
+    if (stage == CardStage.RECALL) {
+        HintPanel(card, hints, canHint, onHint)
+        return
+    }
     if (card.sahabi.isBlank() && card.takhrij.isBlank()) return
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -350,6 +377,51 @@ private fun CoreCues(card: ReviewCard) {
             }
             if (card.takhrij.isNotBlank()) {
                 Text(stringResource(R.string.study_takhrij, card.takhrij), style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+/** The hint button of a layer 1 card and the hints it has given so far. */
+@Composable
+private fun HintPanel(card: ReviewCard, hints: List<HintKind>, canHint: Boolean, onHint: () -> Unit) {
+    if (card.hintKinds.isEmpty()) return
+    val description = stringResource(R.string.review_hint_description)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+    ) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            hints.forEach { kind ->
+                when (kind) {
+                    HintKind.COMPANION -> Text(
+                        stringResource(R.string.sahabi_label, companionHint(card.sahabi)),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                    HintKind.TAKHRIJ -> Text(
+                        stringResource(R.string.study_takhrij, card.takhrij),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+            if (canHint) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onHint, modifier = Modifier.semantics { contentDescription = description }) {
+                        Text(stringResource(R.string.review_hint))
+                    }
+                    if (hints.isEmpty()) {
+                        Text(
+                            stringResource(R.string.review_hint_prompt),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }
@@ -373,9 +445,9 @@ private fun TashkeelToggle(hidden: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** The chain, folded away until the core of the hadith holds. */
+/** The chain, folded away until the core of the hadith holds; a tap says why. */
 @Composable
-private fun SanadLockedPanel() {
+private fun SanadLockedPanel(onExplain: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -384,7 +456,7 @@ private fun SanadLockedPanel() {
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.layer_2_name), style = MaterialTheme.typography.titleSmall)
-            LockedHint(stringResource(R.string.layer_sanad_locked_hint))
+            LockedHint(stringResource(R.string.layer_sanad_locked_hint), onClick = onExplain)
         }
     }
 }
@@ -550,13 +622,64 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
         } else {
             Text(stringResource(R.string.review_done_title), style = MaterialTheme.typography.headlineMedium)
             Text(
-                stringResource(R.string.review_done_body, session.queue.size),
+                stringResource(R.string.review_done_body, session.totalReviewed),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
             )
             if (session.unlocks.isNotEmpty()) UnlockSummary(session.unlocks)
         }
         Button(onClick = onClose) { Text(stringResource(R.string.action_back_home)) }
+    }
+}
+
+/** Which batch of a long backlog is on, and how big it is. */
+@Composable
+private fun BatchLabel(session: ReviewSession) {
+    Text(
+        stringResource(
+            R.string.review_batch_label,
+            session.batchNumber,
+            session.batchCount,
+            pluralStringResource(R.plurals.hadith_count, session.queue.size, session.queue.size),
+        ),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** Between two batches: a small success, and the choice to go on or to stop for today. */
+@Composable
+private fun BatchBreakPanel(session: ReviewSession, onEvent: (ReviewEvent) -> Unit, onClose: () -> Unit, modifier: Modifier = Modifier) {
+    val next = session.laterBatches.first().size
+    val left = session.laterBatches.sumOf { it.size }
+    Column(
+        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+    ) {
+        Text(
+            stringResource(R.string.review_batch_done_title, session.batchNumber, session.batchCount),
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.review_batch_done_body),
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.review_batch_left, pluralStringResource(R.plurals.hadith_count, left, left)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (session.unlocks.isNotEmpty()) UnlockSummary(session.unlocks)
+        Button(onClick = { onEvent(ReviewEvent.NextBatch) }, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.review_batch_next, pluralStringResource(R.plurals.hadith_count, next, next)))
+        }
+        OutlinedButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.review_batch_stop))
+        }
     }
 }
 

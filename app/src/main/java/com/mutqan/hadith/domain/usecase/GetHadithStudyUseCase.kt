@@ -8,7 +8,7 @@ import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 
 /**
  * One hadith with everything the study screen shows besides its text: how far the user has come with it.
@@ -40,8 +40,8 @@ class GetHadithStudyUseCase(
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     operator fun invoke(hadithId: Long): Flow<HadithStudy?> =
-        reviews.observeAllMastery().map { records ->
-            val hadith = hadiths.getWithSanad(hadithId) ?: return@map null
+        combine(reviews.observeAllMastery(), scheduler.layerRules) { records, _ ->
+            val hadith = hadiths.getWithSanad(hadithId) ?: return@combine null
             val at = now()
             val record = records.firstOrNull { it.hadithId == hadithId }
             HadithStudy(

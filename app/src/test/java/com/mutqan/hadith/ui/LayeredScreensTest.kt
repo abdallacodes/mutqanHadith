@@ -154,14 +154,23 @@ class LayeredScreensTest {
     }
 
     @Test
-    fun layerOne_keepsTheCuesInViewWhileTheMatnIsStillBeingRecalled() {
+    fun layerOne_holdsTheCuesBackAsHintsWhileTheMatnIsStillBeingRecalled() {
         core(1)
         showReview(ReviewMode.DUE)
 
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").assertExists()
+        compose.onNodeWithText("تلميح").assertExists()
+        compose.onNodeWithText("الصحابي: عمر").assertDoesNotExist()
+        compose.onNodeWithText("التخريج: متفق عليه").assertDoesNotExist()
+        compose.onNodeWithText(TASHKEEL).assertDoesNotExist()
+
+        // Once the matn is shown the cues are there in full, to check against.
+        compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").performClick()
+        compose.waitForIdle()
+
         compose.onNodeWithText("الصحابي: عمر").assertExists()
         compose.onNodeWithText("التخريج: متفق عليه").assertExists()
-        compose.onNodeWithText(TASHKEEL).assertDoesNotExist()
+        compose.onNodeWithText("تلميح").assertDoesNotExist()
     }
 
     @Test

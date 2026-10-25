@@ -18,6 +18,7 @@ import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
+import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.usecase.GetMasteryAnalyticsUseCase
 import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.common.UiState
@@ -120,6 +121,40 @@ class SettingsAnalyticsViewModelsTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun backupText(data: UserData = UserData(mastery, events)) = BackupCodec.encode(data, now)
+
+    // -- The advanced student's choice ------------------------------------------------------
+
+    private fun viewModelOver(preferences: InMemoryStudyPreferences) =
+        SettingsViewModel(ExportUserDataUseCase(backup, { now }), importer, ResetProgressUseCase(backup), files, preferences)
+
+    @Test
+    fun advanced_isOffUntilChosenAndTheChoiceIsKept() {
+        val preferences = InMemoryStudyPreferences()
+        val settings = viewModelOver(preferences)
+        assertFalse(settings.state.value.unlockAllLayers)
+
+        settings.setUnlockAllLayers(true)
+
+        assertTrue(settings.state.value.unlockAllLayers)
+        assertTrue("the scheduler reads the same stored choice", preferences.unlockAllLayers.value)
+        assertTrue("a screen opened later starts from it", viewModelOver(preferences).state.value.unlockAllLayers)
+
+        settings.setUnlockAllLayers(false)
+
+        assertFalse(settings.state.value.unlockAllLayers)
+        assertFalse(preferences.unlockAllLayers.value)
+    }
+
+    @Test
+    fun advanced_resettingProgressLeavesTheChoiceAlone() = runTest {
+        val preferences = InMemoryStudyPreferences().also { it.setUnlockAllLayers(true) }
+        val settings = viewModelOver(preferences)
+
+        settings.reset()
+
+        assertTrue(settings.state.value.unlockAllLayers)
+        assertTrue(preferences.unlockAllLayers.value)
+    }
 
     // -- Export -----------------------------------------------------------------------------
 

@@ -6,6 +6,9 @@ import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.StabilityMetrics
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.pow
@@ -62,7 +65,14 @@ data class SchedulerConfig(
  */
 class DualDecayScheduler(
     private val config: SchedulerConfig = SchedulerConfig(),
+    /**
+     * The "advanced student" choice: when it is on, every hadith in study is on the last layer, whatever its
+     * stabilities say. Read each time a layer is decided, so a change takes effect at once.
+     */
+    private val unlockAllLayers: StateFlow<Boolean> = MutableStateFlow(false),
 ) : SpacedRepetitionScheduler {
+
+    override val layerRules: Flow<Boolean> get() = unlockAllLayers
 
     override fun schedule(request: ScheduleRequest): ScheduleResult {
         val prev = request.previous
@@ -129,9 +139,11 @@ class DualDecayScheduler(
     /**
      * Layer 2 opens when the Matn is mastered to [SchedulerConfig.sanadTreeUnlockMastery], or as soon as the chain
      * has been studied at all (a hadith whose chain was reviewed before layers existed keeps it). Layer 3 opens
-     * from there once the Sanad is mastered to [SchedulerConfig.termsUnlockMastery].
+     * from there once the Sanad is mastered to [SchedulerConfig.termsUnlockMastery]. An advanced student who chose to
+     * unlock everything is on the last layer from the start.
      */
     private fun layerFor(matnStability: Double, sanadStability: Double, sanadLastReviewedAt: Long?): LayerStatus {
+        if (unlockAllLayers.value) return LayerStatus(MemorizationLayer.LAYER_3_TRANSMISSION_TERMS, 1f)
         val matn = mastery(matnStability, decay = 1.0)
         val sanad = mastery(sanadStability, decay = config.sanadDecayMultiplier)
         return when {

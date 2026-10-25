@@ -6,6 +6,7 @@ import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadLink
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
+import com.mutqan.hadith.domain.model.ReviewBatching
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
@@ -104,9 +105,38 @@ data class ReviewSession(
     val unlocks: List<LayerUnlock> = emptyList(),
     /** Hadiths left out of a narrator's review because their Sanad tree is not open yet. */
     val lockedSkipped: Int = 0,
+    /** How many hints of the current layer 1 card were asked for; see [hintKinds]. */
+    val hintsUsed: Int = 0,
+    /**
+     * The due reviews are worked through in batches: [queue] is the current one and [laterBatches] those waiting
+     * behind it, so a long backlog never shows as one long list. Every other mode is a single batch.
+     */
+    val laterBatches: List<List<ReviewCard>> = emptyList(),
+    val batchNumber: Int = 1,
+    val batchCount: Int = 1,
+    /** Hadiths reviewed in the batches before the current one. */
+    val reviewedInEarlierBatches: Int = 0,
 ) {
     val current: ReviewCard? get() = queue.getOrNull(index)
     val isFinished: Boolean get() = index >= queue.size
+
+    val isBatched: Boolean get() = batchCount > 1
+
+    /** The current batch is done and another waits: the session pauses on a screen that lets the user choose. */
+    val isBatchBreak: Boolean get() = isFinished && queue.isNotEmpty() && laterBatches.isNotEmpty()
+
+    /** Every hadith reviewed so far in the session, across its batches. */
+    val totalReviewed: Int get() = reviewedInEarlierBatches + if (isFinished) queue.size else index
+
+    /** The hints given so far for the current card, in order. */
+    val shownHints: List<HintKind> get() = current?.hintKinds?.take(hintsUsed).orEmpty()
+
+    /** A hint can still be asked for: only on a layer 1 card, while its matn is hidden, and while any is left. */
+    val canHint: Boolean
+        get() {
+            val card = current ?: return false
+            return !card.activeLayer.opensSanad && stage == CardStage.RECALL && hintsUsed < card.hintKinds.size
+        }
 
     /** The Sanad is only rated once its layer is open; before that a card is graded on its Matn alone. */
     val canSubmit: Boolean
@@ -134,6 +164,12 @@ sealed interface ReviewEvent {
 
     /** Closes the banner announcing a newly opened layer. */
     data object DismissUnlock : ReviewEvent
+
+    /** Gives the next hint about the layer 1 card: the Companion's first letter, then the takhrij. Never reveals the matn. */
+    data object Hint : ReviewEvent
+
+    /** Starts the next batch of due reviews, after the break between two. */
+    data object NextBatch : ReviewEvent
 }
 
 class ReviewViewModel(
@@ -178,7 +214,7 @@ class ReviewViewModel(
                 if (cards.isEmpty() && (mode == ReviewMode.SINGLE || (mode == ReviewMode.NEW && targetId != null))) {
                     UiState.Error("Hadith $targetId not found")
                 } else {
-                    UiState.Success(ReviewSession(mode, cards, stage = initialStage(), lockedSkipped = lockedSkipped))
+                    UiState.Success(newSession(cards, lockedSkipped))
                 }
             } catch (e: Exception) {
                 UiState.Error(e.message.orEmpty())
@@ -198,6 +234,8 @@ class ReviewViewModel(
             ReviewEvent.ToggleTashkeel -> update { it.copy(hideTashkeel = !it.hideTashkeel) }
             ReviewEvent.RevealTerms -> update { it.copy(termsRevealed = true) }
             ReviewEvent.DismissUnlock -> update { it.copy(unlock = null) }
+            ReviewEvent.Hint -> update { if (it.canHint) it.copy(hintsUsed = it.hintsUsed + 1) else it }
+            ReviewEvent.NextBatch -> update { it.startNextBatch() }
             is ReviewEvent.RateMatn -> update { it.copy(matnRating = event.rating) }
             is ReviewEvent.RateSanad -> update { it.copy(sanadRating = event.rating) }
             is ReviewEvent.ToggleMissed -> update { s ->
@@ -258,11 +296,47 @@ class ReviewViewModel(
         sanadRating = null,
         missedNarratorIds = emptySet(),
         termsRevealed = false,
+        hintsUsed = 0,
         unlock = unlock,
         unlocks = if (unlock != null) unlocks + unlock else unlocks,
         isSubmitting = false,
         submitError = null,
     )
+
+    /** A session over [cards]: the due reviews are cut into batches, every other mode is one. */
+    private fun newSession(cards: List<ReviewCard>, lockedSkipped: Int): ReviewSession {
+        val batches = if (mode == ReviewMode.DUE) ReviewBatching.batches(cards) else listOf(cards)
+        return ReviewSession(
+            mode = mode,
+            queue = batches.firstOrNull().orEmpty(),
+            stage = initialStage(),
+            lockedSkipped = lockedSkipped,
+            laterBatches = batches.drop(1),
+            batchCount = batches.size.coerceAtLeast(1),
+        )
+    }
+
+    /** The next batch in place of the one that was finished; nothing happens when none is left or this one is not done. */
+    private fun ReviewSession.startNextBatch(): ReviewSession {
+        val next = laterBatches.firstOrNull() ?: return this
+        if (!isFinished) return this
+        return copy(
+            queue = next,
+            laterBatches = laterBatches.drop(1),
+            index = 0,
+            stage = initialStage(),
+            matnRating = null,
+            sanadRating = null,
+            missedNarratorIds = emptySet(),
+            termsRevealed = false,
+            hintsUsed = 0,
+            unlock = null,
+            isSubmitting = false,
+            submitError = null,
+            batchNumber = batchNumber + 1,
+            reviewedInEarlierBatches = reviewedInEarlierBatches + queue.size,
+        )
+    }
 
     private fun initialStage() = if (mode == ReviewMode.NEW) CardStage.MATN else CardStage.RECALL
 

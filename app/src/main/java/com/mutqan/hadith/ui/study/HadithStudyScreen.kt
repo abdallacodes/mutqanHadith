@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +61,7 @@ import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
+import com.mutqan.hadith.ui.common.LayerLockSheet
 import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.SanadDrillButtons
@@ -94,6 +97,8 @@ fun HadithStudyRoute(
         onSanadBuilder = onSanadBuilder,
         onMissingLink = onMissingLink,
         onToggleTashkeel = viewModel::toggleTashkeel,
+        onConfirmPacing = { viewModel.confirmPacing(onStartLearning) },
+        onDismissPacing = viewModel::dismissPacing,
     )
 }
 
@@ -136,7 +141,12 @@ fun HadithStudyScreen(
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
     onToggleTashkeel: () -> Unit = {},
+    /** The user chose to go on although enough new hadiths were started today. */
+    onConfirmPacing: () -> Unit = {},
+    /** The user left the hadith for another day. */
+    onDismissPacing: () -> Unit = {},
 ) {
+    (state as? UiState.Success)?.data?.takeIf { it.pacingPrompt }?.let { PacingDialog(onConfirmPacing, onDismissPacing) }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -222,6 +232,8 @@ private fun StudyHeader(hadith: HadithEntity) {
 /** Where the user stands with a hadith in study: its layer and what is next, with the Sanad drills once they are open. */
 @Composable
 private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit) {
+    var explainingLock by rememberSaveable { mutableStateOf(false) }
+    if (explainingLock) LayerLockSheet(onDismiss = { explainingLock = false })
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -240,10 +252,22 @@ private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long
                 Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
                 SanadDrillButtons(hadithId, onSanadBuilder, onMissingLink)
             } else {
-                LockedHint(stringResource(R.string.study_drills_locked))
+                LockedHint(stringResource(R.string.study_drills_locked), onClick = { explainingLock = true })
             }
         }
     }
+}
+
+/** Asked before a third new hadith in a day is taken up: calm, and the user's word is final. */
+@Composable
+private fun PacingDialog(onProceed: () -> Unit, onDefer: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDefer,
+        title = { Text(stringResource(R.string.pacing_title)) },
+        text = { Text(stringResource(R.string.pacing_body), style = MaterialTheme.typography.bodyLarge) },
+        confirmButton = { TextButton(onClick = onProceed) { Text(stringResource(R.string.pacing_proceed)) } },
+        dismissButton = { Button(onClick = onDefer) { Text(stringResource(R.string.pacing_defer)) } },
+    )
 }
 
 @Composable

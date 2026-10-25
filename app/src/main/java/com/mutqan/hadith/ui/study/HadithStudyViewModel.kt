@@ -2,6 +2,8 @@ package com.mutqan.hadith.ui.study
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mutqan.hadith.domain.pacing.DailyPacing
+import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
@@ -20,7 +22,8 @@ import kotlinx.coroutines.launch
 
 /**
  * [textScale] sizes the matn and [showTashkeel] says whether it is shown with its tashkeel (it is, by default);
- * [isStarting] and [startFailed] describe the "start memorizing" request.
+ * [isStarting] and [startFailed] describe the "start memorizing" request, and [pacingPrompt] says the request waits
+ * for the user's word because the day's new hadiths are already enough.
  */
 data class HadithStudyUi(
     val study: HadithStudy,
@@ -28,6 +31,7 @@ data class HadithStudyUi(
     val isStarting: Boolean = false,
     val startFailed: Boolean = false,
     val showTashkeel: Boolean = true,
+    val pacingPrompt: Boolean = false,
 )
 
 class HadithStudyViewModel(
@@ -35,6 +39,7 @@ class HadithStudyViewModel(
     getStudy: GetHadithStudyUseCase,
     private val startMemorizingUseCase: StartMemorizingUseCase,
     private val settings: ReaderSettings,
+    private val pacing: DailyPacing = DailyPacing(InMemoryStudyPreferences()),
 ) : ViewModel() {
 
     private enum class Start { IDLE, STARTING, FAILED }
@@ -44,16 +49,17 @@ class HadithStudyViewModel(
     // Not a stored preference: every visit opens on the full text, and the toggle is for a quick look without it.
     private val showTashkeel = MutableStateFlow(true)
     private val start = MutableStateFlow(Start.IDLE)
+    private val pacingPrompt = MutableStateFlow(false)
     private val retryTick = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<UiState<HadithStudyUi>> = retryTick
         .flatMapLatest {
-            combine(getStudy(hadithId), textScale, start, showTashkeel) { study, scale, start, tashkeel ->
+            combine(getStudy(hadithId), textScale, start, showTashkeel, pacingPrompt) { study, scale, start, tashkeel, prompt ->
                 if (study == null) {
                     UiState.Error("Hadith $hadithId not found")
                 } else {
-                    UiState.Success(HadithStudyUi(study, scale, start == Start.STARTING, start == Start.FAILED, tashkeel))
+                    UiState.Success(HadithStudyUi(study, scale, start == Start.STARTING, start == Start.FAILED, tashkeel, prompt))
                 }
             }.catch { emit(UiState.Error(it.message.orEmpty())) }
         }
@@ -73,10 +79,34 @@ class HadithStudyViewModel(
     }
 
     /**
+     * Asks to take the hadith into the user's memorization. When enough new hadiths were started today the user is
+     * asked first ([HadithStudyUi.pacingPrompt]); otherwise it is started right away, see [begin].
+     */
+    fun startMemorizing(onStarted: (Long) -> Unit) {
+        if (start.value == Start.STARTING) return
+        if (pacing.isOverLimit()) {
+            pacingPrompt.value = true
+            return
+        }
+        begin(onStarted)
+    }
+
+    /** The user chose to go on in spite of the day's limit. */
+    fun confirmPacing(onStarted: (Long) -> Unit) {
+        pacingPrompt.value = false
+        begin(onStarted)
+    }
+
+    /** The user left the hadith for another day. */
+    fun dismissPacing() {
+        pacingPrompt.value = false
+    }
+
+    /**
      * Takes the hadith into the user's memorization, then calls [onStarted] so the screen can open the
      * learning flow. A request already under way is not repeated; a failure is shown and can be retried.
      */
-    fun startMemorizing(onStarted: (Long) -> Unit) {
+    private fun begin(onStarted: (Long) -> Unit) {
         if (start.value == Start.STARTING) return
         start.value = Start.STARTING
         viewModelScope.launch {

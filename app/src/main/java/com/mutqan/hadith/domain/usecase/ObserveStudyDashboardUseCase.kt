@@ -67,7 +67,7 @@ class ObserveStudyDashboardUseCase(
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     operator fun invoke(): Flow<StudyDashboard> =
-        combine(hadiths.observeAll(), reviews.observeAllMastery()) { library, mastery ->
+        combine(hadiths.observeAll(), reviews.observeAllMastery(), scheduler.layerRules) { library, mastery, _ ->
             val at = now()
             val masteryById = mastery.associateBy { it.hadithId }
             val inCurriculumOrder = library.sortedWith(compareBy(CurriculumOrder) { it.hadith })
