@@ -70,11 +70,12 @@ The library is organized in three levels, each a book of increasing demand.
 | Level | Arabic | Source | Status |
 |:-----:|--------|--------|--------|
 | **1** | **الأصول والأسس** — *Foundations* | The **42 hadiths** of *Al-Arba'in An-Nawawiyya* (Imam an-Nawawi's forty-hadith collection, as numbered in the Arabic edition used) | Complete. |
-| **2** | **أحاديث الأحكام** — *Legal rulings* | Hadiths from *Umdat al-Ahkam* | **In progress** — the level exists in the app and the catalog, and its data is being prepared. |
+| **2** | **أحاديث الأحكام** — *Legal rulings* | **345 hadiths** of *Umdat al-Ahkam* (Abd al-Ghani al-Maqdisi's collection of legal hadiths), the main narration of each, with its Companion and takhrij | Populated; the hadiths of the book that could not be verified against Sahih al-Bukhari or Sahih Muslim are left out rather than repaired. |
 | **3** | **دواوين السنّة المسندة** — *The musnad compendia* | Core chain narrations from *Sahih al-Bukhari* | A **10-hadith selection** from Sahih al-Bukhari today. |
 
-Level 1 and Level 3 data come from the verified pipeline described [below](#scholarly-verified-data-pipeline); nothing
-in the seed catalog was typed in by hand or produced by a language model.
+All three levels come from the verified pipeline described [below](#scholarly-verified-data-pipeline); nothing in the
+seed catalog was typed in by hand or produced by a language model. The catalog holds **397 hadiths** in total
+(42 + 345 + 10).
 
 ---
 
@@ -120,6 +121,9 @@ from the earlier schema and from a stale catalog — asserting that the learner'
 
 - It builds `seed_hadiths.json` from **published open datasets pinned by commit and sha256**, using only the Python
   standard library. Texts, chains, and takhrij are never written by hand or generated.
+- Umdat al-Ahkam comes from a dataset that audited nothing itself, so a record is imported only if its text is found,
+  at 0.80 or better of its words in order, in a narration of Sahih al-Bukhari or Sahih Muslim from the audited
+  editions. Those editions also decide the takhrij (*agreed upon*, *narrated by al-Bukhari*, or *narrated by Muslim*).
 - What *is* curated by hand is limited to *which* hadiths to include (`tools/data/selection.json`) and the neutral
   wording of fields that no dataset provides.
 - The records it uses are committed as `tools/data/source_snapshot.json`, so the seed is **reproducible offline**
@@ -243,7 +247,10 @@ existing installs pick it up.
 - **Hadith data** is not covered by this project's MIT license; it comes from the following sources, pinned by commit in
   `tools/import_hadiths.py` and recorded in the seed's `provenance` block:
   - [`fawazahmed0/hadith-api`](https://github.com/fawazahmed0/hadith-api) — Arabic editions with Tashkeel
-    (`ara-nawawi` and `ara-bukhari`); released under the Unlicense.
+    (`ara-nawawi`, `ara-bukhari` and `ara-muslim`); released under the Unlicense.
+  - [`okabe-r/Umdat-al-Ahkam`](https://github.com/okabe-r/Umdat-al-Ahkam) — the numbered hadiths of *Umdat al-Ahkam*
+    with Tashkeel, book, chapter and Companion. The repository states no license and no edition; the text is a classical
+    work, and every hadith imported from it is checked against the editions above.
   - [`ShathaTm/LK-Hadith-Corpus`](https://github.com/ShathaTm/LK-Hadith-Corpus) — the Sahih al-Bukhari narrations with the
     chain separated from the text, extracted from Sunnah.com and manually checked by its authors. The repository states
     no license and asks for citation: Altammami, S., Atwell, E. & Alsalka, A., *"The Arabic-English Parallel Corpus of

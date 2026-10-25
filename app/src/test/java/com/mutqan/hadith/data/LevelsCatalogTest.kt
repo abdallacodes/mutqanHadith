@@ -99,7 +99,9 @@ class LevelsCatalogTest {
         assertEquals(seeded.filter { it.level == 1 }.sortedBy { it.hadithNumber }.map { it.id }, dao.getHadithsByLevel(1).first().map { it.id })
         // Bukhari by the number of the hadith in the book: 1, 6, 8, 13, 50, 52, 54, 135, 611, 877.
         assertEquals(listOf(1L, 9L, 3L, 4L, 10L, 5L, 2L, 7L, 6L, 8L), dao.getHadithsByLevel(3).first().map { it.id })
-        assertTrue(dao.getHadithsByLevel(2).first().isEmpty())
+        // Umdat al-Ahkam by the number of the hadith in the book (its ids are 1000 + that number).
+        assertEquals(seeded.filter { it.level == 2 }.sortedBy { it.hadithNumber }.map { it.id }, dao.getHadithsByLevel(2).first().map { it.id })
+        assertEquals(345, dao.getHadithsByLevel(2).first().size)
         assertTrue(dao.getHadithsByLevel(99).first().isEmpty())
     }
 
@@ -117,35 +119,41 @@ class LevelsCatalogTest {
 
     @Test
     fun theHadithsOfANarratorComeLevelByLevel() = runBlocking {
-        // «أبو هريرة» is the Companion of eight of the Forty Hadith and of Bukhari nos. 50 and 135.
+        // «أبو هريرة» is the Companion of eight of the Forty Hadith, of fifty-three hadiths of Umdat al-Ahkam and of Bukhari nos. 50 and 135.
         val seed = SeedLoader.load(context)
         val abuHurayra = seed.narrators.single { it.primaryName == "أبو هريرة" }.id
         val expected = seed.hadiths
             .filter { h -> seed.edges.any { it.hadithId == h.id && it.narratorId == abuHurayra } }
             .sortedWith(compareBy({ it.level }, { it.hadithNumber }, { it.id }))
 
-        assertEquals(10, expected.size)
-        assertEquals(listOf(1, 1, 1, 1, 1, 1, 1, 1, 3, 3), expected.map { it.level })
+        assertEquals(63, expected.size)
+        assertEquals(List(8) { 1 } + List(53) { 2 } + List(2) { 3 }, expected.map { it.level })
         assertEquals(expected.map { it.id }, dao.getHadithsByNarrator(abuHurayra).map { it.hadith.id })
     }
 
     @Test
     fun countHadithsByLevel_countsEachLevel() = runBlocking {
-        assertEquals(listOf(42, 0, 10), (1..3).map { dao.countHadithsByLevel(it).first() })
+        assertEquals(listOf(42, 345, 10), (1..3).map { dao.countHadithsByLevel(it).first() })
     }
 
     @Test
     fun theLevelQueriesFollowTheLibrary() = runBlocking {
+        var added = false
         val sizes = withTimeout(10_000) {
             dao.getHadithsByLevel(2)
-                .onEach { if (it.isEmpty()) dao.insertWithSanad(ahkam(100), listOf(SanadEdgeEntity(hadithId = 100, narratorId = 1, orderIndex = 0, transmissionTerm = "عن"))) }
+                .onEach {
+                    if (!added) {
+                        added = true
+                        dao.insertWithSanad(ahkam(100), listOf(SanadEdgeEntity(hadithId = 100, narratorId = 1, orderIndex = 0, transmissionTerm = "عن")))
+                    }
+                }
                 .take(2)
                 .toList()
                 .map { it.size }
         }
 
-        assertEquals(listOf(0, 1), sizes)
-        assertEquals(1, dao.countHadithsByLevel(2).first())
+        assertEquals(listOf(345, 346), sizes)
+        assertEquals(346, dao.countHadithsByLevel(2).first())
     }
 
     private fun ahkam(id: Long) = HadithEntity(
@@ -191,8 +199,8 @@ class LevelsCatalogTest {
     fun theLibraryByLevel_listsTheSeededLevels() = runBlocking {
         val levels = GetLibraryByLevelUseCase(RoomHadithRepository(db), RoomReviewRepository(db), DualDecayScheduler()).invoke().first()
 
-        assertEquals(listOf(42, 0, 10), levels.map { it.hadiths.size })
-        assertEquals(listOf(42, 0, 10), levels.map { it.totalInLevel })
+        assertEquals(listOf(42, 345, 10), levels.map { it.hadiths.size })
+        assertEquals(listOf(42, 345, 10), levels.map { it.totalInLevel })
         assertTrue(levels.flatMap { it.hadiths }.all { it.progress == HadithProgress.NEW })
     }
 
@@ -218,7 +226,7 @@ class LevelsCatalogTest {
         assertEquals(HadithProgress.LEARNING, inLibrary.progress)
         assertTrue(inLibrary.isDue)
         val foundation = SeedLoader.load(context).hadiths.filter { it.level == 1 && it.id != 12L }.sortedBy { it.hadithNumber }.map { it.id }
-        assertEquals(foundation, hadiths.getUnseen().map { it.hadith.id }.filter { it > 10 })
+        assertEquals(foundation, hadiths.getUnseen().filter { it.hadith.level == 1 }.map { it.hadith.id })
     }
 
     @Test

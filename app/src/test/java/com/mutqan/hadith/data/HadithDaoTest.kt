@@ -50,12 +50,15 @@ class HadithDaoTest {
     @Test
     fun seed_loadsEveryHadithWithItsSanad() = runBlocking {
         val all = hadithDao.getAllWithSanad()
-        assertEquals(52, all.size)
-        // The Bukhari hadiths carry their full chains; the Forty Hadith are anchored to their Companion alone.
+        assertEquals(397, all.size)
+        // The Bukhari hadiths carry their full chains; the Forty Hadith are anchored to their Companion alone, and so
+        // is Umdat al-Ahkam, except for the eight narrations that name a Tabi'i before the Companion.
         assertEquals(10, all.count { it.hadith.level == 3 })
+        assertEquals(345, all.count { it.hadith.level == 2 })
         assertEquals(42, all.count { it.hadith.level == 1 })
         assertTrue(all.filter { it.hadith.level == 3 }.all { it.sanad.size >= 4 })
         assertTrue(all.filter { it.hadith.level == 1 }.all { it.sanad.size == 1 })
+        assertEquals(mapOf(1 to 337, 2 to 8), all.filter { it.hadith.level == 2 }.groupingBy { it.sanad.size }.eachCount())
     }
 
     @Test
@@ -126,10 +129,10 @@ class HadithDaoTest {
         assertEquals(listOf(2L, 6L, 8L), malik.map { it.hadith.id })
         assertTrue(malik.all { h -> h.sanad.any { it.narrator.primaryName == "مالك" } })
 
-        // The Companion is reached from the Bukhari chains and from the Forty Hadith alike.
+        // The Companion is reached from the Bukhari chains, the Forty Hadith and Umdat al-Ahkam alike.
         val abuHurayra = hadithsOf("أبو هريرة")
-        assertEquals(setOf(3, 1), abuHurayra.map { it.hadith.level }.toSet())
-        assertEquals(10, abuHurayra.size)
+        assertEquals(setOf(3, 1, 2), abuHurayra.map { it.hadith.level }.toSet())
+        assertEquals(mapOf(1 to 8, 2 to 53, 3 to 2), abuHurayra.groupingBy { it.hadith.level }.eachCount())
 
         // Narrators are kept apart by the name the source gives: «عمر» is not «عمر بن الخطاب».
         assertTrue(hadithsOf("عمر").none { it in hadithsOf("عمر بن الخطاب") })
@@ -137,9 +140,10 @@ class HadithDaoTest {
 
     @Test
     fun search_withoutTashkeel_findsHadith() = runBlocking {
-        // Bukhari no. 52 and Forty Hadith no. 6 are the same hadith, worded a little differently: one hit in each level.
+        // Bukhari no. 52, Forty Hadith no. 6 and Umdat al-Ahkam no. 369 are the same hadith, worded a little differently:
+        // one hit in each level, in the order of their ids.
         val results = hadithDao.search("الحلال بين")
-        assertEquals(listOf(3, 1), results.map { it.hadith.level })
+        assertEquals(listOf(3, 1, 2), results.map { it.hadith.level })
         assertEquals(listOf(3), hadithDao.search("الحلال بين والحرام بين").map { it.hadith.level })
         results.forEach {
             assertTrue(it.hadith.matnClean.contains("الحلال بين"))
@@ -196,7 +200,7 @@ class HadithDaoTest {
     fun seedParser_computesCleanMatnFromTashkeel() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val seed = SeedLoader.load(context)
-        assertEquals(52, seed.hadiths.size)
+        assertEquals(397, seed.hadiths.size)
         seed.hadiths.forEach {
             assertEquals(ArabicNormalizer.normalize(it.matnWithTashkeel), it.matnClean)
             assertNotNull(it.matnClean)

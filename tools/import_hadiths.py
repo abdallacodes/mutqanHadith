@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Builds app/src/main/assets/seed_hadiths.json from audited open datasets, never from memory.
 
-Every hadith text, chain and takhrij in the seed is derived here from one of two published datasets;
+Every hadith text, chain and takhrij in the seed is derived here from one of three published datasets;
 nothing scholarly is typed in by hand. What is curated by hand is only *which* hadiths to include
 (tools/data/selection.json) and how to word the neutral labels of fields no dataset provides.
 
@@ -11,6 +11,14 @@ Sources (pinned by commit and by sha256, see PINNED below)
   * ShathaTm/LK-Hadith-Corpus, Bukhari folder (extracted from Sunnah.com, manually checked by its authors):
     the same hadiths with the isnad separated from the matn, chapter and grade.
     Cite: Altammami, Atwell & Alsalka, "The Arabic-English Parallel Corpus of Authentic Hadith", IJASAT 2019.
+  * okabe-r/Umdat-al-Ahkam - `hadiths.json`: the 414 numbered hadiths of 'Umdat al-Ahkam (Abd al-Ghani al-Maqdisi) with
+    tashkeel, book, chapter and a Companion label. A small personal repository with no licence and no stated edition:
+    a source that audited nothing, so nothing of it is trusted until it is proven. A record is imported only if its
+    main narration is found, at 0.80 or better of its words in order, in a narration of Sahih al-Bukhari or Sahih
+    Muslim in the audited hadith-api editions above (`ara-bukhari`, `ara-muslim`). Those editions also decide the
+    takhrij: a hadith is "agreed upon" when both hold it (at 0.50 or better of its content words, since the two books
+    often word one hadith differently), otherwise it is the one collector's. A record with a stray non-Arabic character,
+    no Companion named in its text, or no such match is left out and reported, never repaired.
 
 Commands (standard library only; run with `python -I tools/import_hadiths.py <command>`)
   fetch   download the pinned files and refresh tools/data/source_snapshot.json (the records used, nothing else)
@@ -30,6 +38,7 @@ import json
 import re
 import sys
 import urllib.request
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,11 +46,12 @@ SEED = ROOT / "app" / "src" / "main" / "assets" / "seed_hadiths.json"
 SNAPSHOT = ROOT / "tools" / "data" / "source_snapshot.json"
 SELECTION = ROOT / "tools" / "data" / "selection.json"
 
-CATALOG_VERSION = 2  # keep in step with SeedLoader.CATALOG_VERSION
+CATALOG_VERSION = 3  # keep in step with SeedLoader.CATALOG_VERSION
 SAME_HADITH = 0.75
 
 FAWAZ = "fawazahmed0/hadith-api"
 LK = "ShathaTm/LK-Hadith-Corpus"
+UMDAT = "okabe-r/Umdat-al-Ahkam"
 PINNED = {
     FAWAZ: {
         "commit": "df57907be35291c91ad6a6691180e22ca9920784",
@@ -49,6 +59,7 @@ PINNED = {
         "files": {
             "editions/ara-nawawi.json": "91f559b90422005b768bb449426d87d2e6fabbb43ac3a31e5c24c50ca77465e6",
             "editions/ara-bukhari.json": "e34a3402889ca378871da3c5984b7875c680920e93f1c8738ac7afe502179562",
+            "editions/ara-muslim.json": "194073b24090c5368e4d14a3f55c9e0ef144c7437bd7e5aa83aa4d2bc54a8ea0",
         },
     },
     LK: {
@@ -60,6 +71,13 @@ PINNED = {
             "Bukhari/Chapter4.csv": "c5d4b6630100f060ffa01bc052361c781c2a1994339248e061eb88f8397fe541",
             "Bukhari/Chapter10.csv": "398c5cff14d69e2350113c57d32646dc7ee75f6abb36581b340813a6e3c1c3c5",
             "Bukhari/Chapter11.csv": "f7e4596df57ac168755d82bd4c2a470a297bcebcc7cec6599e6c706901961326",
+        },
+    },
+    UMDAT: {
+        "commit": "6ab619645814548442635d12f61bfd5ea5c3be5d",
+        "license": "none stated in the repository; its text is a classical work, its edition and typesetting are unattributed",
+        "files": {
+            "hadiths.json": "8b2c957fa46e0307eebfddbc29513b5842d39287cb0d741169ae7415a7570321",
         },
     },
 }
@@ -330,6 +348,221 @@ def arbain_hadith(number: int, hadith_id: int, record: dict) -> dict:
 
 
 # --------------------------------------------------------------------------------------------------
+# 'Umdat al-Ahkam: the Companion and the matn from the dataset, the authenticity from the two Sahihs
+# --------------------------------------------------------------------------------------------------
+
+VERIFIED = 0.80  # a record is imported if this share of its matn's words is found, in order, in a Sahih narration: chance gives ~0.34, 0.50 at the 90th percentile
+FOUND = 0.50  # a Sahih holds the hadith if this share of the matn's content words is found in order in one of its narrations: chance gives ~0.11, 0.33 at the 95th percentile
+COMMON = 0.02  # a word is not a content word when it is in more than this share of the narrations of the two Sahihs
+MIN_WORDS = 6  # a shorter matn can be found in order almost anywhere
+NUMBER_PREFIX = re.compile(r"^\s*[٠-٩0-9]+\s*-\s*")
+ANTECEDENT = re.compile(r"^وعن(?:ه|ها|هما|هم)(?:\s*،?\s*عن(?:ه|ها|هما|هم))?$")  # `وَعَنْهُ`: the Companion of the hadith before
+LINK_SPLIT = re.compile(r"(?:^|\s|،)(?:و?عن|عمن)\s+")  # each `عَنْ` starts a link of the chain
+REPORT_VERB = re.compile(r"\s*(?:[،:]\s*)?(?:(?:قال[تا]?|قالوا)\s*:\s*|قال[تا]?\s+(?=«))?")
+NOT_A_NAME = re.compile(r"(?:^|\s)(?:قال|قالت|أن|أنه|أنها)(?:\s|$)")
+FORMULA = re.compile(
+    r"(?<![ء-ي])(?:صلي الله عليه و ?سلم|رضي الله عن(?:ه|ها|هما|هم|هن)|عليه السلام|عز وجل|تبارك وتعالي)(?![ء-ي])")
+SHORTLIST = 60
+
+
+class Skip(Exception):
+    """A dataset record that is left out, and why."""
+
+
+def tokens(name: str) -> list[str]:
+    return ["بن" if t == "ابن" else t for t in comparable(letters(name)).split()]
+
+
+def same_companion(label: str, written: str) -> bool:
+    """The dataset's label for a Companion and the name the hadith's own text gives him: the same name, one
+    the beginning of the other, or the shorter one a part of the longer in order (`ابن عباس`, `عبد الله بن عباس`)."""
+    want, have = tokens(label), tokens(written)
+    if not want or not have:
+        return False
+    if have[:len(want)] == want:
+        return True
+    if len(have) < 2 and have[0] != want[0]:
+        return False  # one word is a name only when it opens the fuller one (`حذيفة`, `حذيفة بن اليمان`)
+    rest = iter(want)
+    return all(token in rest for token in have)
+
+
+def match_words(text: str) -> list[str]:
+    """The words a matn is compared in with a Sahih narration: letters folded, the formulae of blessing left out."""
+    return FORMULA.sub(" ", letters(text.replace("ﷺ", " صلى الله عليه وسلم "))).split()
+
+
+def containment(words: list[str], source: list[str]) -> float:
+    """The share of [words] found in [source], in order."""
+    blocks = difflib.SequenceMatcher(None, words, source, autojunk=False).get_matching_blocks()
+    return sum(block.size for block in blocks) / max(len(words), 1)
+
+
+class Umdat:
+    """The records of the dataset (or of the snapshot, which keeps them as they are) read as hadiths."""
+
+    def __init__(self, records: dict):
+        self.records = records
+        self._companions: dict[int, object] = {}
+
+    def paragraphs(self, number: int) -> list[str]:
+        return [p.strip() for p in self.records[str(number)]["text"].split("\n") if p.strip()]
+
+    def _intro(self, number: int):
+        first = NUMBER_PREFIX.sub("", self.paragraphs(number)[0], count=1)
+        mapped = Mapped(first)
+        found = re.match(r"(?P<names>.+?)\s+" + HONORIFIC.pattern, mapped.text)
+        if not found or any(mark in found.group("names") for mark in "«:؛") or NOT_A_NAME.search(found.group("names")):
+            raise Skip("no Companion is named in front of the blessing")
+        return mapped, found
+
+    def companion(self, number: int) -> dict:
+        """{label, from, written, links}: the Companion as the dataset labels him, the record whose text names him
+        (this one, or the one `وَعَنْهُ` points back to), the name as that text writes it, and the narrators the text
+        puts before him."""
+        if number not in self._companions:
+            try:
+                self._companions[number] = self._resolve(number)
+            except Skip as why:
+                self._companions[number] = why
+        value = self._companions[number]
+        if isinstance(value, Skip):
+            raise value
+        return value
+
+    def _resolve(self, number: int) -> dict:
+        label = display_name(self.records[str(number)]["sahabi"][0])
+        _, found = self._intro(number)
+        names = found.group("names")
+        if ANTECEDENT.match(names):
+            if str(number - 1) not in self.records:
+                raise Skip("`وعنه` with no hadith before it")
+            before = self.companion(number - 1)
+            if before["label"] != label:
+                raise Skip(f"`وعنه` points to {before['label']} but the dataset labels {label}")
+            return {"label": label, "from": before["from"], "written": before["written"], "links": []}
+        links = [link.strip(" ،") for link in LINK_SPLIT.split(names) if link.strip(" ،")]
+        if not links:
+            raise Skip("the chain in front of the blessing has no narrator")
+        written = display_name(links[-1].split("،")[0])
+        if not same_companion(label, written):
+            raise Skip(f"the dataset labels {label} but the text says {links[-1]!r}")
+        for link in links[:-1]:
+            if "،" in link or len(link.split()) > 9:
+                raise Skip(f"a link with more than one narrator: {link!r}")
+        return {"label": label, "from": number, "written": written, "links": [display_name(link) for link in links[:-1]]}
+
+    def parse(self, number: int) -> dict:
+        """{label, from, links, matn, variants} or Skip. The matn is the main narration of the record, as the
+        dataset writes it: the book's own variants (`وفي لفظ`, `ولمسلم`) are the lines after it."""
+        who = self.companion(number)
+        mapped, found = self._intro(number)
+        body = mapped.text[found.end():]
+        start = found.end() + REPORT_VERB.match(body).end()
+        matn = tidy(mapped.raw_span(start, len(mapped.text)))
+        if re.search(r"[A-Za-z*]", matn):
+            raise Skip("a stray non-Latin-script character in the dataset's text (a transcription error)")
+        if matn.count("{") != matn.count("}"):
+            raise Skip("unbalanced braces in the dataset's text (a transcription error)")
+        if len(match_words(matn)) < MIN_WORDS:
+            raise Skip("too short to be verified against a Sahih")
+        return {**who, "matn": matn, "variants": [tidy(p) for p in self.paragraphs(number)[1:]]}
+
+
+def sahih_index(sahih: dict) -> tuple[dict, list[str]]:
+    """({collector: ([(number, text, words)], {word pair: indexes})}, the common words): every narration of the two
+    Sahihs, searchable, and the words that more than COMMON of them share (they say nothing about which hadith it is)."""
+    out, seen, total = {}, Counter(), 0
+    for collector, narrations in sahih.items():
+        rows = [(n["hadithnumber"], n["text"], match_words(n["text"])) for n in narrations if n["text"].strip()]
+        pairs: dict[str, set[int]] = {}
+        for i, (_, _, words) in enumerate(rows):
+            seen.update(set(words))
+            for j in range(len(words) - 1):
+                pairs.setdefault(words[j] + " " + words[j + 1], set()).add(i)
+        total += len(rows)
+        out[collector] = (rows, pairs)
+    return out, sorted(word for word, n in seen.items() if n / total > COMMON)
+
+
+def content(words: list[str], common: set[str]) -> list[str]:
+    return [word for word in words if word not in common]
+
+
+def scores(words: list[str], source: list[str], common: set[str]) -> tuple[float, float]:
+    """(all words, content words): the share of the matn found in order in the source narration."""
+    return containment(words, source), containment(content(words, common), content(source, common))
+
+
+def verify(matn: str, index: dict, common: set[str]) -> dict:
+    """{collector: {hadithNumber, score, content, text}} for each Sahih with a narration that holds the hadith (FOUND)."""
+    words = match_words(matn)
+    found = {}
+    for collector, (rows, pairs) in index.items():
+        votes: dict[int, int] = {}
+        for j in range(len(words) - 1):
+            for i in pairs.get(words[j] + " " + words[j + 1], ()):
+                votes[i] = votes.get(i, 0) + 1
+        best = None
+        for i in sorted(votes, key=lambda k: -votes[k])[:SHORTLIST]:
+            every, core = scores(words, rows[i][2], common)
+            if best is None or (core, every) > best[:2]:
+                best = (core, every, i)
+        if best and best[0] >= FOUND:
+            number, text, _ = rows[best[2]]
+            found[collector] = {"hadithNumber": number, "score": round(best[1], 4), "content": round(best[0], 4), "text": text}
+    return found
+
+
+def umdat_takhrij(verified: dict) -> str:
+    if "bukhari" in verified and "muslim" in verified:
+        return "متفق عليه"
+    return "رواه البخاري" if "bukhari" in verified else "رواه مسلم"
+
+
+def umdat_hadiths(snapshot: dict, selection: dict) -> tuple[list[dict], dict[str, str]]:
+    """The hadiths of Level 2 and, for each record left out, why."""
+    book = Umdat(snapshot["umdat"])
+    offset = selection["umdat"]["idOffset"]
+    items, skipped = [], {}
+    for number in sorted(snapshot["umdat"], key=int):
+        record = snapshot["umdat"][number]
+        try:
+            parsed = book.parse(int(number))
+            if not any(v["score"] >= VERIFIED for v in record["verified"].values()):
+                raise Skip(f"its main narration is in neither Sahih at {VERIFIED} or better")
+        except Skip as why:
+            skipped[number] = str(why)
+            continue
+        chapter = record["book"] if record["section"] in ("", record["book"]) else f"{record['book']} - {record['section']}"
+        verified = record["verified"]
+        items.append({
+            "id": offset + int(number),
+            "matnWithTashkeel": parsed["matn"],
+            "sourceBook": "عمدة الأحكام",
+            "hadithNumber": int(number),
+            "chapter": chapter,
+            "grade": "",
+            "collector": "عبد الغني المقدسي",
+            "level": 2,
+            "takhrij": umdat_takhrij(verified),
+            "sahabi": parsed["label"],
+            "_chain": [("عن", name) for name in parsed["links"]] + [("عن", parsed["label"])],
+            "_source": {
+                "dataset": UMDAT, "file": "hadiths.json", "hadithNumber": int(number),
+                "companionFrom": parsed["from"], "companionWrittenAs": parsed["written"],
+                "verifiedIn": {
+                    c: {"dataset": FAWAZ, "file": f"editions/ara-{c}.json", "hadithNumber": v["hadithNumber"],
+                        "matnMatch": v["score"], "contentMatch": v["content"]}
+                    for c, v in sorted(verified.items())
+                },
+                "variants": parsed["variants"],
+            },
+        })
+    return items, skipped
+
+
+# --------------------------------------------------------------------------------------------------
 # The seed
 # --------------------------------------------------------------------------------------------------
 
@@ -348,6 +581,9 @@ def build(snapshot: dict, selection: dict) -> dict:
         hadiths.append(arbain_hadith(number, hadith_id, snapshot["arbain"][str(number)]))
     hadiths.sort(key=lambda h: h["id"])
     upgrade_takhrij(hadiths)
+    level_two, skipped = umdat_hadiths(snapshot, selection)
+    hadiths.extend(level_two)
+    hadiths.sort(key=lambda h: h["id"])
 
     narrators: dict[str, dict] = {}
     for hadith in hadiths:
@@ -369,6 +605,7 @@ def build(snapshot: dict, selection: dict) -> dict:
 
     out = []
     for hadith in hadiths:
+        hadith["sahabi"] = by_key[name_key(hadith["_chain"][-1][1])]["primaryName"]
         sanad = [{"narratorId": by_key[name_key(name)]["id"], "transmissionTerm": term} for term, name in hadith.pop("_chain")]
         item = {k: v for k, v in hadith.items() if not k.startswith("_")}
         item["sanad"] = sanad
@@ -383,7 +620,14 @@ def build(snapshot: dict, selection: dict) -> dict:
             "sources": {repo: {"commit": pin["commit"], "license": pin["license"]} for repo, pin in PINNED.items()},
             "notes": "No hadith text, chain, grade or takhrij here was written by hand; see tools/import_hadiths.py. "
                      "Narrator tier is structural (the last narrator is the Companion, the first of a Bukhari chain is "
-                     "the collector's teacher) and no narrator is flagged as a pivot: no audited dataset provides either.",
+                     "the collector's teacher) and no narrator is flagged as a pivot: no audited dataset provides either. "
+                     "Level 2 ('Umdat al-Ahkam) is the main narration of each record of a single unlicensed dataset, kept only "
+                     "where it was found in Sahih al-Bukhari or Sahih Muslim; its numbering is that dataset's.",
+            "umdatAlAhkam": {
+                "records": len(snapshot["umdat"]),
+                "imported": len(level_two),
+                "leftOut": dict(sorted(Counter(skipped.values()).items(), key=lambda kv: -kv[1])),
+            },
         },
         "narrators": list(by_key.values()),
         "hadiths": out,
@@ -448,11 +692,66 @@ def fetch(selection: dict) -> dict:
         "arbain": {str(h["hadithnumber"]): {"text": h["text"]} for h in nawawi},
         "bukhariEdition": {str(e["number"]): {"text": edition[str(e["number"])]["text"]} for e in selection["bukhari"]},
         "bukhariCorpus": corpus,
+        **fetch_umdat(),
     }
+
+
+def fetch_umdat() -> dict:
+    """Every record of the dataset as it is, and for each that reads as a hadith the Sahih narrations that hold its matn."""
+    records = json.loads(download(UMDAT, "hadiths.json"))
+    index, common = sahih_index({
+        "bukhari": json.loads(download(FAWAZ, "editions/ara-bukhari.json"))["hadiths"],
+        "muslim": json.loads(download(FAWAZ, "editions/ara-muslim.json"))["hadiths"],
+    })
+    book = Umdat(records)
+    out = {}
+    for number in sorted(records, key=int):
+        record = records[number]
+        try:
+            verified = verify(book.parse(int(number))["matn"], index, set(common))
+        except Skip:
+            verified = {}
+        out[number] = {
+            "text": record["text"], "sahabi": record["sahabi"], "book": record["book"], "section": record["section"],
+            "verified": verified,
+        }
+    return {"umdat": out, "umdatCommonWords": common}
 
 
 def dump(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=1, sort_keys=False) + "\n", encoding="utf-8", newline="\n")
+
+
+def audit_umdat(h: dict, label: str, narrators: dict, snapshot: dict) -> list[str]:
+    """A Level 2 hadith: its matn is in its record, its chain is what the record says, and each Sahih it cites holds it."""
+    problems = []
+    record = snapshot["umdat"][str(h["hadithNumber"])]
+    own, source = record["text"], h["source"]
+    if letters(h["matnWithTashkeel"]) not in letters(own):
+        problems.append(f"{label}: the matn is not in its record")
+    names = [narrators[link["narratorId"]]["primaryName"] for link in h["sanad"]]
+    if not in_order(names[:-1], letters(own)):
+        problems.append(f"{label}: the narrators in front of the Companion are not in the order of the record")
+    try:
+        who = Umdat(snapshot["umdat"]).companion(source["companionFrom"])
+        if tokens(who["label"]) != tokens(h["sahabi"]):
+            problems.append(f"{label}: the Companion is {who['label']} in the record that names him, not {h['sahabi']}")
+    except Skip as why:
+        problems.append(f"{label}: the record that names the Companion does not: {why}")
+    if not source["verifiedIn"]:
+        problems.append(f"{label}: found in neither Sahih")
+    words, common = match_words(h["matnWithTashkeel"]), set(snapshot["umdatCommonWords"])
+    if not any(proof["matnMatch"] >= VERIFIED for proof in source["verifiedIn"].values()):
+        problems.append(f"{label}: no Sahih holds its words at {VERIFIED}")
+    for collector, proof in source["verifiedIn"].items():
+        stored = record["verified"][collector]
+        every, core = scores(words, match_words(stored["text"]), common)
+        if core < FOUND or abs(every - proof["matnMatch"]) > 1e-3 or abs(core - proof["contentMatch"]) > 1e-3 \
+                or stored["hadithNumber"] != proof["hadithNumber"]:
+            problems.append(f"{label}: {collector} {proof['hadithNumber']} holds the matn at {every:.2f} / {core:.2f}, not {proof['matnMatch']} / {proof['contentMatch']}")
+    if h["takhrij"] != umdat_takhrij(source["verifiedIn"]):
+        problems.append(f"{label}: takhrij {h['takhrij']} is not what the Sahihs it was found in say")
+    return problems
 
 
 def audit(seed: dict, snapshot: dict) -> list[str]:
@@ -474,6 +773,9 @@ def audit(seed: dict, snapshot: dict) -> list[str]:
                 problems.append(f"{label}: unknown narrator {link['narratorId']}")
         if h["sanad"] and narrators[h["sanad"][-1]["narratorId"]]["primaryName"] != h["sahabi"]:
             problems.append(f"{label}: the chain does not end with the Companion {h['sahabi']}")
+        if h["level"] == 2:
+            problems.extend(audit_umdat(h, label, narrators, snapshot))
+            continue
         source = snapshot["arbain"][str(h["hadithNumber"])]["text"] if h["level"] == 1 else snapshot["bukhariEdition"][str(h["hadithNumber"])]["text"]
         if letters(h["matnWithTashkeel"]) not in letters(source):
             problems.append(f"{label}: the matn is not in its source")
@@ -501,6 +803,10 @@ def main(argv: list[str]) -> int:
             return 1
         dump(SEED, seed)
         print(f"wrote {SEED.relative_to(ROOT)}: {len(seed['hadiths'])} hadiths, {len(seed['narrators'])} narrators")
+        report = seed["provenance"]["umdatAlAhkam"]
+        print(f"'Umdat al-Ahkam: {report['imported']} of {report['records']} records imported; left out:")
+        for reason, count in report["leftOut"].items():
+            print(f"  {count:4d}  {reason}")
         return 0
     if command == "audit":
         on_disk = json.loads(SEED.read_text(encoding="utf-8"))

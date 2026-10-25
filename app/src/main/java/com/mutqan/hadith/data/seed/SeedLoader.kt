@@ -30,9 +30,10 @@ object SeedLoader {
      * in `catalog_state`. A schema change is a Room migration instead.
      *
      * 1: the first levelled catalog. 2: every text and chain re-sourced from audited datasets
-     * (`tools/import_hadiths.py`), replacing the hand-written one.
+     * (`tools/import_hadiths.py`), replacing the hand-written one. 3: Level 2, the hadiths of 'Umdat al-Ahkam
+     * that were found in Sahih al-Bukhari or Sahih Muslim, added as new rows.
      */
-    const val CATALOG_VERSION = 2
+    const val CATALOG_VERSION = 3
 
     fun load(context: Context): SeedData =
         parse(context.assets.open(ASSET_NAME).bufferedReader(Charsets.UTF_8).use { it.readText() })

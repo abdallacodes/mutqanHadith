@@ -8,6 +8,7 @@ import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.seed.SeedLoader
 import java.io.File
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -32,6 +33,10 @@ class CatalogMigrationTest {
     private val seed = SeedLoader.load(context)
     private val shipped = SeedLoader.parse(
         javaClass.classLoader!!.getResourceAsStream("shipped_v1_catalog.json")!!.bufferedReader(Charsets.UTF_8).use { it.readText() },
+    )
+    /** The catalog v1.1.0 shipped (catalog version 2: the Forty Hadith and the Bukhari selection, no Level 2), frozen. */
+    private val shippedV110 = SeedLoader.parse(
+        javaClass.classLoader!!.getResourceAsStream("shipped_v110_catalog.json")!!.bufferedReader(Charsets.UTF_8).use { it.readText() },
     )
     private val progress = MasteryRecordEntity(1, 12.5f, 3.25f, matnLastReviewedAt = 1_700_000_000_000L, sanadLastReviewedAt = 1_700_000_100_000L, nextReviewDue = 1_700_500_000_000L, repetitionCount = 4)
 
@@ -194,6 +199,48 @@ class CatalogMigrationTest {
         // Updating hadith 1 in place must not cascade into the progress that points at it.
         assertEquals(progress, reopened.masteryDao().getByHadithId(1))
         reopened.close()
+    }
+
+    @Test
+    fun updatingFromCatalogTwoAddsLevelTwoAndLeavesTheUsersProgressAlone() = runBlocking {
+        // A device on v1.1.0: the current schema holding exactly the 52 hadiths of catalog 2, with progress on top.
+        val device = open("v110.db")
+        val raw = device.openHelper.writableDatabase
+        listOf("narrator_review_event", "mastery_record", "sanad_edge", "hadith", "narrator").forEach { raw.execSQL("DELETE FROM $it") }
+        SeedLoader.write(raw, shippedV110)
+        SeedLoader.markApplied(raw, 2)
+        val progressOnAnArbain = progress.copy(hadithId = 13)
+        device.masteryDao().upsert(progress)
+        device.masteryDao().upsert(progressOnAnArbain)
+        val narrator = shippedV110.edges.first { it.hadithId == 1L }.narratorId
+        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (1, $narrator, 1700000000000, 1)")
+        assertEquals(52, device.hadithDao().count())
+        val earlier = device.hadithDao().getAllWithSanad()
+        device.close()
+
+        val updated = open("v110.db")
+
+        assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(updated.openHelper.writableDatabase))
+        assertEquals(seed.hadiths.size, updated.hadithDao().count())
+        assertEquals(seed.narrators.size, updated.narratorDao().getAll().size)
+        // The 52 hadiths, their chains and their narrators are exactly as they were; nothing was replaced or renumbered.
+        assertEquals(earlier, updated.hadithDao().getAllWithSanad().filter { it.hadith.level != 2 })
+        // Level 2 arrives whole, each hadith with its chain, waiting to be learned.
+        val levelTwo = seed.hadiths.filter { it.level == 2 }
+        assertTrue(levelTwo.isNotEmpty())
+        assertEquals(levelTwo.map { it.id }.toSet(), updated.hadithDao().getHadithsByLevel(2).first().map { it.id }.toSet())
+        levelTwo.forEach { expected ->
+            val stored = updated.hadithDao().getHadithWithSanad(expected.id)!!
+            assertEquals(expected, stored.hadith)
+            assertEquals(seed.edges.filter { it.hadithId == expected.id }.sortedBy { it.orderIndex }.map { it.narratorId }, stored.sanad.map { it.narrator.id })
+        }
+        assertTrue(updated.hadithDao().getUnseenWithSanad().map { it.hadith.id }.containsAll(levelTwo.map { it.id }))
+        // And the user's progress is untouched.
+        assertEquals(progress, updated.masteryDao().getByHadithId(1))
+        assertEquals(progressOnAnArbain, updated.masteryDao().getByHadithId(13))
+        assertEquals(2, updated.openHelper.writableDatabase.count("SELECT COUNT(*) FROM mastery_record"))
+        assertEquals(1, updated.openHelper.writableDatabase.count("SELECT COUNT(*) FROM narrator_review_event WHERE hadithId = 1 AND narratorId = $narrator"))
+        updated.close()
     }
 
     @Test

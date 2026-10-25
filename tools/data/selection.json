@@ -11,5 +11,6 @@
     {"id": 9, "number": 6, "file": "Bukhari/Chapter1.csv"},
     {"id": 10, "number": 50, "file": "Bukhari/Chapter2.csv"}
   ],
-  "arbainKeepIds": {"1": 11, "3": 12, "7": 13}
+  "arbainKeepIds": {"1": 11, "3": 12, "7": 13},
+  "umdat": {"idOffset": 1000}
 }
