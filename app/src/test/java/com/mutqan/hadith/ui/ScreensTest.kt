@@ -16,6 +16,7 @@ import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
+import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
@@ -69,6 +70,13 @@ class ScreensTest {
     private val narrators = FakeNarratorRepository(chain + distractors)
     private val reviews = FakeReviewRepository().also { hadiths.seenIds = { it.mastery.keys } }
     private val submitReview = SubmitReviewUseCase(hadiths, reviews, scheduler)
+    private val drillAccess = CheckSanadDrillAccessUseCase(reviews, scheduler)
+
+    /** The Sanad drills are for a hadith whose chain is open: hadith 1 is in study, with its Sanad tree opened. */
+    private fun openTreeOfHadith1() {
+        val now = 1_700_000_000_000L
+        reviews.mastery[1] = MasteryRecordEntity(1, 20f, 2f, now - 86_400_000L, now - 5 * 86_400_000L, now - 86_400_000L, 4)
+    }
 
     @Before
     fun setUp() {
@@ -154,7 +162,8 @@ class ScreensTest {
 
     @Test
     fun sanad_builder_accepts_the_chain_in_order_and_submits_it() {
-        val viewModel = SanadBuilderViewModel(1, hadiths, submitReview, Random(7))
+        openTreeOfHadith1()
+        val viewModel = SanadBuilderViewModel(1, hadiths, submitReview, drillAccess, Random(7))
         compose.setContent { MutqanHadithTheme { SanadBuilderRoute(viewModel, onClose = {}) } }
 
         compose.onNodeWithText("تسليم السلسلة").assertIsNotEnabled()
@@ -170,7 +179,8 @@ class ScreensTest {
 
     @Test
     fun sanad_builder_lets_a_wrong_placement_be_taken_back() {
-        val viewModel = SanadBuilderViewModel(1, hadiths, submitReview, Random(7))
+        openTreeOfHadith1()
+        val viewModel = SanadBuilderViewModel(1, hadiths, submitReview, drillAccess, Random(7))
         compose.setContent { MutqanHadithTheme { SanadBuilderRoute(viewModel, onClose = {}) } }
 
         // The wrong narrator goes first on purpose: the second link (سفيان) into the first slot.
@@ -185,20 +195,21 @@ class ScreensTest {
 
     @Test
     fun missing_link_marks_the_hidden_narrator_and_reports_the_answer() {
-        val viewModel = MissingLinkViewModel(1, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler), Random(3))
+        openTreeOfHadith1()
+        val viewModel = MissingLinkViewModel(1, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler), drillAccess, Random(3))
         compose.setContent { MutqanHadithTheme { MissingLinkRoute(viewModel, onClose = {}) } }
 
-        compose.onNodeWithText("[ ؟؟؟ ]").assertExists()
+        compose.onNodeWithText("[ ؟ ]").assertExists()
         compose.onNodeWithText("السؤال التالي").assertDoesNotExist()
 
-        val answer = (viewModel.state.value as UiState.Success).data.round.answer.primaryName
+        val answer = (viewModel.state.value as UiState.Success).data.round.answer.name
         compose.onNodeWithText(answer).performClick()
         compose.waitForIdle()
 
         compose.onNodeWithText("إجابة صحيحة، أحسنت").assertExists()
-        compose.onNodeWithText("[ ؟؟؟ ]").assertDoesNotExist()
+        compose.onNodeWithText("[ ؟ ]").assertDoesNotExist()
         compose.onNodeWithText("السؤال التالي").assertIsEnabled().performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("[ ؟؟؟ ]").assertExists()
+        compose.onNodeWithText("[ ؟ ]").assertExists()
     }
 }

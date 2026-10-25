@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.drill.DrillAccess
 import com.mutqan.hadith.domain.drill.MissingLinkRound
 import com.mutqan.hadith.domain.drill.MissingLinkRoundFactory
+import com.mutqan.hadith.domain.drill.SanadDrill
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
+import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
 import com.mutqan.hadith.domain.usecase.LinkDrillOutcome
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
 import com.mutqan.hadith.ui.common.UiState
@@ -45,6 +48,7 @@ class MissingLinkViewModel(
     private val hadiths: HadithRepository,
     private val narrators: NarratorRepository,
     private val submitDrill: SubmitLinkDrillUseCase,
+    private val checkAccess: CheckSanadDrillAccessUseCase,
     private val random: Random = Random.Default,
 ) : ViewModel() {
 
@@ -63,8 +67,11 @@ class MissingLinkViewModel(
         viewModelScope.launch {
             _state.value = try {
                 val found = hadiths.getWithSanad(hadithId)
+                val access = found?.let { checkAccess(SanadDrill.MISSING_NARRATOR, it) }
                 if (found == null) {
                     UiState.Error("Hadith $hadithId not found")
+                } else if (access is DrillAccess.Closed) {
+                    UiState.Blocked(access)
                 } else {
                     hadith = found
                     allNarrators = narrators.getAll()
@@ -106,8 +113,8 @@ class MissingLinkViewModel(
         update { it.copy(chosenId = narratorId, roundsPlayed = it.roundsPlayed + 1, correctCount = it.correctCount + if (correct) 1 else 0) }
         viewModelScope.launch {
             try {
-                // The ledger tracks the narrator that was hidden, whatever distractor was tapped.
-                val outcome = submitDrill(hadithId, ui.round.answer.id, correct)
+                // The ledger tracks the narrator that was hidden, whatever distractor was tapped, under the chain's own row.
+                val outcome = submitDrill(hadithId, ui.round.hiddenNarrator.id, correct)
                 update { if (it.chosenId == narratorId) it.copy(outcome = outcome) else it }
             } catch (e: Exception) {
                 update { it.copy(submitError = e.message ?: e.javaClass.simpleName) }

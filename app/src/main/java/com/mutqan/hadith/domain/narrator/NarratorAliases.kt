@@ -90,6 +90,17 @@ object NarratorAliases {
         }
     }
 
+    /**
+     * Given names that name no one by themselves: the bare «سفيان» of a Bukhari chain is al-Thawri or Ibn 'Uyaynah,
+     * «يحيى» al-Qattan or Ibn Sa'id, and the book's context is all that says which. The catalog keeps them as the
+     * rows it has, so a question that asks "who is this?" has no one answer for them and must not use them.
+     */
+    private val ambiguousBareNames: Set<String> =
+        listOf("سفيان", "يحيى", "عبد الله", "محمد").mapTo(mutableSetOf(), NarratorNormalizer::key)
+
+    /** Whether [raw] is a bare given name that fits several narrators; see [ambiguousBareNames]. */
+    fun isAmbiguous(raw: String): Boolean = NarratorNormalizer.key(raw) in ambiguousBareNames
+
     /** The group [raw] belongs to, whatever its tashkeel, hamza or grammatical case; null for a name nobody merges. */
     fun groupOf(raw: String): AliasGroup? = byKey[NarratorNormalizer.key(raw)]
 

@@ -50,6 +50,9 @@ import com.mutqan.hadith.ui.narratorGraphViewModelFactory
 import com.mutqan.hadith.ui.missinglink.MissingLinkRoute
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.missingLinkViewModelFactory
+import com.mutqan.hadith.ui.orderChainViewModelFactory
+import com.mutqan.hadith.ui.orderchain.OrderChainRoute
+import com.mutqan.hadith.ui.orderchain.OrderChainViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewRoute
 import com.mutqan.hadith.ui.review.ReviewViewModel
@@ -75,6 +78,7 @@ object Routes {
     const val REVIEW = "review/{$ARG_MODE}?$ARG_ID={$ARG_ID}"
     const val SANAD_BUILDER = "sanad_builder/{$ARG_HADITH_ID}"
     const val MISSING_LINK = "missing_link/{$ARG_HADITH_ID}"
+    const val ORDER_CHAIN = "order_chain/{$ARG_HADITH_ID}"
     const val NARRATOR_GRAPH = "narrator_graph"
     const val ANALYTICS = "analytics"
     const val LIBRARY = "library"
@@ -89,6 +93,8 @@ object Routes {
     fun sanadBuilder(hadithId: Long): String = "sanad_builder/$hadithId"
 
     fun missingLink(hadithId: Long): String = "missing_link/$hadithId"
+
+    fun orderChain(hadithId: Long): String = "order_chain/$hadithId"
 
     fun hadithDetails(hadithId: Long): String = "hadith_details/$hadithId"
 
@@ -170,6 +176,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                     onStudyHadith = { navController.navigate(Routes.hadithStudy(it)) },
                     onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                     onMissingLink = { navController.navigate(Routes.missingLink(it)) },
+                    onOrderChain = { navController.navigate(Routes.orderChain(it)) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                 ),
             )
@@ -203,6 +210,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 onClose = { navController.popBackStack() },
                 onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                 onMissingLink = { navController.navigate(Routes.missingLink(it)) },
+                onOrderChain = { navController.navigate(Routes.orderChain(it)) },
             )
         }
 
@@ -222,6 +230,15 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
             val hadithId = entry.arguments?.getLong(Routes.ARG_HADITH_ID) ?: return@composable
             val viewModel: MissingLinkViewModel = viewModel(factory = container.missingLinkViewModelFactory(hadithId))
             MissingLinkRoute(viewModel, onClose = { navController.popBackStack() })
+        }
+
+        composable(
+            route = Routes.ORDER_CHAIN,
+            arguments = listOf(navArgument(Routes.ARG_HADITH_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val hadithId = entry.arguments?.getLong(Routes.ARG_HADITH_ID) ?: return@composable
+            val viewModel: OrderChainViewModel = viewModel(factory = container.orderChainViewModelFactory(hadithId))
+            OrderChainRoute(viewModel, onClose = { navController.popBackStack() })
         }
 
         composable(Routes.NARRATOR_GRAPH) {
@@ -267,6 +284,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 onReview = { navController.navigate(Routes.review(ReviewMode.SINGLE, it)) },
                 onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                 onMissingLink = { navController.navigate(Routes.missingLink(it)) },
+                onOrderChain = { navController.navigate(Routes.orderChain(it)) },
             )
         }
 

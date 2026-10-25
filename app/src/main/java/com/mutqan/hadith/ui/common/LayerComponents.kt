@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mutqan.hadith.R
+import com.mutqan.hadith.domain.drill.SanadDrill
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 
@@ -151,15 +152,38 @@ fun LayerLockSheet(onDismiss: () -> Unit) {
     }
 }
 
-/** The two Sanad drills of one hadith: ordering its chain, and naming the narrator that was taken out. */
+/**
+ * The Sanad drills open on one hadith ([open], from [com.mutqan.hadith.domain.drill.SanadDrillPolicy]): naming the
+ * narrator taken out of the chain, putting the chain in order, and building it slot by slot. A drill the chain is too
+ * short for is not offered, and a line says so rather than leaving the student to wonder where it went.
+ */
 @Composable
-fun SanadDrillButtons(hadithId: Long, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit, modifier: Modifier = Modifier) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { onSanadBuilder(hadithId) }, modifier = Modifier.weight(1f)) {
-            Text(stringResource(R.string.drill_sanad_builder), textAlign = TextAlign.Center)
+fun SanadDrillButtons(
+    hadithId: Long,
+    open: List<SanadDrill>,
+    onSanadBuilder: (Long) -> Unit,
+    onMissingLink: (Long) -> Unit,
+    onOrderChain: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier.fillMaxWidth()) {
+        for (drill in open) {
+            val (labelRes, onClick) = when (drill) {
+                SanadDrill.MISSING_NARRATOR -> R.string.drill_missing_link to onMissingLink
+                SanadDrill.ORDER_CHAIN -> R.string.drill_order_chain to onOrderChain
+                SanadDrill.SANAD_BUILDER -> R.string.drill_sanad_builder to onSanadBuilder
+            }
+            OutlinedButton(onClick = { onClick(hadithId) }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(labelRes), textAlign = TextAlign.Center)
+            }
         }
-        OutlinedButton(onClick = { onMissingLink(hadithId) }, modifier = Modifier.weight(1f)) {
-            Text(stringResource(R.string.drill_missing_link), textAlign = TextAlign.Center)
+        val hint = when {
+            open.isEmpty() -> stringResource(R.string.drills_short_none)
+            SanadDrill.ORDER_CHAIN !in open -> stringResource(R.string.drills_short_order, SanadDrill.ORDER_CHAIN.minLinks)
+            else -> null
+        }
+        if (hint != null) {
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

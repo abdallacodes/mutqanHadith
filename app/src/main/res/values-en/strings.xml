@@ -33,7 +33,7 @@
     <string name="home_nothing_new">You\'ve finished all the new hadiths</string>
     <string name="home_drills">Sanad Drills</string>
     <string name="drill_sanad_builder">Sanad Builder</string>
-    <string name="drill_missing_link">Missing Link</string>
+    <string name="drill_missing_link">Missing Narrator</string>
     <string name="sheet_review_this">Review this hadith</string>
 
     <!-- Bottom navigation -->
@@ -122,9 +122,9 @@
     <string name="builder_wrong_desc">Wrong</string>
 
     <!-- Missing link -->
-    <string name="missing_title">Missing Link</string>
+    <string name="missing_title">Missing Narrator</string>
     <string name="missing_instruction">Who is the hidden narrator in this chain?</string>
-    <string name="missing_masked">[ ??? ]</string>
+    <string name="missing_masked">[ ? ]</string>
     <string name="missing_correct">Correct, well done</string>
     <string name="missing_wrong">The answer: %1$s</string>
     <string name="missing_link_stability">Stability of this link: %1$d%% (%2$d of %3$d correct)</string>
@@ -382,4 +382,33 @@
     <string name="settings_unlock_all">Unlock All Layers (Advanced)</string>
     <string name="settings_unlock_all_hint">Opens the Sanad tree and the transmission terms on every hadith right away, without waiting for the matn to settle. For students who already know the material.</string>
     <string name="narrator_also_known">Also known as: %1$s</string>
+    <!-- Sanad drill suite -->
+    <string name="drill_order_chain">Order the Chain</string>
+    <string name="drills_short_none">This hadith\'s chain has a single narrator, so there are no drills on it</string>
+    <string name="drills_short_order">Ordering the chain needs %1$d or more narrators</string>
+    <string name="home_drills_short">Sanad drills need a hadith with two or more narrators, and the hadiths you have opened have one each</string>
+    <string name="drill_closed_title">This drill is closed for now</string>
+    <string name="drill_closed_layer">Sanad drills open once you master the core of the hadith. An advanced student can open them in Settings, under Unlock All Layers.</string>
+    <string name="drill_closed_short">This hadith\'s chain has %2$d narrator(s), and this drill needs %1$d or more.</string>
+    <string name="drill_closed_unidentified">The narrators of this chain are named only by a first name (like «Sufyan» or «Yahya»), so none of them can be asked for.</string>
+    <string name="missing_answer_name">Narrator: %1$s</string>
+    <string name="missing_relation_from">Received from: %1$s</string>
+    <string name="missing_relation_to">Passed on to: %1$s</string>
+    <string name="missing_relation_collector">The collector\'s teacher</string>
+    <string name="missing_relation_first">The first narrator of the chain</string>
+    <string name="order_title">Order the Chain</string>
+    <string name="order_instruction">Put the narrators in the order they received the hadith: the Companion at the top, the collector\'s teacher at the bottom. Tap one narrator and then another to swap them, or move one with the arrows.</string>
+    <string name="order_top_caption">First to narrate the hadith</string>
+    <string name="order_bottom_caption">End of the chain: the collector\'s teacher</string>
+    <string name="order_verify">Verify Order</string>
+    <string name="order_reveal">Show the order</string>
+    <string name="order_new_round">New attempt</string>
+    <string name="order_move_up">Move up</string>
+    <string name="order_move_down">Move down</string>
+    <string name="order_selected_desc">Selected</string>
+    <string name="order_place_desc">Position %1$d</string>
+    <string name="order_result_correct">The order is right, well done!</string>
+    <string name="order_result_partial">%1$d of %2$d are in the right place. Fix the red ones, then verify again.</string>
+    <string name="order_result_revealed">This is the right order, and it needs another look.</string>
+    <string name="order_misplaced">Out of place: %1$s</string>
 </resources>

@@ -55,7 +55,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.entity.HadithEntity
+import com.mutqan.hadith.data.relation.SanadLink
 import com.mutqan.hadith.data.text.ArabicNormalizer
+import com.mutqan.hadith.domain.drill.SanadDrillPolicy
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.narrator.NarratorAliases
@@ -85,6 +87,7 @@ fun HadithStudyRoute(
     onReview: (Long) -> Unit,
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     HadithStudyScreen(
@@ -97,6 +100,7 @@ fun HadithStudyRoute(
         onReview = onReview,
         onSanadBuilder = onSanadBuilder,
         onMissingLink = onMissingLink,
+        onOrderChain = onOrderChain,
         onToggleTashkeel = viewModel::toggleTashkeel,
         onConfirmPacing = { viewModel.confirmPacing(onStartLearning) },
         onDismissPacing = viewModel::dismissPacing,
@@ -141,6 +145,7 @@ fun HadithStudyScreen(
     /** Opens the Sanad drills for the hadith; offered once its Sanad tree is open. */
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
     onToggleTashkeel: () -> Unit = {},
     /** The user chose to go on although enough new hadiths were started today. */
     onConfirmPacing: () -> Unit = {},
@@ -165,7 +170,7 @@ fun HadithStudyScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { ui ->
-                StudyContent(ui, onSmaller, onLarger, Modifier.contentWidth(), onSanadBuilder, onMissingLink)
+                StudyContent(ui, onSmaller, onLarger, Modifier.contentWidth(), onSanadBuilder, onMissingLink, onOrderChain)
             }
         }
     }
@@ -179,6 +184,7 @@ private fun StudyContent(
     modifier: Modifier = Modifier,
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
 ) {
     val hadith = ui.study.hadith.hadith
     Column(
@@ -186,7 +192,7 @@ private fun StudyContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         StudyHeader(hadith)
-        ui.study.layer?.let { LayerCard(hadith.id, it, onSanadBuilder, onMissingLink) }
+        ui.study.layer?.let { LayerCard(hadith.id, it, ui.study.hadith.sanad, onSanadBuilder, onMissingLink, onOrderChain) }
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
         SanadCard(ui.study)
     }
@@ -232,7 +238,14 @@ private fun StudyHeader(hadith: HadithEntity) {
 
 /** Where the user stands with a hadith in study: its layer and what is next, with the Sanad drills once they are open. */
 @Composable
-private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit) {
+private fun LayerCard(
+    hadithId: Long,
+    status: LayerStatus,
+    chain: List<SanadLink>,
+    onSanadBuilder: (Long) -> Unit,
+    onMissingLink: (Long) -> Unit,
+    onOrderChain: (Long) -> Unit,
+) {
     var explainingLock by rememberSaveable { mutableStateOf(false) }
     if (explainingLock) LayerLockSheet(onDismiss = { explainingLock = false })
     Card(
@@ -251,7 +264,7 @@ private fun LayerCard(hadithId: Long, status: LayerStatus, onSanadBuilder: (Long
             )
             if (status.layer.opensSanad) {
                 Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
-                SanadDrillButtons(hadithId, onSanadBuilder, onMissingLink)
+                SanadDrillButtons(hadithId, SanadDrillPolicy.openDrills(status, chain), onSanadBuilder, onMissingLink, onOrderChain)
             } else {
                 LockedHint(stringResource(R.string.study_drills_locked), onClick = { explainingLock = true })
             }

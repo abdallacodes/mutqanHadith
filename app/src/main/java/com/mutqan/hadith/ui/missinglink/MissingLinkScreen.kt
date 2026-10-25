@@ -34,30 +34,28 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
-import com.mutqan.hadith.data.entity.NarratorEntity
+import com.mutqan.hadith.domain.drill.DrillChoice
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
-import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.MatnAnchorCard
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.shakeOn
 import com.mutqan.hadith.ui.common.stateText
-import com.mutqan.hadith.ui.theme.MatnCompactTextStyle
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
 import kotlin.math.roundToInt
@@ -78,6 +76,16 @@ fun MissingLinkScreen(
     val ui = (state as? UiState.Success)?.data
     val snackbar = remember { SnackbarHostState() }
     val errorText = stringResource(R.string.review_submit_error)
+    // A buzz to go with the green or the red, for a student who answers without looking at the screen.
+    val haptics = LocalHapticFeedback.current
+    val verdict = ui?.isCorrect
+    LaunchedEffect(ui?.roundsPlayed, verdict) {
+        when (verdict) {
+            true -> haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+            false -> haptics.performHapticFeedback(HapticFeedbackType.Reject)
+            null -> Unit
+        }
+    }
     val submitError = ui?.submitError
     LaunchedEffect(submitError) {
         if (submitError != null) {
@@ -109,7 +117,7 @@ fun MissingLinkContent(ui: MissingLinkUi, onEvent: (MissingLinkEvent) -> Unit, m
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        MatnAnchor(ui)
+        MatnAnchorCard(ui.sourceBook, ui.hadithNumber, ui.matn)
 
         Text(stringResource(R.string.missing_instruction), style = MaterialTheme.typography.titleMedium)
 
@@ -139,34 +147,6 @@ fun MissingLinkContent(ui: MissingLinkUi, onEvent: (MissingLinkEvent) -> Unit, m
     }
 }
 
-@Composable
-private fun MatnAnchor(ui: MissingLinkUi) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                InfoChip(ui.sourceBook, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
-                InfoChip(
-                    stringResource(R.string.hadith_number, ui.hadithNumber),
-                    container = MaterialTheme.colorScheme.primaryContainer,
-                    content = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Text(
-                ui.matn,
-                style = MatnCompactTextStyle,
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
 /** The four candidates as a 2×2 grid; the cell count follows [MissingLinkRound.options]. */
 @Composable
 private fun OptionsGrid(ui: MissingLinkUi, onChoose: (Long) -> Unit) {
@@ -185,7 +165,7 @@ private fun OptionsGrid(ui: MissingLinkUi, onChoose: (Long) -> Unit) {
 private enum class OptionState { Idle, Correct, Wrong, Dimmed }
 
 @Composable
-private fun OptionCell(ui: MissingLinkUi, option: NarratorEntity, modifier: Modifier, onClick: () -> Unit) {
+private fun OptionCell(ui: MissingLinkUi, option: DrillChoice, modifier: Modifier, onClick: () -> Unit) {
     val colors = MutqanTheme.colors
     val scheme = MaterialTheme.colorScheme
     val isAnswer = option.id == ui.round.answer.id
@@ -231,7 +211,7 @@ private fun OptionCell(ui: MissingLinkUi, option: NarratorEntity, modifier: Modi
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                option.primaryName,
+                option.name,
                 style = NarratorTextStyle,
                 color = if (state == OptionState.Dimmed) scheme.onSurfaceVariant else scheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -259,14 +239,21 @@ private fun Feedback(ui: MissingLinkUi) {
         ),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            val round = ui.round
             Text(
                 if (correct) {
                     stringResource(R.string.missing_correct)
                 } else {
-                    stringResource(R.string.missing_wrong, ui.round.answer.primaryName)
+                    stringResource(R.string.missing_wrong, round.answer.name)
                 },
                 style = MaterialTheme.typography.titleMedium,
             )
+            // The man by his canonical name, and where he stands in this chain.
+            if (correct) Text(stringResource(R.string.missing_answer_name, round.answer.name), style = MaterialTheme.typography.bodyLarge)
+            round.narratedFrom?.let { Text(stringResource(R.string.missing_relation_from, it.name), style = MaterialTheme.typography.bodyMedium) }
+            round.narratedTo?.let { Text(stringResource(R.string.missing_relation_to, it.name), style = MaterialTheme.typography.bodyMedium) }
+            if (round.isCollectorsTeacher) Text(stringResource(R.string.missing_relation_collector), style = MaterialTheme.typography.bodyMedium)
+            if (round.isLast) Text(stringResource(R.string.missing_relation_first), style = MaterialTheme.typography.bodyMedium)
             ui.outcome?.let { outcome ->
                 Text(
                     stringResource(

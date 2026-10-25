@@ -3,6 +3,8 @@ package com.mutqan.hadith.domain.usecase
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.analytics.StudyStreakCalculator
+import com.mutqan.hadith.domain.drill.SanadDrill
+import com.mutqan.hadith.domain.drill.SanadDrillPolicy
 import com.mutqan.hadith.domain.model.CurriculumOrder
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.StabilityMetrics
@@ -24,6 +26,8 @@ data class DashboardItem(
     val isDue: Boolean,
     /** The memorization layer; [LayerStatus.Fresh] for a hadith not yet taken into study. */
     val layer: LayerStatus = LayerStatus.Fresh,
+    /** The Sanad drills open on this hadith: its layer must have opened the chain, and the chain must have enough in it. */
+    val drills: List<SanadDrill> = emptyList(),
 ) {
     val isNew: Boolean get() = metrics == null
 }
@@ -46,7 +50,7 @@ data class StudyDashboard(
     val overallMastery: Float,
     /** Due Hadiths first, then curriculum order. */
     val items: List<DashboardItem>,
-    /** The Hadith whose Sanad is shakiest among those whose Sanad tree is open, for the drills; null while none is. */
+    /** The Hadith whose Sanad is shakiest among those with a drill open on them; null while none has. */
     val drillSuggestionId: Long?,
     /** Studied Hadiths not yet mastered; see [GetMasteryAnalyticsUseCase.MASTERED_AT]. */
     val learningCount: Int = 0,
@@ -56,6 +60,8 @@ data class StudyDashboard(
     val streak: StudyStreak = StudyStreak.None,
     /** Null once every Hadith in the library has been started. */
     val nextToLearn: NextToLearn? = null,
+    /** The drills open on [drillSuggestionId]; all of them unless the use case says otherwise. */
+    val drillSuggestionDrills: List<SanadDrill> = SanadDrill.entries.toList(),
 ) {
     val studiedCount: Int get() = learningCount + masteredCount
 }
@@ -74,6 +80,7 @@ class ObserveStudyDashboardUseCase(
             val inCurriculumOrder = library.sortedWith(compareBy(CurriculumOrder) { it.hadith })
             val items = inCurriculumOrder.map { h ->
                 val record = masteryById[h.hadith.id]
+                val layer = scheduler.layerStatus(record)
                 DashboardItem(
                     hadithId = h.hadith.id,
                     hadithNumber = h.hadith.hadithNumber,
@@ -81,11 +88,13 @@ class ObserveStudyDashboardUseCase(
                     sahabiName = NarratorAliases.canonicalName(h.sanad.lastOrNull()?.narrator?.primaryName.orEmpty()),
                     metrics = record?.let(scheduler::metrics),
                     isDue = record != null && record.nextReviewDue <= at,
-                    layer = scheduler.layerStatus(record),
+                    layer = layer,
+                    drills = SanadDrillPolicy.openDrills(layer.takeIf { record != null }, h.sanad),
                 )
             }.sortedBy { !it.isDue }
 
             val studied = items.filter { !it.isNew }
+            val suggestion = studied.filter { it.drills.isNotEmpty() }.minByOrNull { it.metrics!!.sanadMastery }
             val mastered = studied.count { it.metrics!!.overallMastery >= GetMasteryAnalyticsUseCase.MASTERED_AT }
             val next = inCurriculumOrder.firstOrNull { it.hadith.id !in masteryById }
             val recall = inCurriculumOrder.mapNotNull { h -> masteryById[h.hadith.id]?.let { recallNow(it, at) } }
@@ -95,7 +104,8 @@ class ObserveStudyDashboardUseCase(
                 newCount = items.count { it.isNew },
                 overallMastery = if (items.isEmpty()) 0f else items.map { it.metrics?.overallMastery ?: 0f }.average().toFloat(),
                 items = items,
-                drillSuggestionId = studied.filter { it.layer.layer.opensSanad }.minByOrNull { it.metrics!!.sanadMastery }?.hadithId,
+                drillSuggestionId = suggestion?.hadithId,
+                drillSuggestionDrills = suggestion?.drills ?: emptyList(),
                 learningCount = studied.size - mastered,
                 masteredCount = mastered,
                 retention = if (recall.isEmpty()) null else recall.average().toFloat(),

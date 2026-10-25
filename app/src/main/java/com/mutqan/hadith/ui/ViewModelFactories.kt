@@ -11,6 +11,7 @@ import com.mutqan.hadith.ui.home.HomeViewModel
 import com.mutqan.hadith.ui.insights.InsightsViewModel
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
+import com.mutqan.hadith.ui.orderchain.OrderChainViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewViewModel
 import com.mutqan.hadith.ui.sanadbuilder.SanadBuilderViewModel
@@ -28,11 +29,15 @@ fun AppContainer.reviewViewModelFactory(mode: ReviewMode, targetId: Long?): View
 }
 
 fun AppContainer.sanadBuilderViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
-    initializer { SanadBuilderViewModel(hadithId, hadithRepository, submitReview) }
+    initializer { SanadBuilderViewModel(hadithId, hadithRepository, submitReview, checkSanadDrillAccess) }
+}
+
+fun AppContainer.orderChainViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
+    initializer { OrderChainViewModel(hadithId, hadithRepository, submitReview, checkSanadDrillAccess) }
 }
 
 fun AppContainer.missingLinkViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
-    initializer { MissingLinkViewModel(hadithId, hadithRepository, narratorRepository, submitLinkDrill) }
+    initializer { MissingLinkViewModel(hadithId, hadithRepository, narratorRepository, submitLinkDrill, checkSanadDrillAccess) }
 }
 
 fun AppContainer.narratorGraphViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

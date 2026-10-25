@@ -79,6 +79,19 @@ object NarratorNormalizer {
         }.joinToString(" ")
     }
 
+    /**
+     * Whether [a] and [b] could be one man: they are the same name, or one is only the beginning of the other
+     * («سفيان» and «سفيان الثوري»; «يحيى» and «يحيى بن سعيد»). A shorter name that opens a longer one says too little to
+     * rule the longer one out, which is what a quiz needs to know before it offers both as different answers.
+     */
+    fun mayBeSamePerson(a: String, b: String): Boolean {
+        val x = key(a).split(" ").filter { it.isNotEmpty() }
+        val y = key(b).split(" ").filter { it.isNotEmpty() }
+        if (x.isEmpty() || y.isEmpty()) return false
+        val (short, long) = if (x.size <= y.size) x to y else y to x
+        return long.take(short.size) == short
+    }
+
     private fun startsWith(words: List<String>, parts: List<String>) =
         words.size > parts.size && parts.indices.all { fold(words[it]) == parts[it] }
 

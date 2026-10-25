@@ -39,7 +39,7 @@ studied at is derived purely from how stable the learner's memory of it has beco
 | Layer | Name | What is studied | When it opens |
 |:-----:|------|-----------------|---------------|
 | **1** | **لبّ الحديث** — *The core of the hadith* | The matn, the Companion (*Sahabi*) who narrates it, and the *takhrij* (the collectors who recorded it). One focus at a time, with a full-Tashkeel toggle in the reader so the learner can recall the text unvocalized and check against the vocalized form. | Always. |
-| **2** | **شبكة السند** — *The chain network* | The chain as a relationship between teacher and student rather than a list of names to recite: a chain view, plus the *Sanad Builder* and *Missing Link* drills. | When the matn's mastery reaches **0.5** (or as soon as the chain has been studied before). |
+| **2** | **شبكة السند** — *The chain network* | The chain as a relationship between teacher and student rather than a list of names to recite: a chain view, plus the *Missing Narrator*, *Order the Chain* and *Sanad Builder* drills. | When the matn's mastery reaches **0.5** (or as soon as the chain has been studied before). |
 | **3** | **صيغ الأداء والضبط** — *Transmission formulas and reliability* | The terms of transmission (`حدّثنا`, `أخبرنا`, `عن`, …) at each link, and each narrator's standing (reliability tier). | When the sanad's mastery reaches **0.6**. |
 
 Gating is evaluated from stored stabilities alone, so it is deterministic, testable, and migrates cleanly: users who
@@ -92,8 +92,14 @@ The app has three tabs — **Home**, **Library** and **Insights** — and these 
   shows which links of a chain are holding. A long backlog is worked through in batches of five with a pause between
   them, and a stuck layer-1 card can give hints (the Companion's first letter, then the takhrij) without revealing the
   matn. Tapping a locked Sanad explains why the chain waits for the matn.
-- **Chain drills:** *Sanad Builder* (assemble the chain in order) and *Missing Link* (find the narrator that was
-  removed).
+- **Sanad drills** (open on a hadith once its Sanad tree is, or on every hadith in study for an advanced student):
+  *Missing Narrator* (name the narrator who was taken out of a chain of two or more, from four different people —
+  never one who is in the chain or a spelling of one, and never a bare «سفيان» or «يحيى» that names no one — with the
+  narrator's canonical name and whom he received the hadith from and passed it to shown after the answer),
+  *Order the Chain* (put a chain of three or more in the order it was received, Companion at the top, by tapping two
+  narrators to swap them or with the arrows; nothing is judged until *Verify Order*, which marks each place green or red
+  and rates the round from the mistakes made on the way) and *Sanad Builder* (assemble the chain slot by slot, each
+  placement checked at once). A drill a chain is too short for is not offered, and the screen says why.
 - **Insights:** the *Narrator Network* graph (narrators your chains share and where each stands), *Mastery Analytics*
   (how well the matn and the sanad hold right now), and *Memory Clocks* (how long your memory holds before a review).
 - **Settings** (opened from Insights): language (Arabic / English, switched at runtime and persisted), *Unlock All
@@ -241,7 +247,7 @@ existing installs pick it up.
 │       │   │   ├── data/      # Room: entities, DAOs, database & migrations, repositories, seed loader, backup, text utils
 │       │   │   ├── domain/    # models, repository interfaces, use cases, dual-decay scheduler, drills, graph, analytics
 │       │   │   ├── ui/        # Compose screens + ViewModels: home, library, insights, study, review, sanadbuilder,
-│       │   │   │              #   missinglink, graph, heatmap, analytics, settings, navigation, theme
+│       │   │   │              #   missinglink, orderchain, graph, heatmap, analytics, settings, navigation, theme
 │       │   │   └── di/        # AppContainer (manual dependency injection)
 │       │   ├── assets/        # seed_hadiths.json — the bundled hadith catalog (generated)
 │       │   └── res/           # strings (ar default, en), fonts (Amiri), themes

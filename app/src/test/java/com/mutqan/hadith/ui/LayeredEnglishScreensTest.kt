@@ -106,7 +106,7 @@ class LayeredEnglishScreensTest {
         compose.onNodeWithText("Hide tashkeel").assertExists()
         compose.onNodeWithText("Humaydi").assertDoesNotExist()
         compose.onNodeWithText("Sanad Builder").assertDoesNotExist()
-        compose.onNodeWithText("Missing Link").assertDoesNotExist()
+        compose.onNodeWithText("Missing Narrator").assertDoesNotExist()
         compose.onAllNodesWithText("Good").assertCountEquals(1)
     }
 
@@ -119,7 +119,7 @@ class LayeredEnglishScreensTest {
 
         compose.onAllNodesWithText("Humaydi")[0].assertExists()
         compose.onNodeWithText("Sanad Builder").assertIsEnabled().performClick()
-        compose.onNodeWithText("Missing Link").assertIsEnabled().performClick()
+        compose.onNodeWithText("Missing Narrator").assertIsEnabled().performClick()
         assertEquals(listOf("builder1", "link1"), calls)
         compose.onNodeWithText("Firm up the chain to unlock transmission terms and precision").assertExists()
     }
@@ -223,7 +223,7 @@ class LayeredEnglishScreensTest {
         compose.onNodeWithText("Progress toward unlocking transmission terms: 50%").assertExists()
         compose.onNodeWithText("Matn 90% · Sanad 60%").assertExists()
         compose.onNodeWithText("Sanad Builder").performClick()
-        compose.onNodeWithText("Missing Link").performClick()
+        compose.onNodeWithText("Missing Narrator").performClick()
         assertEquals(listOf("builder1", "link1"), calls)
     }
 

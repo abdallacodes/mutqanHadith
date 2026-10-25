@@ -23,7 +23,13 @@ data class CanonicalNarrator(
     val aliases: List<String>,
     /** Honorific titles that stood before his name («أمير المؤمنين»), kept for display and out of the name. */
     val titles: List<String>,
-)
+) {
+    /**
+     * Whether the name says who he is. A bare «سفيان», «يحيى» or «عبد الله» (see [NarratorAliases.isAmbiguous]) does
+     * not, unless a row carries the longer name; a drill that asks for him has no single right answer.
+     */
+    val isResolved: Boolean get() = !NarratorAliases.isAmbiguous(fullName)
+}
 
 /**
  * Who is who among a set of narrator rows: which rows are one person, and the identity they share. Nothing is stored or

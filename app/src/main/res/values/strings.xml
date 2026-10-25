@@ -132,7 +132,7 @@
     <!-- Missing link -->
     <string name="missing_title">الراوي المفقود</string>
     <string name="missing_instruction">من الراوي المحجوب في هذه السلسلة؟</string>
-    <string name="missing_masked">[ ؟؟؟ ]</string>
+    <string name="missing_masked">[ ؟ ]</string>
     <string name="missing_correct">إجابة صحيحة، أحسنت</string>
     <string name="missing_wrong">الصحيح: %1$s</string>
     <string name="missing_link_stability">ثبات هذه الحلقة: %1$d٪ (%2$d من %3$d)</string>
@@ -412,4 +412,33 @@
     <string name="settings_unlock_all">تجاوز التدرج (طالب علم متقدم)</string>
     <string name="settings_unlock_all_hint">تُفتح شجرة السند وصيغ الأداء على كل الأحاديث فورًا دون انتظار ثبات المتن. يناسب من تمرّس بالحديث.</string>
     <string name="narrator_also_known">يُعرف أيضًا بـ: %1$s</string>
+    <!-- Sanad drill suite -->
+    <string name="drill_order_chain">ترتيب السند</string>
+    <string name="drills_short_none">سند هذا الحديث راوٍ واحد، فلا تمارين عليه</string>
+    <string name="drills_short_order">ترتيب السند يحتاج سندًا من %1$d رواة فأكثر</string>
+    <string name="home_drills_short">تمارين السند تحتاج حديثًا سنده راويان فأكثر، وأحاديثك المفتوحة الآن سندها راوٍ واحد</string>
+    <string name="drill_closed_title">هذا التمرين مغلق الآن</string>
+    <string name="drill_closed_layer">تُفتح تمارين السند بعد أن تُتقن لبّ الحديث. وطالب العلم المتقدم يفتحها من الإعدادات عند «تجاوز التدرج».</string>
+    <string name="drill_closed_short">في سند هذا الحديث %2$d من الرواة، وهذا التمرين يحتاج %1$d فأكثر.</string>
+    <string name="drill_closed_unidentified">أسماء رواة هذا السند مجملة («سفيان» و«يحيى» ونحوهما)، فلا يصح السؤال عن أحدهم.</string>
+    <string name="missing_answer_name">الراوي: %1$s</string>
+    <string name="missing_relation_from">روى عن: %1$s</string>
+    <string name="missing_relation_to">روى عنه: %1$s</string>
+    <string name="missing_relation_collector">هو شيخ المصنِّف</string>
+    <string name="missing_relation_first">هو أول رواة السند</string>
+    <string name="order_title">ترتيب السند</string>
+    <string name="order_instruction">رتّب الرواة كما تلقّوا الحديث: من الصحابي في الأعلى إلى شيخ المصنِّف في الأسفل. اضغط راويًا ثم آخر لتبديل موضعيهما، أو حرّكه بالسهمين.</string>
+    <string name="order_top_caption">أول من روى الحديث</string>
+    <string name="order_bottom_caption">آخر السند: شيخ المصنِّف</string>
+    <string name="order_verify">تحقق من الترتيب</string>
+    <string name="order_reveal">أظهر الترتيب</string>
+    <string name="order_new_round">محاولة جديدة</string>
+    <string name="order_move_up">حرّك إلى الأعلى</string>
+    <string name="order_move_down">حرّك إلى الأسفل</string>
+    <string name="order_selected_desc">محدد</string>
+    <string name="order_place_desc">الموضع %1$d</string>
+    <string name="order_result_correct">الترتيب صحيح، أحسنت!</string>
+    <string name="order_result_partial">%1$d من %2$d في موضعها الصحيح. صحّح المواضع الحمراء ثم تحقق مرة أخرى.</string>
+    <string name="order_result_revealed">هذا هو الترتيب الصحيح، وهو يحتاج إلى مراجعة.</string>
+    <string name="order_misplaced">لم يكونوا في مواضعهم: %1$s</string>
 </resources>

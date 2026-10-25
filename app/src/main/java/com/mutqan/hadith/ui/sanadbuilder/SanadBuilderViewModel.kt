@@ -2,10 +2,13 @@ package com.mutqan.hadith.ui.sanadbuilder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mutqan.hadith.domain.drill.DrillAccess
 import com.mutqan.hadith.domain.drill.PlacementFeedback
 import com.mutqan.hadith.domain.drill.SanadBuilderState
+import com.mutqan.hadith.domain.drill.SanadDrill
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.repository.HadithRepository
+import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +52,7 @@ class SanadBuilderViewModel(
     private val hadithId: Long,
     private val hadiths: HadithRepository,
     private val submitReview: SubmitReviewUseCase,
+    private val checkAccess: CheckSanadDrillAccessUseCase,
     private val random: Random = Random.Default,
 ) : ViewModel() {
 
@@ -64,8 +68,11 @@ class SanadBuilderViewModel(
         viewModelScope.launch {
             _state.value = try {
                 val hadith = hadiths.getWithSanad(hadithId)
+                val access = hadith?.let { checkAccess(SanadDrill.SANAD_BUILDER, it) }
                 if (hadith == null) {
                     UiState.Error("Hadith $hadithId not found")
+                } else if (access is DrillAccess.Closed) {
+                    UiState.Blocked(access)
                 } else {
                     UiState.Success(
                         SanadBuilderUi(

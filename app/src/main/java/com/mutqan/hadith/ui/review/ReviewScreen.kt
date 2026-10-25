@@ -60,6 +60,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.text.ArabicNormalizer
+import com.mutqan.hadith.data.relation.SanadLink
+import com.mutqan.hadith.domain.drill.SanadDrillPolicy
+import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
@@ -86,9 +89,10 @@ fun ReviewRoute(
     onClose: () -> Unit,
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ReviewScreen(state, mode, viewModel::onEvent, viewModel::load, onClose, onSanadBuilder, onMissingLink)
+    ReviewScreen(state, mode, viewModel::onEvent, viewModel::load, onClose, onSanadBuilder, onMissingLink, onOrderChain)
 }
 
 @Composable
@@ -101,6 +105,7 @@ fun ReviewScreen(
     /** Opens the Sanad builder for a Hadith; offered once its Sanad tree is open. */
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
 ) {
     val snackbar = remember { SnackbarHostState() }
     val errorText = stringResource(R.string.review_submit_error)
@@ -142,7 +147,7 @@ fun ReviewScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { session ->
-                ReviewContent(session, onEvent, onClose, Modifier.contentWidth(), onSanadBuilder, onMissingLink)
+                ReviewContent(session, onEvent, onClose, Modifier.contentWidth(), onSanadBuilder, onMissingLink, onOrderChain)
             }
         }
     }
@@ -169,6 +174,7 @@ fun ReviewContent(
     modifier: Modifier = Modifier,
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
+    onOrderChain: (Long) -> Unit = {},
 ) {
     val card = session.current
     if (card == null) {
@@ -184,7 +190,10 @@ fun ReviewContent(
             modifier = Modifier.fillMaxWidth(),
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
-        session.unlock?.let { UnlockBanner(it, { onEvent(ReviewEvent.DismissUnlock) }, onSanadBuilder, onMissingLink) }
+        session.unlock?.let { unlock ->
+            val links = session.queue.firstOrNull { it.hadithId == unlock.hadithId }?.links.orEmpty()
+            UnlockBanner(unlock, links, { onEvent(ReviewEvent.DismissUnlock) }, onSanadBuilder, onMissingLink, onOrderChain)
+        }
         Box(Modifier.weight(1f)) {
             AnimatedContent(
                 targetState = CardFrame(
@@ -208,6 +217,7 @@ fun ReviewContent(
                     onExplainLock = { explainingLock = true },
                     onSanadBuilder = onSanadBuilder,
                     onMissingLink = onMissingLink,
+                    onOrderChain = onOrderChain,
                 )
             }
         }
@@ -223,7 +233,14 @@ fun ReviewContent(
 
 /** "The Sanad tree is unlocked": a layer was just opened by the previous review. */
 @Composable
-private fun UnlockBanner(unlock: LayerUnlock, onDismiss: () -> Unit, onSanadBuilder: (Long) -> Unit, onMissingLink: (Long) -> Unit) {
+private fun UnlockBanner(
+    unlock: LayerUnlock,
+    links: List<SanadLink>,
+    onDismiss: () -> Unit,
+    onSanadBuilder: (Long) -> Unit,
+    onMissingLink: (Long) -> Unit,
+    onOrderChain: (Long) -> Unit,
+) {
     val colors = MutqanTheme.colors
     val last = unlock.layer == MemorizationLayer.LAYER_3_TRANSMISSION_TERMS
     Surface(
@@ -245,7 +262,9 @@ private fun UnlockBanner(unlock: LayerUnlock, onDismiss: () -> Unit, onSanadBuil
                 color = MaterialTheme.colorScheme.onSurface,
             )
             if (!last) {
-                SanadDrillButtons(unlock.hadithId, onSanadBuilder, onMissingLink)
+                // The layer that was just opened is the Sanad tree, so only the chain decides which drills there are.
+                val open = SanadDrillPolicy.openDrills(LayerStatus(unlock.layer, 0f), links)
+                SanadDrillButtons(unlock.hadithId, open, onSanadBuilder, onMissingLink, onOrderChain)
             }
             Row(Modifier.fillMaxWidth()) {
                 Spacer(Modifier.weight(1f))
@@ -266,6 +285,7 @@ private fun CardPane(
     onExplainLock: () -> Unit,
     onSanadBuilder: (Long) -> Unit,
     onMissingLink: (Long) -> Unit,
+    onOrderChain: (Long) -> Unit,
 ) {
     val card = frame.card
     val stage = frame.stage
@@ -348,7 +368,7 @@ private fun CardPane(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                SanadDrillButtons(card.hadithId, onSanadBuilder, onMissingLink)
+                SanadDrillButtons(card.hadithId, SanadDrillPolicy.openDrills(card.layer, card.links), onSanadBuilder, onMissingLink, onOrderChain)
             }
         }
     }

@@ -185,7 +185,7 @@ class NarratorIdentityUseCasesTest {
             narrator(1, "ابن عمر", companion), narrator(2, "عبد الله بن عمر", companion),
             narrator(3, "عمر بن الخطاب", companion), narrator(4, "أنس", companion), narrator(5, "أنس بن مالك", companion),
         )
-        val chain = hadith(9, listOf(narrator(8, "عبد الله بن عباس", companion)), level = 1)
+        val chain = hadith(9, listOf(narrator(7, "نافع", "راوٍ"), narrator(8, "عبد الله بن عباس", companion)), level = 3)
         val directory = NarratorDirectory.of(pool + chain.sanad.map { it.narrator })
 
         repeat(40) { seed ->

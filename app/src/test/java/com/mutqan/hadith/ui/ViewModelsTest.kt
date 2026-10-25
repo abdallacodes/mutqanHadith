@@ -14,6 +14,7 @@ import com.mutqan.hadith.domain.model.ReviewRating.HARD
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
+import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
@@ -80,6 +81,7 @@ class ViewModelsTest {
     private val getUnseen = GetUnseenHadithsUseCase(hadiths)
     private val getHeatmap = GetNarratorChainHeatmapUseCase(hadiths, reviews)
     private val getLayers = GetLayerStatusesUseCase(reviews, scheduler)
+    private val drillAccess = CheckSanadDrillAccessUseCase(reviews, scheduler)
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -252,7 +254,15 @@ class ViewModelsTest {
 
     // -- Sanad builder ---------------------------------------------------------------------
 
-    private fun builderVm() = SanadBuilderViewModel(1, hadiths, submitReview, Random(5))
+    /** The Sanad drills are for a hadith whose chain is open: hadith 1 is in study, with its Sanad tree opened. */
+    private fun openTreeOfHadith1() {
+        reviews.mastery[1] = MasteryRecordEntity(1, 20f, 2f, now - DAY_MS, now - 5 * DAY_MS, now - DAY_MS, 4)
+    }
+
+    private fun builderVm(): SanadBuilderViewModel {
+        openTreeOfHadith1()
+        return SanadBuilderViewModel(1, hadiths, submitReview, drillAccess, Random(5))
+    }
 
     private fun SanadBuilderViewModel.ui(): SanadBuilderUi = (state.value as UiState.Success).data
 
@@ -276,7 +286,7 @@ class ViewModelsTest {
         assertEquals(GOOD, result.rating)
         assertTrue(result.misplacedNames.isEmpty())
         val record = reviews.mastery[1]!!
-        assertNull(record.matnLastReviewedAt) // the Matn was only the anchor
+        assertEquals(now - DAY_MS, record.matnLastReviewedAt) // the Matn was only the anchor: its clock was not touched
         assertEquals(clock, record.sanadLastReviewedAt)
         assertEquals(4, reviews.events.count { it.succeeded })
     }
@@ -321,15 +331,18 @@ class ViewModelsTest {
 
     @Test
     fun builder_unknownHadithIsAnError() = runTest {
-        val vm = SanadBuilderViewModel(99, hadiths, submitReview)
+        val vm = SanadBuilderViewModel(99, hadiths, submitReview, drillAccess)
         assertTrue(vm.state.value is UiState.Error)
     }
 
     // -- Missing link ----------------------------------------------------------------------
 
-    private fun linkVm(seed: Int = 11) = MissingLinkViewModel(
-        1, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler) { clock }, Random(seed),
-    )
+    private fun linkVm(seed: Int = 11): MissingLinkViewModel {
+        openTreeOfHadith1()
+        return MissingLinkViewModel(
+            1, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler) { clock }, drillAccess, Random(seed),
+        )
+    }
 
     private fun MissingLinkViewModel.ui() = (state.value as UiState.Success).data
 
@@ -402,7 +415,7 @@ class ViewModelsTest {
 
     @Test
     fun missingLink_unknownHadithIsAnError() = runTest {
-        val vm = MissingLinkViewModel(99, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler))
+        val vm = MissingLinkViewModel(99, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler), drillAccess)
         assertTrue(vm.state.value is UiState.Error)
     }
 }

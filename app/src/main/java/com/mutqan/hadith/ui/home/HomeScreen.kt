@@ -26,7 +26,6 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +50,7 @@ import com.mutqan.hadith.domain.usecase.NextToLearn
 import com.mutqan.hadith.domain.usecase.StudyDashboard
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LockedHint
+import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.StatTile
 import com.mutqan.hadith.ui.common.UiState
@@ -69,6 +69,7 @@ data class HomeActions(
     val onSanadBuilder: (Long) -> Unit,
     val onMissingLink: (Long) -> Unit,
     val onOpenSettings: () -> Unit,
+    val onOrderChain: (Long) -> Unit = {},
 )
 
 @Composable
@@ -347,22 +348,17 @@ private fun DrillActions(dashboard: StudyDashboard, actions: HomeActions) {
     // The drills are on the chain, which opens hadith by hadith; with nothing studied there is nothing to wait for yet.
     if (target == null) {
         if (dashboard.studiedCount > 0) {
+            // A chain opened but too short for any drill is another thing to wait for than a chain not yet opened.
+            val chainOpened = dashboard.items.any { !it.isNew && it.layer.layer.opensSanad }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
-                LockedHint(stringResource(R.string.home_drills_locked))
+                LockedHint(stringResource(if (chainOpened) R.string.home_drills_short else R.string.home_drills_locked))
             }
         }
         return
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = { actions.onSanadBuilder(target) }, modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.drill_sanad_builder), textAlign = TextAlign.Center)
-            }
-            OutlinedButton(onClick = { actions.onMissingLink(target) }, modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.drill_missing_link), textAlign = TextAlign.Center)
-            }
-        }
+        SanadDrillButtons(target, dashboard.drillSuggestionDrills, actions.onSanadBuilder, actions.onMissingLink, actions.onOrderChain)
     }
 }

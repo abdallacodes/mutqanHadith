@@ -3,7 +3,6 @@ package com.mutqan.hadith.domain.drill
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.relation.SanadLink
 import com.mutqan.hadith.domain.model.ReviewRating
-import kotlin.math.ceil
 import kotlin.random.Random
 
 /** A draggable narrator. [chipId] is the chain position the chip truly belongs to, unique per chip. */
@@ -78,14 +77,7 @@ data class SanadBuilderState(
     }
 
     /** GOOD for a clean build, HARD for a few slips (up to a third of the chain), AGAIN beyond that. */
-    fun rating(): ReviewRating {
-        val mistakes = misplacedNarratorIds.size
-        return when {
-            mistakes == 0 -> ReviewRating.GOOD
-            mistakes <= ceil(slots.size / 3.0).toInt() -> ReviewRating.HARD
-            else -> ReviewRating.AGAIN
-        }
-    }
+    fun rating(): ReviewRating = ratingForChainMistakes(misplacedNarratorIds.size, slots.size)
 
     companion object {
         /** Starts a build with the chips shuffled; for chains longer than one it never starts already solved. */

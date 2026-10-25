@@ -230,5 +230,6 @@ private fun SummaryBody(state: UiState<MasteryAnalytics>, onRetry: () -> Unit, c
             TextButton(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
         }
         is UiState.Success -> content(state.data)
+        is UiState.Blocked -> Unit
     }
 }

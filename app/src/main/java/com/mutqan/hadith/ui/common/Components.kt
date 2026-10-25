@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +56,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mutqan.hadith.R
+import com.mutqan.hadith.domain.drill.DrillAccess
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
 import kotlin.math.roundToInt
@@ -170,7 +172,29 @@ fun <T> UiStateHost(
                 Button(onClick = onRetry) { Text(stringResource(R.string.action_retry)) }
             }
         }
+        is UiState.Blocked -> DrillClosedPanel(state.access, modifier)
         is UiState.Success -> content(state.data)
+    }
+}
+
+/** Why a Sanad drill cannot be played on this hadith now, said once and kindly; the top bar's back arrow is the way out. */
+@Composable
+fun DrillClosedPanel(access: DrillAccess.Closed, modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(Icons.Filled.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.drill_closed_title), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+            Text(
+                when (access) {
+                    DrillAccess.LayerLocked -> stringResource(R.string.drill_closed_layer)
+                    is DrillAccess.ChainTooShort -> stringResource(R.string.drill_closed_short, access.needed, access.links)
+                    DrillAccess.NoIdentifiedNarrator -> stringResource(R.string.drill_closed_unidentified)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

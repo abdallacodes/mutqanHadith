@@ -38,17 +38,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,12 +53,12 @@ import com.mutqan.hadith.domain.drill.BuilderChip
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.MatnAnchorCard
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.shakeOn
 import com.mutqan.hadith.ui.common.stateText
-import com.mutqan.hadith.ui.theme.MatnCompactTextStyle
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
 
@@ -111,7 +107,7 @@ fun SanadBuilderContent(ui: SanadBuilderUi, onEvent: (SanadBuilderEvent) -> Unit
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        MatnAnchor(ui)
+        MatnAnchorCard(ui.sourceBook, ui.hadithNumber, ui.matn, label = stringResource(R.string.builder_matn_anchor))
 
         ui.result?.let { ResultCard(it) } ?: Text(
             stringResource(R.string.builder_instruction),
@@ -138,35 +134,6 @@ fun SanadBuilderContent(ui: SanadBuilderUi, onEvent: (SanadBuilderEvent) -> Unit
                     },
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun MatnAnchor(ui: SanadBuilderUi) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                InfoChip(stringResource(R.string.builder_matn_anchor))
-                InfoChip(ui.sourceBook, container = MaterialTheme.colorScheme.surfaceVariant, content = MaterialTheme.colorScheme.onSurfaceVariant)
-                InfoChip(
-                    stringResource(R.string.hadith_number, ui.hadithNumber),
-                    container = MaterialTheme.colorScheme.primaryContainer,
-                    content = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Text(
-                ui.matn,
-                style = MatnCompactTextStyle,
-                maxLines = if (expanded) Int.MAX_VALUE else 3,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }

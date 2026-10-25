@@ -176,7 +176,7 @@ class EnglishScreensTest {
         compose.onNodeWithText("Retention").assertExists()
         compose.onNodeWithText("83%").assertExists()
         compose.onNodeWithText("Sanad Builder").assertExists()
-        compose.onNodeWithText("Missing Link").assertExists()
+        compose.onNodeWithText("Missing Narrator").assertExists()
     }
 
     @Test
