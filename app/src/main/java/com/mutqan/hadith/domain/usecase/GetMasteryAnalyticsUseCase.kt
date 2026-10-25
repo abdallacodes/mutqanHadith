@@ -2,6 +2,7 @@ package com.mutqan.hadith.domain.usecase
 
 import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.analytics.StudyStreakCalculator
+import com.mutqan.hadith.domain.narrator.NarratorDirectory
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -114,18 +115,20 @@ class GetMasteryAnalyticsUseCase(
             )
         }
 
+    /** One entry per person: the tallies of every row that names the same man are added up under his canonical name. */
     private suspend fun weakestNarrators(): List<WeakNarrator> {
-        val byId = narrators.getAll().associateBy { it.id }
+        val directory = NarratorDirectory.of(narrators.getAll())
         return reviews.getNarratorOutcomeTotals()
-            .mapNotNull { total ->
-                val narrator = byId[total.narratorId] ?: return@mapNotNull null
+            .mapNotNull { total -> directory.canonicalOf(total.narratorId)?.let { it to total } }
+            .groupBy({ it.first }, { it.second })
+            .map { (person, totals) ->
                 WeakNarrator(
-                    narratorId = narrator.id,
-                    name = narrator.primaryName,
-                    tier = narrator.tier,
-                    isPivot = narrator.isPivot,
-                    errorCount = total.errorCount,
-                    attempts = total.errorCount + total.successCount,
+                    narratorId = person.id,
+                    name = person.name,
+                    tier = person.tier,
+                    isPivot = person.isPivot,
+                    errorCount = totals.sumOf { it.errorCount },
+                    attempts = totals.sumOf { it.errorCount + it.successCount },
                 )
             }
             .filter { it.errorCount > 0 && it.attempts >= MIN_ATTEMPTS }

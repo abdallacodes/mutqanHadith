@@ -381,4 +381,5 @@
     <string name="settings_section_study">Study</string>
     <string name="settings_unlock_all">Unlock All Layers (Advanced)</string>
     <string name="settings_unlock_all_hint">Opens the Sanad tree and the transmission terms on every hadith right away, without waiting for the matn to settle. For students who already know the material.</string>
+    <string name="narrator_also_known">Also known as: %1$s</string>
 </resources>

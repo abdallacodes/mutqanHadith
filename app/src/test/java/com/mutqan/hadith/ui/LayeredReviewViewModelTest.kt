@@ -102,7 +102,7 @@ class LayeredReviewViewModelTest {
         assertEquals(LAYER_1_CORE, queue.getValue(1).activeLayer)
         assertEquals(LAYER_2_SANAD_TREE, queue.getValue(2).activeLayer)
         assertEquals(LAYER_3_TRANSMISSION_TERMS, queue.getValue(3).activeLayer)
-        assertEquals("عمر", queue.getValue(1).sahabi)
+        assertEquals("عمر بن الخطاب", queue.getValue(1).sahabi)
         assertEquals("متفق عليه", queue.getValue(1).takhrij)
         assertEquals(CardStage.MATN, queue.getValue(1).finalStage)
         assertEquals(CardStage.SANAD, queue.getValue(2).finalStage)

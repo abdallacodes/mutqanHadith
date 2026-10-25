@@ -149,7 +149,7 @@ class LayeredScreensTest {
     fun layerOne_putsTheCompanionAndTheTakhrijInFront() {
         showReview(ReviewMode.NEW, targetId = 1)
 
-        compose.onNodeWithText("الصحابي: عمر").assertExists()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
         compose.onNodeWithText("التخريج: متفق عليه").assertExists()
     }
 
@@ -160,7 +160,7 @@ class LayeredScreensTest {
 
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").assertExists()
         compose.onNodeWithText("تلميح").assertExists()
-        compose.onNodeWithText("الصحابي: عمر").assertDoesNotExist()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertDoesNotExist()
         compose.onNodeWithText("التخريج: متفق عليه").assertDoesNotExist()
         compose.onNodeWithText(TASHKEEL).assertDoesNotExist()
 
@@ -168,7 +168,7 @@ class LayeredScreensTest {
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("الصحابي: عمر").assertExists()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
         compose.onNodeWithText("التخريج: متفق عليه").assertExists()
         compose.onNodeWithText("تلميح").assertDoesNotExist()
     }

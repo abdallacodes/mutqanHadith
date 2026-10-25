@@ -1,7 +1,8 @@
 package com.mutqan.hadith.domain.graph
 
 /**
- * A narrator in the isnad network. [errorCount] and [successCount] sum the user's recall attempts
+ * A narrator in the isnad network: one man, however many catalog rows name him ([id] is the canonical id of those
+ * rows, see [com.mutqan.hadith.domain.narrator.NarratorDirectory]). [errorCount] and [successCount] sum the user's recall attempts
  * for this narrator over every Hadith, so [errorRate] says how reliably they place him.
  */
 data class NarratorNode(
@@ -14,6 +15,8 @@ data class NarratorNode(
     val successCount: Int,
     /** In how many Hadiths of the (possibly filtered) library the narrator appears. */
     val hadithCount: Int,
+    /** The other names the catalog gives the same man, e.g. «ابن عباس» for «عبد الله بن عباس». */
+    val aliases: List<String> = emptyList(),
 ) {
     val attempts: Int get() = errorCount + successCount
 

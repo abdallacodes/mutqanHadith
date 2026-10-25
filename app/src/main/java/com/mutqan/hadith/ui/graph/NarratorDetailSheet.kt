@@ -77,6 +77,13 @@ internal fun NarratorDetailBody(
                         if (node.fullName.isNotBlank() && node.fullName != node.name) {
                             Text(node.fullName, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
                         }
+                        if (node.aliases.isNotEmpty()) {
+                            Text(
+                                stringResource(R.string.narrator_also_known, node.aliases.joinToString(stringResource(R.string.list_separator))),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = scheme.onSurfaceVariant,
+                            )
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             InfoChip(tierLabel(node.tier), container = scheme.surfaceVariant, content = scheme.onSurfaceVariant)
                             if (node.isPivot) InfoChip(stringResource(R.string.narrator_pivot_badge))

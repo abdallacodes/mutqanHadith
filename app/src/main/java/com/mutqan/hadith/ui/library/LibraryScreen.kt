@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.model.HadithLevel
+import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.usecase.HadithProgress
 import com.mutqan.hadith.domain.usecase.LibraryHadith
 import com.mutqan.hadith.domain.usecase.LibraryLevel
@@ -295,7 +296,7 @@ fun LibraryHadithCard(item: LibraryHadith, onClick: () -> Unit, modifier: Modifi
                     Text(hadith.sourceBook, style = MaterialTheme.typography.titleMedium)
                     if (hadith.sahabi.isNotBlank()) {
                         Text(
-                            stringResource(R.string.sahabi_label, hadith.sahabi),
+                            stringResource(R.string.sahabi_label, NarratorAliases.canonicalName(hadith.sahabi)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

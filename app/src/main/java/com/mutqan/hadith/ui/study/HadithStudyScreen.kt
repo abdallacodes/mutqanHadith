@@ -58,6 +58,7 @@ import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.text.ArabicNormalizer
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
+import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
@@ -217,7 +218,7 @@ private fun StudyHeader(hadith: HadithEntity) {
             }
         }
         if (hadith.sahabi.isNotBlank()) {
-            Text(stringResource(R.string.sahabi_label, hadith.sahabi), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.sahabi_label, NarratorAliases.canonicalName(hadith.sahabi)), style = MaterialTheme.typography.titleMedium)
         }
         if (hadith.chapter.isNotBlank()) {
             Text(

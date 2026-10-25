@@ -114,8 +114,8 @@ class StudyUseCasesTest {
         val d = dashboard().first()
 
         assertEquals(3L, d.items.first().hadithId)
-        assertEquals("عمر", d.items.first { it.hadithId == 1L }.sahabiName)
-        assertEquals("أنس", d.items.first { it.hadithId == 2L }.sahabiName)
+        assertEquals("عمر بن الخطاب", d.items.first { it.hadithId == 1L }.sahabiName)
+        assertEquals("أنس بن مالك", d.items.first { it.hadithId == 2L }.sahabiName)
         assertEquals(listOf(1, 2, 3), d.items.map { it.hadithNumber }.sorted())
     }
 

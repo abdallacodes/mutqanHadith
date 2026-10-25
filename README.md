@@ -136,6 +136,24 @@ from the earlier schema and from a stale catalog — asserting that the learner'
 - `SeedDataIntegrityTest` re-proves every matn and every narrator in the shipped seed against that snapshot's
   source text on every test run.
 
+### One narrator, one identity
+
+The books spell the same Companion differently (*Ibn 'Umar* in the Arba'in, *'Abd Allah ibn 'Umar* in 'Umdat
+al-Ahkam), so the catalog's 148 narrator rows name only **110 different people**. The app resolves this at read time and
+changes no row, so the database, its foreign keys and the learner's per-narrator history stay exactly as they were
+(no catalog bump, no migration):
+
+- `NarratorNormalizer` reads a name the way a narration writes it: «عن أبي هريرة رضي الله عنه» becomes «أبو هريرة»
+  (no «عن», blessing or tashkeel; the noun of a kunya in the nominative; «ابن» as «بن»). Titles such as *Amir
+  al-Mu'minin* are kept as display metadata, out of the name.
+- `NarratorAliases` is the curated table of who is who, 27 people in all. Each merge rests on the same kunya, ism or
+  lineage, or on the same place in parallel chains of one hadith; look-alikes (*'Abd Allah ibn 'Umar* and *ibn
+  'Amr*) are left apart, and `NarratorAliasesSeedTest` pins the exact set of merges against the shipped catalog.
+- `NarratorDirectory` applies the table to the rows in use. A person's canonical id is always the id of a real row.
+  The narrator network shows one node per person, a person's recall tally adds up his rows, review through a narrator
+  covers every spelling, a drill never offers him as his own distractor, and the Companion hint and label are taken
+  from the canonical name.
+
 ### Stack
 
 | Area | Choice |

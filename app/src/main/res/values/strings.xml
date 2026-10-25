@@ -411,4 +411,5 @@
     <string name="settings_section_study">الدراسة</string>
     <string name="settings_unlock_all">تجاوز التدرج (طالب علم متقدم)</string>
     <string name="settings_unlock_all_hint">تُفتح شجرة السند وصيغ الأداء على كل الأحاديث فورًا دون انتظار ثبات المتن. يناسب من تمرّس بالحديث.</string>
+    <string name="narrator_also_known">يُعرف أيضًا بـ: %1$s</string>
 </resources>

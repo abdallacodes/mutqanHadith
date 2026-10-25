@@ -347,7 +347,7 @@ class RetentionSuiteScreensTest {
     fun hint_firstGivesTheCompanionsLetterThenTheTakhrijAndNeverTheMatn() {
         core(1)
         showReview(ReviewMode.DUE)
-        compose.onNodeWithText("الصحابي: عمر").assertDoesNotExist()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertDoesNotExist()
         compose.onNodeWithText("التخريج: متفق عليه").assertDoesNotExist()
 
         compose.onNodeWithText("تلميح").performClick()
@@ -366,7 +366,7 @@ class RetentionSuiteScreensTest {
         compose.onNodeWithText("تلميح").assertDoesNotExist()
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").assertExists()
         compose.onNodeWithText(MATN).assertDoesNotExist()
-        compose.onNodeWithText("الصحابي: عمر").assertDoesNotExist()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertDoesNotExist()
     }
 
     @Test
@@ -378,7 +378,7 @@ class RetentionSuiteScreensTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("تلميح").assertDoesNotExist()
-        compose.onNodeWithText("الصحابي: عمر").assertExists()
+        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
         compose.onNodeWithText("التخريج: متفق عليه").assertExists()
     }
 

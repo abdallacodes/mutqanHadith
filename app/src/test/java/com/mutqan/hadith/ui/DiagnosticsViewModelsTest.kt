@@ -212,8 +212,10 @@ class DiagnosticsViewModelsTest {
 
     @Test
     fun graph_aFailingHadithListLeavesAnEmptyProfileInsteadOfSpinningForever() = runTest {
+        // The graph loads the library once; the man's hadith list reads it again, and that read fails.
+        var reads = 0
         val flaky = object : HadithRepository by hadiths {
-            override suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad> = error("no disk")
+            override suspend fun getAll(): List<HadithWithFullSanad> = if (reads++ == 0) hadiths.getAll() else error("no disk")
         }
         val vm = graphVm(hadithRepo = flaky)
 
@@ -227,10 +229,12 @@ class DiagnosticsViewModelsTest {
     @Test
     fun graph_aSlowHadithListDoesNotOverwriteTheNarratorTappedNext() = runTest {
         val gate = CompletableDeferred<Unit>()
+        // Read 0 is the graph; read 1 is the list for the first narrator tapped, which hangs on the gate.
+        var reads = 0
         val slowForTwo = object : HadithRepository by hadiths {
-            override suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad> {
-                if (narratorId == 2L) gate.await()
-                return hadiths.getThroughNarrator(narratorId)
+            override suspend fun getAll(): List<HadithWithFullSanad> {
+                if (reads++ == 1) gate.await()
+                return hadiths.getAll()
             }
         }
         val vm = graphVm(hadithRepo = slowForTwo)

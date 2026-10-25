@@ -8,6 +8,8 @@ import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.model.ReviewBatching
 import com.mutqan.hadith.domain.model.ReviewRating
+import com.mutqan.hadith.domain.narrator.NarratorAliases
+import com.mutqan.hadith.domain.narrator.getThroughPerson
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
@@ -74,7 +76,8 @@ fun HadithWithFullSanad.toReviewCard(layer: LayerStatus = LayerStatus.Fresh) = R
     grade = hadith.grade,
     matn = hadith.matnWithTashkeel,
     links = sanad,
-    sahabi = hadith.sahabi.ifBlank { sanad.lastOrNull()?.narrator?.primaryName.orEmpty() },
+    // The Companion by his canonical name, so that the hint and the label agree whichever way the book writes him.
+    sahabi = NarratorAliases.canonicalName(hadith.sahabi.ifBlank { sanad.lastOrNull()?.narrator?.primaryName.orEmpty() }),
     takhrij = hadith.takhrij,
     layer = layer,
 )
@@ -204,7 +207,7 @@ class ReviewViewModel(
                             getUnseen(limit = NEW_BATCH_SIZE)
                         }
                     ReviewMode.SINGLE -> listOfNotNull(targetId?.let { hadiths.getWithSanad(it) })
-                    ReviewMode.NARRATOR -> targetId?.let { hadiths.getThroughNarrator(it) }.orEmpty()
+                    ReviewMode.NARRATOR -> targetId?.let { hadiths.getThroughPerson(it) }.orEmpty()
                 }
                 val layers = getLayers(found.map { it.hadith.id })
                 var cards = found.map { it.toReviewCard(layers[it.hadith.id] ?: LayerStatus.Fresh) }

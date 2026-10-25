@@ -6,6 +6,7 @@ import com.mutqan.hadith.domain.analytics.StudyStreakCalculator
 import com.mutqan.hadith.domain.model.CurriculumOrder
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.StabilityMetrics
+import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
@@ -77,7 +78,7 @@ class ObserveStudyDashboardUseCase(
                     hadithId = h.hadith.id,
                     hadithNumber = h.hadith.hadithNumber,
                     sourceBook = h.hadith.sourceBook,
-                    sahabiName = h.sanad.lastOrNull()?.narrator?.primaryName.orEmpty(),
+                    sahabiName = NarratorAliases.canonicalName(h.sanad.lastOrNull()?.narrator?.primaryName.orEmpty()),
                     metrics = record?.let(scheduler::metrics),
                     isDue = record != null && record.nextReviewDue <= at,
                     layer = scheduler.layerStatus(record),
@@ -105,7 +106,7 @@ class ObserveStudyDashboardUseCase(
                         level = it.hadith.level,
                         hadithNumber = it.hadith.hadithNumber,
                         sourceBook = it.hadith.sourceBook,
-                        sahabiName = it.sanad.lastOrNull()?.narrator?.primaryName.orEmpty(),
+                        sahabiName = NarratorAliases.canonicalName(it.sanad.lastOrNull()?.narrator?.primaryName.orEmpty()),
                         matn = it.hadith.matnWithTashkeel,
                     )
                 },

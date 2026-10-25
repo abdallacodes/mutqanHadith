@@ -1,5 +1,6 @@
 package com.mutqan.hadith.domain.usecase
 
+import com.mutqan.hadith.domain.narrator.NarratorDirectory
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 
@@ -25,11 +26,17 @@ class GetHadithsByNarratorUseCase(
     private val hadiths: HadithRepository,
     private val reviews: ReviewRepository,
 ) {
-    /** Every Hadith through [narratorId], in curriculum order; empty for an unknown narrator. */
+    /**
+     * Every Hadith through the man [narratorId] stands for (a canonical id, or any of his rows), under any of his
+     * names, in curriculum order; empty for an unknown narrator.
+     */
     suspend operator fun invoke(narratorId: Long): List<NarratorHadith> {
-        val through = hadiths.getThroughNarrator(narratorId)
+        val library = hadiths.getAll()
+        val rows = NarratorDirectory.ofLibrary(library).membersOf(narratorId)
+        val through = library.filter { h -> h.edges.any { it.narrator.id in rows } }
         if (through.isEmpty()) return emptyList()
-        val outcomes = reviews.getOutcomeCountsByHadith(narratorId).associateBy { it.hadithId }
+        val outcomes = rows.flatMap { reviews.getOutcomeCountsByHadith(it) }.groupBy { it.hadithId }
+            .mapValues { (_, counts) -> counts.sumOf { it.errorCount } to counts.sumOf { it.successCount } }
         val studied = reviews.getAllMastery().mapTo(mutableSetOf()) { it.hadithId }
 
         return through.sortedBy { it.hadith.id }.map { h ->
@@ -41,10 +48,10 @@ class GetHadithsByNarratorUseCase(
                 sourceBook = h.hadith.sourceBook,
                 chapter = h.hadith.chapter,
                 matn = h.hadith.matnWithTashkeel,
-                position = chain.indexOfFirst { it.narrator.id == narratorId } + 1,
+                position = chain.indexOfFirst { it.narrator.id in rows } + 1,
                 chainLength = chain.size,
-                errorCount = outcome?.errorCount ?: 0,
-                successCount = outcome?.successCount ?: 0,
+                errorCount = outcome?.first ?: 0,
+                successCount = outcome?.second ?: 0,
                 isStudied = h.hadith.id in studied,
             )
         }

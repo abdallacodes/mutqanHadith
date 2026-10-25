@@ -68,7 +68,7 @@ class DailyDashboardViewModelsTest {
         val first = vm.loaded().nextToLearn
         assertEquals(2L, first?.hadithId)
         assertEquals(1, first?.level)
-        assertEquals("عمر", first?.sahabiName)
+        assertEquals("عمر بن الخطاب", first?.sahabiName)
 
         StartMemorizingUseCase(hadiths, reviews) { now }(2)
 
