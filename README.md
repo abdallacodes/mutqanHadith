@@ -65,17 +65,22 @@ The scheduler is a pure Kotlin class with no Android dependencies, covered by un
 
 ## Curriculum
 
-The library is organized in three levels, each a book of increasing demand.
+The library is a shelf of **books**, and a book can hold **sections** (a chapter, a door), which can hold sections of
+their own. There is no ranking of books into levels: the library shows what is there, one book at a time.
 
-| Level | Arabic | Source | Status |
-|:-----:|--------|--------|--------|
-| **1** | **الأصول والأسس** — *Foundations* | The **42 hadiths** of *Al-Arba'in An-Nawawiyya* (Imam an-Nawawi's forty-hadith collection, as numbered in the Arabic edition used) | Complete. |
-| **2** | **أحاديث الأحكام** — *Legal rulings* | **345 hadiths** of *Umdat al-Ahkam* (Abd al-Ghani al-Maqdisi's collection of legal hadiths), the main narration of each, with its Companion and takhrij | Populated; the hadiths of the book that could not be verified against Sahih al-Bukhari or Sahih Muslim are left out rather than repaired. |
-| **3** | **دواوين السنّة المسندة** — *The musnad compendia* | Core chain narrations from *Sahih al-Bukhari* | A **10-hadith selection** from Sahih al-Bukhari today. |
+| Book | Arabic | Source | Status |
+|------|--------|--------|--------|
+| **The Forty Hadith of an-Nawawi** | **الأربعون النووية** | The **42 hadiths** of *Al-Arba'in An-Nawawiyya* (Imam an-Nawawi's forty-hadith collection, as numbered in the Arabic edition used), each with its Companion and the takhrij the author gives | The only book today. |
 
-All three levels come from the verified pipeline described [below](#scholarly-verified-data-pipeline); nothing in the
-seed catalog was typed in by hand or produced by a language model. The catalog holds **397 hadiths** in total
-(42 + 345 + 10).
+The shelf says that more books will be added in future updates, and the structure is ready for them: a book is a row of
+`catalog_group`, a section is a row whose parent is another group, and each hadith is filed in the deepest group that
+names it and carries the `position` it is taught at across the whole catalog. A later catalog adds its books, sections
+and hadiths by syncing, and an existing install keeps its progress.
+
+The catalog comes from the verified pipeline described [below](#scholarly-verified-data-pipeline); nothing in the seed
+was typed in by hand or produced by a language model. Earlier versions of the app also carried a ten-hadith selection
+from Sahih al-Bukhari and the hadiths of *'Umdat al-Ahkam*; the update that made the Forty Hadith the whole catalog
+removes them from a device that has them, together with the progress, narrator history and collection entries on them.
 
 ---
 
@@ -85,7 +90,10 @@ The app has three tabs — **Home**, **Library** and **Insights** — and these 
 
 - **Home (daily study):** your streak, the reviews that are due with an estimate of the sitting ("3 hadiths · ~4 mins"),
   and the next new hadith to learn. A backlog is offered five at a time rather than as one long list.
-- **Library:** the hadiths by level and chapter; open any of them to read, study or review.
+- **Library:** the books on a shelf. Open a book to see its sections and its hadiths, with how far you have come through
+  all of it, and search the hadith text (with or without tashkeel) inside the book or section you are in. Back goes out
+  of a search, then up one section at a time. Open any hadith to read, study or review it, or file it into one of your
+  **collections** (*مجموعاتي*), the thematic sets that are yours alone.
 - **Hadith reader:** adjustable text size, a transient Tashkeel on/off toggle, and copy (copies exactly the text
   being displayed).
 - **Review:** spaced-repetition sessions scheduled by the dual-decay engine, with a per-narrator chain heatmap that
@@ -121,10 +129,15 @@ document picker.
 ### Non-destructive catalog migrations
 
 The shipped catalog carries a `catalogVersion`, mirrored by `SeedLoader.CATALOG_VERSION`. When the app opens with a
-newer catalog than the database holds, it **syncs** rather than reseeds: new hadiths, narrators and levels are added,
-existing hadith rows are never replaced, and the learner's review state is untouched. Schema changes ship as real Room
-migrations (the current schema is **v5**, migrating from v4), and `CatalogMigrationTest` exercises the upgrade paths —
-from the earlier schema and from a stale catalog — asserting that the learner's progress survives each one.
+newer catalog than the database holds, it **syncs** rather than reseeds: new hadiths, narrators and groups are added,
+existing hadith rows are never replaced, and the learner's review state is untouched. Removing hadiths is a decision a
+catalog version makes once (catalog 4 retired Bukhari and 'Umdat al-Ahkam), not a standing rule that deletes whatever a
+catalog omits, so a later catalog can bring a book back. Groups carry no foreign key to or from a hadith, so a catalog
+can move a hadith between sections or drop a section without a cascade ever reaching the learner's progress. Schema
+changes ship as real Room migrations (the current schema is **v7**, migrating from v4), and `CatalogMigrationTest`,
+`CollectionsMigrationTest` and `GroupsMigrationTest` exercise the upgrade paths — from each earlier schema and from a
+stale catalog — asserting that the learner's progress survives each one. A backup that holds progress on a retired
+hadith still restores: the retired hadiths are skipped and the import says how many.
 
 ### Scholarly-verified data pipeline
 
@@ -132,11 +145,12 @@ from the earlier schema and from a stale catalog — asserting that the learner'
 
 - It builds `seed_hadiths.json` from **published open datasets pinned by commit and sha256**, using only the Python
   standard library. Texts, chains, and takhrij are never written by hand or generated.
-- Umdat al-Ahkam comes from a dataset that audited nothing itself, so a record is imported only if its text is found,
-  at 0.80 or better of its words in order, in a narration of Sahih al-Bukhari or Sahih Muslim from the audited
-  editions. Those editions also decide the takhrij (*agreed upon*, *narrated by al-Bukhari*, or *narrated by Muslim*).
-- What *is* curated by hand is limited to *which* hadiths to include (`tools/data/selection.json`) and the neutral
-  wording of fields that no dataset provides.
+- The Forty Hadith come with the author's own takhrij note, from which the collector is read (*agreed upon*, *narrated
+  by Muslim*, or the author's wording where he cites a book outside the two Sahihs); the Companion is the name an-Nawawi
+  gives, and the chain is that Companion alone, since no audited dataset carries a longer one for these hadith.
+- What *is* curated by hand is limited to the ids that keep a hadith, a narrator and a group the same row from one
+  catalog to the next, the books and sections with their titles, and the neutral wording of fields that no dataset
+  provides (`tools/data/selection.json`).
 - The records it uses are committed as `tools/data/source_snapshot.json`, so the seed is **reproducible offline**
   and can be audited without network access.
 - `SeedDataIntegrityTest` re-proves every matn and every narrator in the shipped seed against that snapshot's
@@ -144,16 +158,17 @@ from the earlier schema and from a stale catalog — asserting that the learner'
 
 ### One narrator, one identity
 
-The books spell the same Companion differently (*Ibn 'Umar* in the Arba'in, *'Abd Allah ibn 'Umar* in 'Umdat
-al-Ahkam), so the catalog's 148 narrator rows name only **110 different people**. The app resolves this at read time and
-changes no row, so the database, its foreign keys and the learner's per-narrator history stay exactly as they were
-(no catalog bump, no migration):
+The Forty Hadith spell the same Companion differently (*Ibn 'Umar* in two hadiths, *Abu 'Abd ar-Rahman 'Abd Allah ibn
+'Umar ibn al-Khattab* in a third), so the catalog's 32 narrator rows name only **23 different people**. The app resolves
+this at read time and changes no row, so the database, its foreign keys and the learner's per-narrator history stay
+exactly as they were (no migration):
 
 - `NarratorNormalizer` reads a name the way a narration writes it: «عن أبي هريرة رضي الله عنه» becomes «أبو هريرة»
   (no «عن», blessing or tashkeel; the noun of a kunya in the nominative; «ابن» as «بن»). Titles such as *Amir
   al-Mu'minin* are kept as display metadata, out of the name.
-- `NarratorAliases` is the curated table of who is who, 27 people in all. Each merge rests on the same kunya, ism or
-  lineage, or on the same place in parallel chains of one hadith; look-alikes (*'Abd Allah ibn 'Umar* and *ibn
+- `NarratorAliases` is the curated table of who is who, kept whole so that a book added later finds its people already
+  placed; the groups of books the catalog does not carry today change nothing. Each merge rests on the same kunya, ism
+  or lineage, or on the same place in parallel chains of one hadith; look-alikes (*'Abd Allah ibn 'Umar* and *ibn
   'Amr*) are left apart, and `NarratorAliasesSeedTest` pins the exact set of merges against the shipped catalog.
 - `NarratorDirectory` applies the table to the rows in use. A person's canonical id is always the id of a real row.
   The narrator network shows one node per person, a person's recall tally adds up his rows, review through a narrator
@@ -175,7 +190,7 @@ changes no row, so the database, its foreign keys and the learner's per-narrator
 
 ### Testing
 
-The suite exceeds **500 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **942 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.
@@ -275,15 +290,8 @@ existing installs pick it up.
   [SIL Open Font License 1.1](licenses/OFL-Amiri.txt).
 - **Hadith data** is not covered by this project's MIT license; it comes from the following sources, pinned by commit in
   `tools/import_hadiths.py` and recorded in the seed's `provenance` block:
-  - [`fawazahmed0/hadith-api`](https://github.com/fawazahmed0/hadith-api) — Arabic editions with Tashkeel
-    (`ara-nawawi`, `ara-bukhari` and `ara-muslim`); released under the Unlicense.
-  - [`okabe-r/Umdat-al-Ahkam`](https://github.com/okabe-r/Umdat-al-Ahkam) — the numbered hadiths of *Umdat al-Ahkam*
-    with Tashkeel, book, chapter and Companion. The repository states no license and no edition; the text is a classical
-    work, and every hadith imported from it is checked against the editions above.
-  - [`ShathaTm/LK-Hadith-Corpus`](https://github.com/ShathaTm/LK-Hadith-Corpus) — the Sahih al-Bukhari narrations with the
-    chain separated from the text, extracted from Sunnah.com and manually checked by its authors. The repository states
-    no license and asks for citation: Altammami, S., Atwell, E. & Alsalka, A., *"The Arabic-English Parallel Corpus of
-    Authentic Hadith"*, International Journal on Islamic Applications in Computer Science and Technology (IJASAT), 2019.
+  - [`fawazahmed0/hadith-api`](https://github.com/fawazahmed0/hadith-api) — the Arabic edition of the Forty Hadith with
+    Tashkeel (`ara-nawawi`); released under the Unlicense.
 
 This app is a study aid. It is not a substitute for learning hadith from qualified teachers, and the grading and
 takhrij it shows are those of the sources above.

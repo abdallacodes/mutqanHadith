@@ -58,7 +58,7 @@ class AdHocReviewInvarianceTest {
     private val scheduler = DualDecayScheduler()
 
     private val chain = listOf(narrator(1, "الحميدي"), narrator(2, "سفيان"), narrator(3, "يحيى"), narrator(4, "عمر", tier = "صحابي"))
-    private val library = (1L..9L).map { hadith(it, if (it % 2 == 0L) chain else chain.takeLast(1), level = if (it <= 4) 3 else 1) }
+    private val library = (1L..9L).map { hadith(it, if (it % 2 == 0L) chain else chain.takeLast(1), position = if (it <= 4) it.toInt() + 10 else it.toInt()) }
     private val hadiths = FakeHadithRepository(library)
     private val collections = FakeCollectionRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }

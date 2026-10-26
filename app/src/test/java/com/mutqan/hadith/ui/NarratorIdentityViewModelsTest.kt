@@ -48,11 +48,11 @@ class NarratorIdentityViewModelsTest {
 
     private val hadiths = FakeHadithRepository(
         listOf(
-            hadith(1, listOf(ibnUmar), level = 1),
-            hadith(2, listOf(abdAllahIbnUmar), level = 2),
-            hadith(4, listOf(nafi, ibnAbbas), level = 3),
-            hadith(5, listOf(salim, abdAllahIbnAbbas), level = 3),
-            hadith(6, listOf(nafi, ibnUmar), level = 3),
+            hadith(1, listOf(ibnUmar)),
+            hadith(2, listOf(abdAllahIbnUmar)),
+            hadith(4, listOf(nafi, ibnAbbas)),
+            hadith(5, listOf(salim, abdAllahIbnAbbas)),
+            hadith(6, listOf(nafi, ibnUmar)),
         ),
     )
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }

@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "hadith", indices = [Index("level")])
+@Entity(tableName = "hadith", indices = [Index("level"), Index("groupId")])
 data class HadithEntity(
     @PrimaryKey val id: Long,
     val matnWithTashkeel: String,
@@ -20,6 +20,13 @@ data class HadithEntity(
     @ColumnInfo(defaultValue = "''") val takhrij: String,
     /** The Companion the hadith is anchored to: the first layer of memorization, and the whole chain at level 1. */
     @ColumnInfo(defaultValue = "''") val sahabi: String,
-    /** Which stage of the curriculum the hadith belongs to; see [com.mutqan.hadith.domain.model.HadithLevel]. */
+    /**
+     * Retired: the app no longer has levels, and the catalog writes 1 here. The column stays because SQLite cannot drop
+     * one without rebuilding the table; nothing reads it.
+     */
     @ColumnInfo(defaultValue = "3") val level: Int = 3,
+    /** The book or section this hadith is filed under (`catalog_group.id`); null until the catalog has placed it. */
+    val groupId: Long? = null,
+    /** Where the hadith stands in the whole catalog, ascending: the order it is taught in. See `CurriculumOrder`. */
+    @ColumnInfo(defaultValue = "0") val position: Int = 0,
 )

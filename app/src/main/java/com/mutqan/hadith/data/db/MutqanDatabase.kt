@@ -10,6 +10,7 @@ import com.mutqan.hadith.data.dao.HadithDao
 import com.mutqan.hadith.data.dao.MasteryDao
 import com.mutqan.hadith.data.dao.NarratorDao
 import com.mutqan.hadith.data.dao.ReviewHistoryDao
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.CatalogStateEntity
 import com.mutqan.hadith.data.entity.CollectionEntity
 import com.mutqan.hadith.data.entity.HadithCollectionCrossRef
@@ -30,8 +31,9 @@ import com.mutqan.hadith.data.seed.SeedLoader
         CatalogStateEntity::class,
         CollectionEntity::class,
         HadithCollectionCrossRef::class,
+        CatalogGroupEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {

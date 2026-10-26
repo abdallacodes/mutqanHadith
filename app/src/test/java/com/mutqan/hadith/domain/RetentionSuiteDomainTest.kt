@@ -108,7 +108,7 @@ class RetentionSuiteDomainTest {
 
     @Test
     fun onlyAHadithReallyTakenIntoStudyCountsTowardsTheDay() = runTest {
-        val hadiths = FakeHadithRepository((1L..3L).map { hadith(it, listOf(narrator(1, "عمر", tier = "صحابي")), level = 1) })
+        val hadiths = FakeHadithRepository((1L..3L).map { hadith(it, listOf(narrator(1, "عمر", tier = "صحابي"))) })
         val reviews = FakeReviewRepository()
         val start = StartMemorizingUseCase(hadiths, reviews, pacing) { clock }
 

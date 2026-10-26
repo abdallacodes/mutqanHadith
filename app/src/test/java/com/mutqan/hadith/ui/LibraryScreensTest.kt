@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.LiveReviewRepository
@@ -17,7 +18,7 @@ import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
-import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.withMatn
 import com.mutqan.hadith.ui.common.UiState
@@ -60,13 +61,19 @@ class LibraryScreensTest {
     private val middle = narrator(3, "مالك", tier = "راوٍ")
     private val teacher = narrator(2, "الحميدي", tier = "شيخ المصنف")
 
-    private val library = listOf(
-        hadith(1, listOf(companion), level = 1).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"),
-        hadith(2, listOf(companion), level = 1).withMatn("الدِّينُ النَّصِيحَةُ"),
-        hadith(10, listOf(teacher, middle, companion), level = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ"),
-        hadith(11, listOf(teacher, companion), level = 3).withMatn("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"),
+    // Two books; the second has a section, and the section a hadith of its own.
+    private val groups = listOf(
+        CatalogGroupEntity(1, null, "الكتاب الأول", "First book", 0),
+        CatalogGroupEntity(2, null, "الكتاب الثاني", "Second book", 1),
+        CatalogGroupEntity(3, 2, "باب الإيمان", "Faith", 0),
     )
-    private val hadiths = FakeHadithRepository(library)
+    private val library = listOf(
+        hadith(1, listOf(companion), position = 1, groupId = 1).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"),
+        hadith(2, listOf(companion), position = 2, groupId = 1).withMatn("الدِّينُ النَّصِيحَةُ"),
+        hadith(11, listOf(teacher, companion), position = 4, groupId = 2).withMatn("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"),
+        hadith(10, listOf(teacher, middle, companion), position = 3, groupId = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ"),
+    )
+    private val hadiths = FakeHadithRepository(library, groups)
     private val reviews = LiveReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
 
     private class MemorySettings(override var matnScale: Float = MatnScale.DEFAULT) : ReaderSettings
@@ -78,7 +85,7 @@ class LibraryScreensTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun libraryRoute(onOpenHadith: (Long) -> Unit = {}) {
-        val vm = LibraryViewModel(GetLibraryByLevelUseCase(hadiths, reviews, scheduler) { now })
+        val vm = LibraryViewModel(GetLibraryPageUseCase(hadiths, reviews, scheduler) { now })
         compose.setContent { MutqanHadithTheme { LibraryRoute(vm, onClose = {}, onOpenHadith = onOpenHadith) } }
     }
 
@@ -102,27 +109,61 @@ class LibraryScreensTest {
 
     // -- Library ----------------------------------------------------------------------------
 
+    private fun openFirstBook() {
+        compose.onNodeWithText("الكتاب الأول").performClick()
+        compose.waitForIdle()
+    }
+
     @Test
-    fun library_listsTheFirstLevelWithItsTabsStatusAndProgress() {
+    fun library_startsOnTheShelfOfBooksWithTheirSizeAndProgress() {
         libraryRoute()
 
-        listOf("المستوى الأول: الأصول والأسس", "المستوى الثاني: أحاديث الأحكام", "المستوى الثالث: دواوين السنّة").forEach {
-            compose.onNodeWithText(it).assertExists()
-        }
-        compose.onNodeWithText("الأربعون النووية: متون جامعة، مع راويها من الصحابة وتخريجها").assertExists()
-        compose.onNodeWithText("جديد: 2").assertExists()
-        compose.onNodeWithText("قيد الحفظ: 0").assertExists()
+        compose.onNodeWithText("المكتبة").assertExists()
+        compose.onNodeWithText("الكتب").assertExists()
+        compose.onNodeWithText("الكتاب الأول").assertExists()
+        compose.onNodeWithText("الكتاب الثاني").assertExists()
+        compose.onNodeWithText("حديثان").assertExists()
+        // The second book holds a hadith of its own and one in its section: two, and one section.
+        compose.onNodeWithText("حديثان · قسم واحد").assertExists()
+        compose.onAllNodesWithText("جديد: 2").assertCountEquals(2)
+        // No hadith is listed on the shelf, and nothing is searched there.
+        compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ").assertDoesNotExist()
+        compose.onNode(hasSetTextAction()).assertDoesNotExist()
+        // The library says it will grow.
+        compose.onNodeWithText("قريبًا بإذن الله").assertExists()
+        compose.onNodeWithText("ستُضاف كتب أخرى من كتب السنّة في التحديثات القادمة.").assertExists()
+    }
+
+    @Test
+    fun library_noLevelIsMentionedAnywhere() {
+        libraryRoute()
+
+        compose.onAllNodesWithText("المستوى", substring = true).assertCountEquals(0)
+        openFirstBook()
+        compose.onAllNodesWithText("المستوى", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun library_openingABookListsItsHadithsWithTheirProgress() {
+        libraryRoute()
+
+        openFirstBook()
+
         compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ").assertExists()
         compose.onNodeWithText("الدِّينُ النَّصِيحَةُ").assertExists()
-        compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").assertDoesNotExist() // that is level 3
+        compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").assertDoesNotExist() // that is in the second book
+        compose.onNodeWithText("جديد: 2").assertExists()
+        compose.onNodeWithText("قيد الحفظ: 0").assertExists()
         compose.onAllNodesWithText("جديد").assertCountEquals(2)
         compose.onAllNodesWithText("الصحابي: عمر بن الخطاب").assertCountEquals(2)
+        compose.onNode(hasSetTextAction()).assertExists()
     }
 
     @Test
     fun library_tappingACardOpensItsHadith() {
         var opened: Long? = null
         libraryRoute { opened = it }
+        openFirstBook()
 
         compose.onNodeWithText("الدِّينُ النَّصِيحَةُ").performClick()
 
@@ -130,39 +171,73 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun library_anotherLevelShowsItsOwnHadiths() {
+    fun library_aBookWithSectionsListsThemAboveItsOwnHadiths() {
         var opened: Long? = null
         libraryRoute { opened = it }
 
-        compose.onNodeWithText("المستوى الثالث: دواوين السنّة").performClick()
+        compose.onNodeWithText("الكتاب الثاني").performClick()
         compose.waitForIdle()
 
+        compose.onNodeWithText("الأقسام").assertExists()
+        compose.onNodeWithText("باب الإيمان").assertExists()
+        compose.onNodeWithText("الأحاديث").assertExists()
         compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").assertExists()
-        compose.onNodeWithText("الدِّينُ النَّصِيحَةُ").assertDoesNotExist()
+        compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ").assertDoesNotExist() // that is in the section
         compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").performClick()
         assertEquals(11L, opened)
-    }
 
-    @Test
-    fun library_aLevelWithNothingYetSaysSo() {
-        libraryRoute()
-
-        compose.onNodeWithText("المستوى الثاني: أحاديث الأحكام").performClick()
+        compose.onNodeWithText("باب الإيمان").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("قريبًا بإذن الله").assertExists()
+        compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ").assertExists()
+        compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").assertDoesNotExist()
+        // Where the section sits is said above it.
+        compose.onNodeWithText("الكتاب الثاني").assertExists()
     }
 
     @Test
-    fun library_searchNarrowsEveryLevelAndClearingRestoresIt() {
+    fun library_theArrowOfTheBarGoesUpOneGroupAtATime() {
         libraryRoute()
+        compose.onNodeWithText("الكتاب الثاني").performClick()
+        compose.onNodeWithText("باب الإيمان").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("رجوع").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ").assertExists()
+
+        compose.onNodeWithContentDescription("رجوع").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("الكتب").assertExists()
+        compose.onNodeWithText("الكتاب الأول").assertExists()
+    }
+
+    @Test
+    fun library_aBookWithNothingInItSaysSo() {
+        val empty = LibraryViewModel(
+            GetLibraryPageUseCase(FakeHadithRepository(emptyList(), groups), reviews, scheduler) { now },
+        )
+        compose.setContent { MutqanHadithTheme { LibraryRoute(empty, onClose = {}, onOpenHadith = {}) } }
+
+        compose.onNodeWithText("الكتاب الأول").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("لا أحاديث في هذا القسم بعد").assertExists()
+    }
+
+    @Test
+    fun library_searchStaysInTheOpenBookAndClearingRestoresIt() {
+        libraryRoute()
+        openFirstBook()
 
         compose.onNode(hasSetTextAction()).performTextInput("الأعمال")
         compose.waitForIdle()
 
         compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ").assertExists()
         compose.onNodeWithText("الدِّينُ النَّصِيحَةُ").assertDoesNotExist()
-        compose.onNodeWithText("جديد: 1").assertExists()
+        compose.onNodeWithText("حديث واحد").assertExists()
+        // «إنما الأعمال بالنية» is in the other book, so it is not found from here.
+        compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ").assertDoesNotExist()
 
         compose.onNodeWithContentDescription("مسح البحث").performClick()
         compose.waitForIdle()
@@ -172,19 +247,37 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun library_aSearchWithoutResultsSaysSo() {
+    fun library_aSearchInABookFindsTheHadithsOfItsSectionsToo() {
         libraryRoute()
+        compose.onNodeWithText("الكتاب الثاني").performClick()
+        compose.waitForIdle()
+
+        compose.onNode(hasSetTextAction()).performTextInput("الأعمال")
+        compose.waitForIdle()
+
+        compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ").assertExists()
+        compose.onNodeWithText("باب الإيمان").assertDoesNotExist() // matches only: the section cards give way
+    }
+
+    @Test
+    fun library_aSearchWithoutResultsNamesTheGroupItLookedIn() {
+        libraryRoute()
+        openFirstBook()
 
         compose.onNode(hasSetTextAction()).performTextInput("زززز")
         compose.waitForIdle()
 
-        compose.onNodeWithText("لا نتائج لـ «زززز» في هذا المستوى").assertExists()
+        compose.onNodeWithText("لا نتائج لـ «زززز» في «الكتاب الأول»").assertExists()
     }
 
     @Test
     fun library_showsWhereTheUserStands() {
         reviews.mastery[2] = MasteryRecordEntity(2, 3f, 3f, matnLastReviewedAt = now - 1_000, sanadLastReviewedAt = now - 1_000, nextReviewDue = now + 86_400_000L, repetitionCount = 2)
         libraryRoute()
+
+        // On the shelf, the book already shows how far the user has come in it.
+        compose.onNodeWithText("قيد الحفظ: 1").assertExists()
+        openFirstBook()
 
         compose.onNodeWithText("جديد: 1").assertExists()
         compose.onNodeWithText("قيد الحفظ: 1").assertExists()
@@ -220,8 +313,8 @@ class LibraryScreensTest {
 
     @Test
     fun study_aBlankGradeIsNotShown() {
-        val ungraded = hadith(3, listOf(companion), level = 1)
-        val repo = FakeHadithRepository(library + ungraded.copy(hadith = ungraded.hadith.copy(grade = "")))
+        val ungraded = hadith(3, listOf(companion))
+        val repo = FakeHadithRepository(library + ungraded.copy(hadith = ungraded.hadith.copy(grade = "")), groups)
         val vm = HadithStudyViewModel(3, GetHadithStudyUseCase(repo, reviews, scheduler) { now }, StartMemorizingUseCase(repo, reviews) { now }, MemorySettings())
         compose.setContent { MutqanHadithTheme { HadithStudyRoute(vm, onClose = {}, onStartLearning = {}, onReview = {}) } }
 

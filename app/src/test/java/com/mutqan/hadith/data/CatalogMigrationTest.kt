@@ -6,9 +6,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.repository.RoomCollectionRepository
 import com.mutqan.hadith.data.seed.SeedLoader
+import com.mutqan.hadith.domain.model.CurriculumOrder
 import java.io.File
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -98,6 +101,9 @@ class CatalogMigrationTest {
 
     private fun SupportSQLiteDatabase.count(sql: String): Int = query(sql).use { it.moveToFirst(); it.getInt(0) }
 
+    /** The hadiths as a catalog older than the groups wrote them: filed nowhere, taught in no particular position. */
+    private fun List<HadithWithFullSanad>.unplaced() = map { it.copy(hadith = it.hadith.copy(groupId = null, position = 0)) }
+
 
 
     @Test
@@ -133,8 +139,10 @@ class CatalogMigrationTest {
         val arbain = db.hadithDao().getHadithWithSanad(13)!!
         assertEquals(seed.hadiths.single { it.id == 13L }.sahabi, arbain.sanad.single().narrator.primaryName)
         // Never reviewed, so they are waiting to be learned by the number in the book.
-        val curriculum = compareBy<com.mutqan.hadith.data.entity.HadithEntity>({ it.level }, { it.hadithNumber }, { it.id })
-        assertEquals(seed.hadiths.sortedWith(curriculum).map { it.id }, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
+        assertEquals(seed.hadiths.sortedWith(CurriculumOrder).map { it.id }, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
+        // And they are on the shelf: one book, holding all of them.
+        assertEquals(seed.groups, db.hadithDao().observeGroups().first())
+        assertTrue(all.all { it.hadith.groupId == 1L })
         db.close()
     }
 
@@ -161,7 +169,8 @@ class CatalogMigrationTest {
         val raw = db.openHelper.writableDatabase
         // An older catalog: a hadith missing, another worded differently, and no record of having been synced.
         raw.execSQL("DELETE FROM hadith WHERE id = 13")
-        raw.execSQL("UPDATE hadith SET takhrij = 'قديم', level = 2 WHERE id = 11")
+        raw.execSQL("UPDATE hadith SET takhrij = 'قديم', level = 2, groupId = NULL, position = 0 WHERE id = 11")
+        raw.execSQL("DELETE FROM catalog_group")
         raw.execSQL("DELETE FROM catalog_state")
         db.close()
 
@@ -171,6 +180,8 @@ class CatalogMigrationTest {
         val refreshed = reopened.hadithDao().getHadithWithSanad(11)!!
         assertEquals(seed.hadiths.single { it.id == 11L }.takhrij, refreshed.hadith.takhrij)
         assertEquals(1, refreshed.hadith.level)
+        assertEquals(seed.hadiths.single { it.id == 11L }.let { it.groupId to it.position }, refreshed.hadith.let { it.groupId to it.position })
+        assertEquals(seed.groups, reopened.hadithDao().observeGroups().first())
         assertEquals(seed.edges.count { it.hadithId == 11L }, refreshed.sanad.size)
         assertEquals(1, reopened.hadithDao().getHadithWithSanad(13)!!.sanad.size)
         // Updating hadith 11 in place must not cascade into the progress that points at it.
@@ -206,7 +217,7 @@ class CatalogMigrationTest {
         raw.execSQL("INSERT INTO collections (id, title, createdAt, accent) VALUES (1, 'Mine', 1, 0)")
         listOf(1, 13, 1005).forEach { raw.execSQL("INSERT INTO hadith_collection_cross_ref (collectionId, hadithId, addedAt) VALUES (1, $it, ${it + 10})") }
         assertEquals(shippedV110.hadiths.size + 1, device.hadithDao().count())
-        val arbainBefore = device.hadithDao().getAllWithSanad().filter { it.hadith.level == 1 }
+        val arbainBefore = device.hadithDao().getAllWithSanad().filter { it.hadith.level == 1 }.unplaced()
         device.close()
 
         val updated = open("v14.db")
@@ -214,7 +225,10 @@ class CatalogMigrationTest {
 
         assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(after))
         // The Forty Hadith, their chains and their narrators are exactly as they were; nothing was replaced or renumbered.
-        assertEquals(arbainBefore, updated.hadithDao().getAllWithSanad())
+        // The catalog has only now filed them under their book.
+        assertEquals(arbainBefore, updated.hadithDao().getAllWithSanad().unplaced())
+        assertTrue(updated.hadithDao().getAllWithSanad().all { it.hadith.groupId == 1L && it.hadith.position > 0 })
+        assertEquals(seed.groups, updated.hadithDao().observeGroups().first())
         assertEquals(seed.hadiths.map { it.id }.sorted(), updated.hadithDao().getAllIds().sorted())
         assertEquals(seed.narrators.map { it.id }.toSet(), updated.narratorDao().getAll().map { it.id }.toSet())
         // Progress, narrator history and collection entries on the retired hadiths went with them; the others are untouched.

@@ -59,7 +59,7 @@ class RetentionSuiteViewModelsTest {
 
     private var now = 1_700_000_000_000L
     private val chain = listOf(narrator(1, "الحميدي"), narrator(2, "سفيان"), narrator(3, "يحيى"), narrator(4, "عمر", tier = "صحابي"))
-    private val hadiths = FakeHadithRepository((1L..12L).map { hadith(it, chain, level = 1) } + hadith(20, emptyList(), level = 1))
+    private val hadiths = FakeHadithRepository((1L..12L).map { hadith(it, chain) } + hadith(20, emptyList()))
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
     private val scheduler = DualDecayScheduler()
 

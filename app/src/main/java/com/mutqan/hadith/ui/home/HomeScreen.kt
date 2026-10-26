@@ -284,7 +284,6 @@ private fun NextStepSection(next: NextToLearn?, primary: Boolean, onStudy: (Long
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(stringResource(R.string.home_next_number, next.hadithNumber), style = MaterialTheme.typography.titleMedium)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            InfoChip(stringResource(R.string.level_badge, next.level))
                             if (next.sahabiName.isNotBlank()) {
                                 Text(
                                     stringResource(R.string.sahabi_label, next.sahabiName),

@@ -1,5 +1,5 @@
 {
- "catalogVersion": 4,
+ "catalogVersion": 5,
  "provenance": {
   "generatedBy": "tools/import_hadiths.py",
   "sources": {
@@ -10,6 +10,15 @@
   },
   "notes": "No hadith text, chain or takhrij here was written by hand; see tools/import_hadiths.py. A chain is the Companion alone, so every narrator is a Companion, and no narrator is flagged as a pivot: no audited dataset provides either."
  },
+ "groups": [
+  {
+   "id": 1,
+   "parentId": null,
+   "position": 0,
+   "title": "الأربعون النووية",
+   "titleEn": "The Forty Hadith of an-Nawawi"
+  }
+ ],
  "narrators": [
   {
    "id": 12,
@@ -248,6 +257,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أمير المؤمنين أبي حفص عمر بن الخطاب",
+   "groupId": 1,
+   "position": 1,
    "sanad": [
     {
      "narratorId": 46,
@@ -272,6 +283,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الرحمن عبد الله بن عمر بن الخطاب",
+   "groupId": 1,
+   "position": 3,
    "sanad": [
     {
      "narratorId": 47,
@@ -296,6 +309,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو رقية تميم بن أوس الداري",
+   "groupId": 1,
+   "position": 7,
    "sanad": [
     {
      "narratorId": 48,
@@ -320,6 +335,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "عمر",
+   "groupId": 1,
+   "position": 2,
    "sanad": [
     {
      "narratorId": 12,
@@ -344,6 +361,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الرحمن عبد الله بن مسعود",
+   "groupId": 1,
+   "position": 4,
    "sanad": [
     {
      "narratorId": 49,
@@ -368,6 +387,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أم المؤمنين أم عبد الله عائشة",
+   "groupId": 1,
+   "position": 5,
    "sanad": [
     {
      "narratorId": 50,
@@ -392,6 +413,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الله النعمان بن بشير",
+   "groupId": 1,
+   "position": 6,
    "sanad": [
     {
      "narratorId": 51,
@@ -416,6 +439,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن عمر",
+   "groupId": 1,
+   "position": 8,
    "sanad": [
     {
      "narratorId": 16,
@@ -440,6 +465,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة عبد الرحمن بن صخر",
+   "groupId": 1,
+   "position": 9,
    "sanad": [
     {
      "narratorId": 52,
@@ -464,6 +491,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 10,
    "sanad": [
     {
      "narratorId": 34,
@@ -488,6 +517,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي والنسائي",
    "sahabi": "أبو محمد الحسن بن علي بن أبي طالب",
+   "groupId": 1,
+   "position": 11,
    "sanad": [
     {
      "narratorId": 53,
@@ -512,6 +543,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي وابن ماجه",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 12,
    "sanad": [
     {
      "narratorId": 34,
@@ -536,6 +569,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو حمزة أنس بن مالك",
+   "groupId": 1,
+   "position": 13,
    "sanad": [
     {
      "narratorId": 54,
@@ -560,6 +595,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن مسعود",
+   "groupId": 1,
+   "position": 14,
    "sanad": [
     {
      "narratorId": 55,
@@ -584,6 +621,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 15,
    "sanad": [
     {
      "narratorId": 34,
@@ -608,6 +647,8 @@
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 16,
    "sanad": [
     {
      "narratorId": 34,
@@ -632,6 +673,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو يعلى شداد بن أوس",
+   "groupId": 1,
+   "position": 17,
    "sanad": [
     {
      "narratorId": 56,
@@ -656,6 +699,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "أبو ذر جندب بن جنادة",
+   "groupId": 1,
+   "position": 18,
    "sanad": [
     {
      "narratorId": 57,
@@ -680,6 +725,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "عبد الله بن عباس",
+   "groupId": 1,
+   "position": 19,
    "sanad": [
     {
      "narratorId": 58,
@@ -704,6 +751,8 @@
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو مسعود عقبة بن عمرو الأنصاري البدري",
+   "groupId": 1,
+   "position": 20,
    "sanad": [
     {
      "narratorId": 59,
@@ -728,6 +777,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو عمرو سفيان بن عبد الله",
+   "groupId": 1,
+   "position": 21,
    "sanad": [
     {
      "narratorId": 60,
@@ -752,6 +803,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو عبد الله جابر بن عبد الله الأنصاري",
+   "groupId": 1,
+   "position": 22,
    "sanad": [
     {
      "narratorId": 61,
@@ -776,6 +829,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو مالك الحارث بن عاصم الأشعري",
+   "groupId": 1,
+   "position": 23,
    "sanad": [
     {
      "narratorId": 62,
@@ -800,6 +855,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو ذر الغفاري",
+   "groupId": 1,
+   "position": 24,
    "sanad": [
     {
      "narratorId": 63,
@@ -824,6 +881,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو ذر",
+   "groupId": 1,
+   "position": 25,
    "sanad": [
     {
      "narratorId": 64,
@@ -848,6 +907,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 26,
    "sanad": [
     {
      "narratorId": 34,
@@ -872,6 +933,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "النواس بن سمعان",
+   "groupId": 1,
+   "position": 27,
    "sanad": [
     {
      "narratorId": 65,
@@ -896,6 +959,8 @@
    "level": 1,
    "takhrij": "رواه أبو داود والترمذي",
    "sahabi": "أبو نجيح العرباض بن سارية",
+   "groupId": 1,
+   "position": 28,
    "sanad": [
     {
      "narratorId": 66,
@@ -920,6 +985,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "معاذ بن جبل",
+   "groupId": 1,
+   "position": 29,
    "sanad": [
     {
      "narratorId": 67,
@@ -944,6 +1011,8 @@
    "level": 1,
    "takhrij": "رواه الدارقطني",
    "sahabi": "أبو ثعلبة الخشني جرثوم بن ناشر",
+   "groupId": 1,
+   "position": 30,
    "sanad": [
     {
      "narratorId": 68,
@@ -968,6 +1037,8 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه",
    "sahabi": "أبو العباس سهل بن سعد الساعدي",
+   "groupId": 1,
+   "position": 31,
    "sanad": [
     {
      "narratorId": 69,
@@ -992,6 +1063,8 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه والدارقطني",
    "sahabi": "أبو سعيد سعد بن مالك بن سنان الخدري",
+   "groupId": 1,
+   "position": 32,
    "sanad": [
     {
      "narratorId": 70,
@@ -1016,6 +1089,8 @@
    "level": 1,
    "takhrij": "رواه البيهقي",
    "sahabi": "ابن عباس",
+   "groupId": 1,
+   "position": 33,
    "sanad": [
     {
      "narratorId": 42,
@@ -1040,6 +1115,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو سعيد الخدري",
+   "groupId": 1,
+   "position": 34,
    "sanad": [
     {
      "narratorId": 29,
@@ -1064,6 +1141,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 35,
    "sanad": [
     {
      "narratorId": 34,
@@ -1088,6 +1167,8 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 36,
    "sanad": [
     {
      "narratorId": 34,
@@ -1112,6 +1193,8 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن عباس",
+   "groupId": 1,
+   "position": 37,
    "sanad": [
     {
      "narratorId": 42,
@@ -1136,6 +1219,8 @@
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو هريرة",
+   "groupId": 1,
+   "position": 38,
    "sanad": [
     {
      "narratorId": 34,
@@ -1160,6 +1245,8 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه والبيهقي",
    "sahabi": "ابن عباس",
+   "groupId": 1,
+   "position": 39,
    "sanad": [
     {
      "narratorId": 42,
@@ -1184,6 +1271,8 @@
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "ابن عمر",
+   "groupId": 1,
+   "position": 40,
    "sanad": [
     {
      "narratorId": 16,
@@ -1208,6 +1297,8 @@
    "level": 1,
    "takhrij": "رويناه في كتاب \"الحجة\" بإسناد صحيح",
    "sahabi": "أبو محمد عبد الله بن عمرو بن العاص",
+   "groupId": 1,
+   "position": 41,
    "sanad": [
     {
      "narratorId": 71,
@@ -1232,6 +1323,8 @@
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "أنس بن مالك",
+   "groupId": 1,
+   "position": 42,
    "sanad": [
     {
      "narratorId": 72,

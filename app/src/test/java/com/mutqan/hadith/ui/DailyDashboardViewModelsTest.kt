@@ -38,12 +38,12 @@ class DailyDashboardViewModelsTest {
     private val now = 1_700_000_000_000L
     private val scheduler = DualDecayScheduler()
 
-    // Level 3 has the lowest hadith number; level 1 must still come first.
+    // Hadith 1 has the lowest number; the position still puts it last.
     private val sahabi = narrator(10, "عمر", tier = "صحابي")
     private val library = listOf(
-        hadith(1, listOf(narrator(1, "الحميدي"), sahabi), level = 3),
-        hadith(2, listOf(sahabi), level = 1),
-        hadith(3, listOf(narrator(11, "أنس", tier = "صحابي")), level = 1),
+        hadith(1, listOf(narrator(1, "الحميدي"), sahabi), position = 3),
+        hadith(2, listOf(sahabi), position = 1),
+        hadith(3, listOf(narrator(11, "أنس", tier = "صحابي")), position = 2),
     )
     private val hadiths = FakeHadithRepository(library)
     private val reviews = LiveReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
@@ -61,13 +61,12 @@ class DailyDashboardViewModelsTest {
     // -- Home ------------------------------------------------------------------------------
 
     @Test
-    fun home_recommendsTheFirstHadithOfLevelOneAndMovesOnOnceItIsStarted() = runTest {
+    fun home_recommendsTheFirstHadithOfTheCurriculumAndMovesOnOnceItIsStarted() = runTest {
         val vm = homeVm()
         backgroundScope.launch { vm.state.collect {} }
 
         val first = vm.loaded().nextToLearn
         assertEquals(2L, first?.hadithId)
-        assertEquals(1, first?.level)
         assertEquals("عمر بن الخطاب", first?.sahabiName)
 
         StartMemorizingUseCase(hadiths, reviews) { now }(2)

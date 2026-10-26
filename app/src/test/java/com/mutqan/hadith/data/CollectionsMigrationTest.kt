@@ -22,9 +22,11 @@ import org.robolectric.annotation.Config
 
 /**
  * A device on v1.4.x holds a version 5 database with the user's study history in it. Updating to the version with
- * personal collections must add the two new tables and change nothing else. The old schema is rebuilt here from the
- * schema Room exported for it, filled with the bundled catalog and a study history, and opened with the production
- * database; every row of every table that existed before is compared with what it was.
+ * personal collections must add the two new tables and change nothing else; the groups that came after add one table
+ * and two columns, which the catalog sync then fills. The old schema is rebuilt here from the schema Room exported for
+ * it, filled with the bundled catalog and a study history, and opened with the production database; every row of every
+ * table that existed before is compared with what it was, apart from the catalog's own bookkeeping (what version of the
+ * catalog is in, and where each hadith is filed), which the update is meant to change.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -37,8 +39,15 @@ class CollectionsMigrationTest {
     private val studied = seed.hadiths.map { it.id }.sorted().let { listOf(it[0], it[6], it[13], it[27], it.last()) }
     private val unstudied = seed.hadiths.map { it.id }.sorted()[30]
 
-    /** The tables of version 5, i.e. every one of the app's tables before collections. */
-    private val versionFiveTables = listOf("narrator", "hadith", "sanad_edge", "narrator_review_event", "mastery_record", "catalog_state")
+    /** The tables of version 5, i.e. every one of the app's tables before collections, but for the catalog's bookkeeping. */
+    private val versionFiveTables = listOf("narrator", "hadith", "sanad_edge", "narrator_review_event", "mastery_record")
+
+    /** The columns the hadith table had in version 5; the groups added two more, which are the catalog's to fill. */
+    private val versionFiveHadithColumns =
+        "id, matnWithTashkeel, matnClean, sourceBook, hadithNumber, chapter, grade, collector, takhrij, sahabi, level"
+
+    /** The catalog version the fixture claims to hold: the Forty Hadith alone, before they were filed in groups. */
+    private val catalogBeforeGroups = 4
 
     private fun schema(version: Int): JSONObject =
         JSONObject(File("schemas/com.mutqan.hadith.data.db.MutqanDatabase/$version.json").readText(Charsets.UTF_8)).getJSONObject("database")
@@ -81,7 +90,7 @@ class CollectionsMigrationTest {
                     put("transmissionTerm", it.transmissionTerm)
                 })
             }
-            db.insert("catalog_state", null, ContentValues().apply { put("id", 1); put("version", SeedLoader.CATALOG_VERSION) })
+            db.insert("catalog_state", null, ContentValues().apply { put("id", 1); put("version", catalogBeforeGroups) })
 
             // The user's study history: hadiths in different states, and what was recalled of their chains.
             val history = listOf(
@@ -112,7 +121,9 @@ class CollectionsMigrationTest {
     }
 
     private fun dump(query: (String) -> Cursor): Map<String, List<List<String?>>> =
-        versionFiveTables.associateWith { table -> query("SELECT * FROM $table ORDER BY rowid").rows() }
+        versionFiveTables.associateWith { table ->
+            query("SELECT ${if (table == "hadith") versionFiveHadithColumns else "*"} FROM $table ORDER BY rowid").rows()
+        }
 
     private fun rawDump(name: String): Map<String, List<List<String?>>> =
         context.openOrCreateDatabase(name, Context.MODE_PRIVATE, null).use { raw -> dump { raw.rawQuery(it, null) } }
@@ -127,18 +138,18 @@ class CollectionsMigrationTest {
         assertEquals(5, before.getValue("mastery_record").size)
         assertTrue(before.getValue("narrator_review_event").isNotEmpty())
         assertEquals(seed.edges.size, before.getValue("sanad_edge").size)
-        assertEquals(listOf(listOf("1", SeedLoader.CATALOG_VERSION.toString())), before.getValue("catalog_state"))
     }
 
     @Test
-    fun migratingToVersionSixKeepsEveryRowOfEveryExistingTableExactlyAsItWas() {
+    fun migratingToTheCurrentVersionKeepsEveryRowOfEveryExistingTableExactlyAsItWas() {
         createVersion5("v5.db")
         val before = rawDump("v5.db")
 
         val db = open("v5.db")
         val after = dump { db.openHelper.writableDatabase.query(it) }
 
-        assertEquals("the migrated database is version 6", 6, db.openHelper.writableDatabase.version)
+        assertEquals("the migrated database is the current version", 7, db.openHelper.writableDatabase.version)
+        assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(db.openHelper.writableDatabase))
         versionFiveTables.forEach { table -> assertEquals("rows of $table", before.getValue(table), after.getValue(table)) }
         db.close()
     }

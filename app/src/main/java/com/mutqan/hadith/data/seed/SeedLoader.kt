@@ -3,17 +3,20 @@ package com.mutqan.hadith.data.seed
 import android.content.ContentValues
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.CatalogStateEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.text.ArabicNormalizer
+import org.json.JSONArray
 import org.json.JSONObject
 
 data class SeedData(
     val narrators: List<NarratorEntity>,
     val hadiths: List<HadithEntity>,
     val edges: List<SanadEdgeEntity>,
+    val groups: List<CatalogGroupEntity> = emptyList(),
 )
 
 /**
@@ -32,9 +35,10 @@ object SeedLoader {
      * 1: the first levelled catalog. 2: every text and chain re-sourced from audited datasets
      * (`tools/import_hadiths.py`), replacing the hand-written one. 3: Level 2, the hadiths of 'Umdat al-Ahkam
      * that were found in Sahih al-Bukhari or Sahih Muslim, added as new rows. 4: the Forty Hadith alone; the
-     * Bukhari selection and 'Umdat al-Ahkam were retired (see [RETIRED_IN]).
+     * Bukhari selection and 'Umdat al-Ahkam were retired (see [RETIRED_IN]). 5: the hadiths are filed in groups (books and
+     * their sections) and carry the position they are taught in.
      */
-    const val CATALOG_VERSION = 4
+    const val CATALOG_VERSION = 5
 
     /**
      * The catalog version that retired the hadiths of Sahih al-Bukhari and 'Umdat al-Ahkam. A database that
@@ -62,6 +66,20 @@ object SeedLoader {
                 }
             }
         }
+        // A catalog written before groups existed (catalog 4 and older) has none, and files its hadiths nowhere.
+        val groups = (root.optJSONArray("groups") ?: JSONArray()).let { arr ->
+            List(arr.length()) { i ->
+                arr.getJSONObject(i).run {
+                    CatalogGroupEntity(
+                        id = getLong("id"),
+                        parentId = if (isNull("parentId")) null else getLong("parentId"),
+                        title = getString("title"),
+                        titleEn = getString("titleEn"),
+                        position = getInt("position"),
+                    )
+                }
+            }
+        }
         val hadiths = mutableListOf<HadithEntity>()
         val edges = mutableListOf<SanadEdgeEntity>()
         val hadithArr = root.getJSONArray("hadiths")
@@ -81,6 +99,8 @@ object SeedLoader {
                 takhrij = h.getString("takhrij"),
                 sahabi = h.getString("sahabi"),
                 level = h.getInt("level"),
+                groupId = getLongOrNull(h, "groupId"),
+                position = h.optInt("position", 0),
             )
             val sanad = h.getJSONArray("sanad")
             for (j in 0 until sanad.length()) {
@@ -93,8 +113,10 @@ object SeedLoader {
                 )
             }
         }
-        return SeedData(narrators, hadiths, edges)
+        return SeedData(narrators, hadiths, edges, groups)
     }
+
+    private fun getLongOrNull(json: JSONObject, name: String): Long? = if (json.isNull(name)) null else json.getLong(name)
 
     fun isEmpty(db: SupportSQLiteDatabase): Boolean =
         db.query("SELECT COUNT(*) FROM hadith").use { it.moveToFirst() && it.getInt(0) == 0 }
@@ -114,6 +136,7 @@ object SeedLoader {
 
     /** Inserts in FK order; call inside a transaction so a partial seed never survives. */
     fun write(db: SupportSQLiteDatabase, data: SeedData) {
+        data.groups.forEach { db.insert("catalog_group", CONFLICT_REPLACE, groupValues(it)) }
         data.narrators.forEach { db.insert("narrator", CONFLICT_REPLACE, narratorValues(it)) }
         data.hadiths.forEach { db.insert("hadith", CONFLICT_REPLACE, hadithValues(it)) }
         data.edges.forEach { db.insert("sanad_edge", CONFLICT_REPLACE, edgeValues(it)) }
@@ -128,10 +151,13 @@ object SeedLoader {
      * and so is the narrator-level history recorded against the old chain: it says how well the user
      * knew narrators the hadith no longer has, and narrator ids may now mean someone else. Narrators
      * that nothing refers to any more are removed. A database whose [appliedVersion] predates [RETIRED_IN] first
-     * drops the hadiths the catalog no longer carries. Call inside a transaction.
+     * drops the hadiths the catalog no longer carries. The groups are rewritten as a whole: nothing the user owns refers
+     * to one. Call inside a transaction.
      */
     fun sync(db: SupportSQLiteDatabase, data: SeedData, appliedVersion: Int) {
         if (appliedVersion < RETIRED_IN) retireMissing(db, data)
+        db.execSQL("DELETE FROM catalog_group")
+        data.groups.forEach { db.insert("catalog_group", CONFLICT_ABORT, groupValues(it)) }
         val knownHadiths = ids(db, "hadith")
         val storedChains = chains(db)
         val newChains = data.edges.groupBy { it.hadithId }.mapValues { (_, edges) ->
@@ -221,6 +247,16 @@ object SeedLoader {
         put("takhrij", h.takhrij)
         put("sahabi", h.sahabi)
         put("level", h.level)
+        if (h.groupId != null) put("groupId", h.groupId) else putNull("groupId")
+        put("position", h.position)
+    }
+
+    private fun groupValues(g: CatalogGroupEntity) = ContentValues().apply {
+        put("id", g.id)
+        if (g.parentId != null) put("parentId", g.parentId) else putNull("parentId")
+        put("title", g.title)
+        put("titleEn", g.titleEn)
+        put("position", g.position)
     }
 
     private fun edgeValues(e: SanadEdgeEntity) = ContentValues().apply {

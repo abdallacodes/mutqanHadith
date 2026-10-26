@@ -52,7 +52,7 @@ fun AppContainer.hadithDetailsViewModelFactory(hadithId: Long): ViewModelProvide
 }
 
 fun AppContainer.libraryViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-    initializer { LibraryViewModel(getLibraryByLevel) }
+    initializer { LibraryViewModel(getLibraryPage) }
 }
 
 fun AppContainer.hadithStudyViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {

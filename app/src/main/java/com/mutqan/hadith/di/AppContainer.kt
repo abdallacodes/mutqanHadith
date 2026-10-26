@@ -27,7 +27,7 @@ import com.mutqan.hadith.domain.usecase.DeleteCollectionUseCase
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
-import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.GetMasteryAnalyticsUseCase
 import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
@@ -68,7 +68,7 @@ class AppContainer(
     val observeStudyDashboard by lazy { ObserveStudyDashboardUseCase(hadithRepository, reviewRepository, scheduler) }
     val getDueHadiths by lazy { GetDueHadithsUseCase(hadithRepository, reviewRepository, scheduler) }
     val getUnseenHadiths by lazy { GetUnseenHadithsUseCase(hadithRepository) }
-    val getLibraryByLevel by lazy { GetLibraryByLevelUseCase(hadithRepository, reviewRepository, scheduler) }
+    val getLibraryPage by lazy { GetLibraryPageUseCase(hadithRepository, reviewRepository, scheduler) }
     val getHadithStudy by lazy { GetHadithStudyUseCase(hadithRepository, reviewRepository, scheduler) }
     val startMemorizing by lazy { StartMemorizingUseCase(hadithRepository, reviewRepository, dailyPacing) }
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }

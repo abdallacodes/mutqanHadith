@@ -3,12 +3,14 @@
 
 Every hadith text, chain and takhrij in the seed is derived here from one published dataset; nothing
 scholarly is typed in by hand. What is curated by hand is only the ids that keep a hadith and a narrator
-the same row from one catalog version to the next (tools/data/selection.json) and how to word the neutral
-labels of fields no dataset provides.
+the same row from one catalog version to the next (tools/data/selection.json), the groups the library is
+browsed by (books and their sections, also in selection.json) and how to word the neutral labels of fields no
+dataset provides.
 
 The catalog is the Forty Hadith of an-Nawawi and nothing else. Versions 1 to 3 also carried 10 hadiths of
 Sahih al-Bukhari (level 3) and 345 of 'Umdat al-Ahkam (level 2); version 4 retired them, and the app removes
-them from a database that still holds them (SeedLoader.sync).
+them from a database that still holds them (SeedLoader.sync). Version 5 files the hadiths in groups, the shelves the
+library shows, and gives each a `position`: its place in the order the whole catalog is taught in.
 
 Source (pinned by commit and by sha256, see PINNED below)
   * fawazahmed0/hadith-api (Unlicense) - `ara-nawawi`: the Forty Hadith of an-Nawawi with tashkeel and the
@@ -36,7 +38,7 @@ SEED = ROOT / "app" / "src" / "main" / "assets" / "seed_hadiths.json"
 SNAPSHOT = ROOT / "tools" / "data" / "source_snapshot.json"
 SELECTION = ROOT / "tools" / "data" / "selection.json"
 
-CATALOG_VERSION = 4  # keep in step with SeedLoader.CATALOG_VERSION
+CATALOG_VERSION = 5  # keep in step with SeedLoader.CATALOG_VERSION
 
 FAWAZ = "fawazahmed0/hadith-api"
 PINNED = {
@@ -231,6 +233,41 @@ def arbain_hadith(number: int, hadith_id: int, record: dict) -> dict:
 
 
 # --------------------------------------------------------------------------------------------------
+# The groups
+# --------------------------------------------------------------------------------------------------
+
+
+def groups_in_order(groups: list[dict]) -> list[dict]:
+    """The groups depth first, each one's sections right after it, siblings by `position` then id.
+
+    That is the order the library lists them in and the order the catalog is taught in. A group id is a key in
+    users' databases once shipped: it is never renumbered or reused, and a group may be dropped only with its hadiths.
+    """
+    children: dict = {}
+    for group in groups:
+        children.setdefault(group["parentId"], []).append(group)
+    ordered: list[dict] = []
+
+    def visit(parent) -> None:
+        for group in sorted(children.get(parent, []), key=lambda g: (g["position"], g["id"])):
+            ordered.append(group)
+            visit(group["id"])
+
+    visit(None)
+    return ordered
+
+
+def place(hadiths: list[dict], groups: list[dict], book_groups: dict) -> None:
+    """Files every hadith under the group of its book and numbers the catalog's teaching order in `position`."""
+    rank = {group["id"]: index for index, group in enumerate(groups_in_order(groups))}
+    for hadith in hadiths:
+        hadith["groupId"] = book_groups[hadith["sourceBook"]]
+    hadiths.sort(key=lambda h: (rank[h["groupId"]], h["hadithNumber"], h["id"]))
+    for position, hadith in enumerate(hadiths, start=1):
+        hadith["position"] = position
+
+
+# --------------------------------------------------------------------------------------------------
 # The seed
 # --------------------------------------------------------------------------------------------------
 
@@ -244,7 +281,8 @@ def build(snapshot: dict, selection: dict) -> dict:
         if hadith_id is None:
             hadith_id, next_id = next_id, next_id + 1
         hadiths.append(arbain_hadith(number, hadith_id, snapshot["arbain"][str(number)]))
-    hadiths.sort(key=lambda h: h["id"])
+    groups = [dict(g) for g in selection["groups"]]
+    place(hadiths, groups, selection["bookGroups"])
 
     # A narrator keeps the row it had, so that the chains and narrator-level history a database already holds stay valid.
     kept_narrators = selection["narratorKeepIds"]
@@ -279,8 +317,9 @@ def build(snapshot: dict, selection: dict) -> dict:
                      "A chain is the Companion alone, so every narrator is a Companion, and no narrator is flagged as a "
                      "pivot: no audited dataset provides either.",
         },
+        "groups": groups_in_order(groups),
         "narrators": sorted(by_key.values(), key=lambda n: n["id"]),
-        "hadiths": out,
+        "hadiths": sorted(out, key=lambda h: h["id"]),
     }
 
 
@@ -311,6 +350,46 @@ def dump(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=1, sort_keys=False) + "\n", encoding="utf-8", newline="\n")
 
 
+def audit_groups(seed: dict) -> list[str]:
+    problems = []
+    groups = {g["id"]: g for g in seed["groups"]}
+    if len(groups) != len(seed["groups"]):
+        problems.append("duplicate group ids")
+    for group in seed["groups"]:
+        for field in ("title", "titleEn"):
+            if not group[field].strip():
+                problems.append(f"group {group['id']}: empty {field}")
+        parent = group["parentId"]
+        if parent is not None and parent not in groups:
+            problems.append(f"group {group['id']}: unknown parent {parent}")
+        seen, at = {group["id"]}, parent
+        while at is not None and at in groups:
+            if at in seen:
+                problems.append(f"group {group['id']}: its parents run in a circle")
+                break
+            seen.add(at)
+            at = groups[at]["parentId"]
+    siblings: dict = {}
+    for group in seed["groups"]:
+        siblings.setdefault(group["parentId"], []).append(group["position"])
+    for parent, positions in siblings.items():
+        if len(set(positions)) != len(positions):
+            problems.append(f"the sections of group {parent} share a position")
+    filed = {h["groupId"] for h in seed["hadiths"]}
+    if not filed <= set(groups):
+        problems.append(f"hadiths filed under unknown groups: {sorted(filed - set(groups))}")
+    positions = sorted(h["position"] for h in seed["hadiths"])
+    if positions != list(range(1, len(positions) + 1)):
+        problems.append("hadith positions are not 1..n")
+    if [g["id"] for g in seed["groups"]] != [g["id"] for g in groups_in_order(seed["groups"])]:
+        problems.append("the groups are not listed depth first")
+    rank = {g["id"]: i for i, g in enumerate(seed["groups"])}
+    by_position = sorted(seed["hadiths"], key=lambda h: h["position"])
+    if by_position != sorted(by_position, key=lambda h: (rank[h["groupId"]], h["hadithNumber"], h["id"])):
+        problems.append("hadith positions do not follow the groups and the numbers")
+    return problems
+
+
 def audit(seed: dict, snapshot: dict) -> list[str]:
     problems = []
     narrators = {n["id"]: n for n in seed["narrators"]}
@@ -321,6 +400,7 @@ def audit(seed: dict, snapshot: dict) -> list[str]:
         problems.append("duplicate hadith ids")
     if sorted(h["hadithNumber"] for h in seed["hadiths"]) != sorted(int(k) for k in snapshot["arbain"]):
         problems.append("the seed does not hold exactly the hadiths of the snapshot")
+    problems += audit_groups(seed)
     used = set()
     for h in seed["hadiths"]:
         label = f"{h['sourceBook']} {h['hadithNumber']}"

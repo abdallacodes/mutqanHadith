@@ -36,10 +36,10 @@ class NarratorIdentityUseCasesTest {
     private val umar = narrator(6, "عمر بن الخطاب", companion)
 
     private val library = listOf(
-        hadith(1, listOf(ibnShihab, ibnAbbas), level = 3),
-        hadith(2, listOf(zuhri, abdAllahIbnAbbas), level = 3),
-        hadith(3, listOf(nafi, abdAllahIbnAbbas), level = 3),
-        hadith(4, listOf(umar), level = 1),
+        hadith(1, listOf(ibnShihab, ibnAbbas)),
+        hadith(2, listOf(zuhri, abdAllahIbnAbbas)),
+        hadith(3, listOf(nafi, abdAllahIbnAbbas)),
+        hadith(4, listOf(umar)),
     )
     private val hadiths = FakeHadithRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
@@ -110,7 +110,7 @@ class NarratorIdentityUseCasesTest {
     @Test
     fun graph_aNoOpEdgeBetweenTwoSpellingsOfOneManIsDropped() = runTest {
         // A chain that names the same man twice in a row does not make him his own teacher.
-        val twice = FakeHadithRepository(listOf(hadith(1, listOf(ibnShihab, zuhri), level = 3)))
+        val twice = FakeHadithRepository(listOf(hadith(1, listOf(ibnShihab, zuhri))))
 
         val graph = GetNarratorGraphUseCase(twice, FakeReviewRepository())()
 
@@ -185,7 +185,7 @@ class NarratorIdentityUseCasesTest {
             narrator(1, "ابن عمر", companion), narrator(2, "عبد الله بن عمر", companion),
             narrator(3, "عمر بن الخطاب", companion), narrator(4, "أنس", companion), narrator(5, "أنس بن مالك", companion),
         )
-        val chain = hadith(9, listOf(narrator(7, "نافع", "راوٍ"), narrator(8, "عبد الله بن عباس", companion)), level = 3)
+        val chain = hadith(9, listOf(narrator(7, "نافع", "راوٍ"), narrator(8, "عبد الله بن عباس", companion)))
         val directory = NarratorDirectory.of(pool + chain.sanad.map { it.narrator })
 
         repeat(40) { seed ->
@@ -200,7 +200,7 @@ class NarratorIdentityUseCasesTest {
 
     @Test
     fun dashboard_namesTheNextCompanionByHisCanonicalName() = runTest {
-        val repo = FakeHadithRepository(listOf(hadith(1, listOf(narrator(16, "ابن عمر", companion)), level = 1)))
+        val repo = FakeHadithRepository(listOf(hadith(1, listOf(narrator(16, "ابن عمر", companion)))))
 
         val dashboard = ObserveStudyDashboardUseCase(repo, FakeReviewRepository(), DualDecayScheduler(), { ZoneOffset.UTC }, { 0L })().first()
 

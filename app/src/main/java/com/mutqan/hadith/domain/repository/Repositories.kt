@@ -1,10 +1,12 @@
 package com.mutqan.hadith.domain.repository
 
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.CollectionEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
+import com.mutqan.hadith.data.relation.HadithPlacement
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.domain.model.CollectionSummary
 import com.mutqan.hadith.domain.model.HadithOutcomeCount
@@ -26,13 +28,20 @@ interface HadithRepository {
     /** Every Hadith whose chain passes through [narratorId], at any position, in curriculum order. */
     suspend fun getThroughNarrator(narratorId: Long): List<HadithWithFullSanad>
 
-    /** The hadiths of one curriculum [level] in curriculum order; emits again when the library changes. */
-    fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>>
+    /** Every group of the catalog, books and sections alike, among their siblings' order; emits again when the catalog changes. */
+    fun observeGroups(): Flow<List<CatalogGroupEntity>>
 
-    fun countHadithsByLevel(level: Int): Flow<Int>
+    /** Where each hadith is filed, in curriculum order; emits again when the library changes. */
+    fun observePlacements(): Flow<List<HadithPlacement>>
 
-    /** The hadiths of [level] whose text contains [query], with or without tashkeel; a query with nothing searchable in it finds none. */
-    fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>>
+    /** The hadiths filed directly under [groupId] in curriculum order; emits again when the library changes. */
+    fun getHadithsInGroup(groupId: Long): Flow<List<HadithEntity>>
+
+    /**
+     * The hadiths filed under any of [groupIds] whose text contains [query], with or without tashkeel, in curriculum
+     * order; a query with nothing searchable in it finds none.
+     */
+    fun searchInGroups(groupIds: Collection<Long>, query: String): Flow<List<HadithEntity>>
 }
 
 interface NarratorRepository {

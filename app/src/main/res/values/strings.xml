@@ -226,21 +226,19 @@
     <string name="library_title">المكتبة</string>
     <string name="library_search_hint">ابحث في نص الحديث…</string>
     <string name="library_search_clear">مسح البحث</string>
-    <string name="level_1_title">المستوى الأول: الأصول والأسس</string>
-    <string name="level_2_title">المستوى الثاني: أحاديث الأحكام</string>
-    <string name="level_3_title">المستوى الثالث: دواوين السنّة</string>
-    <string name="level_1_desc">الأربعون النووية: متون جامعة، مع راويها من الصحابة وتخريجها</string>
-    <string name="level_2_desc">عمدة الأحكام: أحاديث الأحكام الفقهية</string>
-    <string name="level_3_desc">دواوين السنّة المسندة، تُدرس بأسانيدها الكاملة</string>
-    <string name="level_badge">المستوى %1$d</string>
     <string name="library_status_count">%1$s: %2$d</string>
+    <string name="library_books_label">الكتب</string>
+    <string name="library_sections_label">الأقسام</string>
+    <string name="library_hadiths_label">الأحاديث</string>
+    <string name="library_group_size">%1$s · %2$s</string>
+    <string name="library_group_empty">لا أحاديث في هذا القسم بعد</string>
+    <string name="library_more_title">قريبًا بإذن الله</string>
+    <string name="library_more_body">ستُضاف كتب أخرى من كتب السنّة في التحديثات القادمة.</string>
+    <string name="library_no_results">لا نتائج لـ «%1$s» في «%2$s»</string>
+    <string name="library_no_results_hint">جرّب كلمة أخرى، أو جزءًا أقصر من الحديث.</string>
     <string name="progress_new">جديد</string>
     <string name="progress_learning">قيد الحفظ</string>
     <string name="progress_mastered">متقن</string>
-    <string name="library_level_empty_title">قريبًا بإذن الله</string>
-    <string name="library_level_empty_body">لم تُضف أحاديث هذا المستوى بعد، وستظهر هنا عند توفّرها.</string>
-    <string name="library_no_results">لا نتائج لـ «%1$s» في هذا المستوى</string>
-    <string name="library_no_results_hint">جرّب كلمة أخرى، أو انظر في المستويات الأخرى؛ فالتبويبات تعرض عدد النتائج في كل مستوى.</string>
 
     <!-- Hadith study -->
     <string name="study_title">قراءة الحديث</string>
@@ -371,6 +369,14 @@
     <string name="pacing_body">إتقان حديث أو حديثين كل يوم يُثبّت المحفوظ على المدى البعيد، ويمنع تراكم المراجعات حتى لا تثقل عليك. وقد بلغتَ اليوم القدر المريح من الأحاديث الجديدة.</string>
     <string name="pacing_proceed">متابعة الحفظ</string>
     <string name="pacing_defer">الاكتفاء بما سبق</string>
+    <plurals name="library_section_count">
+        <item quantity="zero">لا أقسام</item>
+        <item quantity="one">قسم واحد</item>
+        <item quantity="two">قسمان</item>
+        <item quantity="few">%1$d أقسام</item>
+        <item quantity="many">%1$d قسمًا</item>
+        <item quantity="other">%1$d قسم</item>
+    </plurals>
     <plurals name="hadith_count">
         <item quantity="zero">لا أحاديث</item>
         <item quantity="one">حديث واحد</item>

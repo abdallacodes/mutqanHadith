@@ -52,7 +52,7 @@ class PacingBypassEnglishScreensTest {
     val compose = createComposeRule()
 
     private val chain = listOf(narrator(1, "Al-Humaydi"), narrator(4, "Umar", tier = "\u0635\u062d\u0627\u0628\u064a"))
-    private val hadiths = FakeHadithRepository((1L..4L).map { hadith(it, chain, level = 1) })
+    private val hadiths = FakeHadithRepository((1L..4L).map { hadith(it, chain) })
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
     private val scheduler = DualDecayScheduler()
     private val pacing = DailyPacing(InMemoryStudyPreferences(), { ZoneOffset.UTC }, { TIME })

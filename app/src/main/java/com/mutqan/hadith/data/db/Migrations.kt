@@ -44,5 +44,23 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5, V5_TO_V6)
+    /**
+     * Groups: the books and sections the library is browsed by, one new table, and the two columns that place a hadith
+     * in one and in the curriculum. Nothing the user owns is touched. The hadiths start unplaced (no group, position 0)
+     * and are placed when the catalog is synced on the next open (see `SeedLoader.sync`), since version 5 is not recorded yet.
+     */
+    val V6_TO_V7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `catalog_group` (`id` INTEGER NOT NULL, `parentId` INTEGER, `title` TEXT NOT NULL, " +
+                    "`titleEn` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_catalog_group_parentId` ON `catalog_group` (`parentId`)")
+            db.execSQL("ALTER TABLE hadith ADD COLUMN groupId INTEGER")
+            db.execSQL("ALTER TABLE hadith ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_hadith_groupId` ON `hadith` (`groupId`)")
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7)
 }

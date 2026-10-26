@@ -56,9 +56,9 @@ class NarratorIdentityScreensTest {
 
     private val hadiths = FakeHadithRepository(
         listOf(
-            hadith(1, listOf(narrator(16, "ابن عمر", companion)), level = 1),
-            hadith(4, listOf(narrator(5, "نافع", "راوٍ"), narrator(42, "ابن عباس", companion)), level = 3),
-            hadith(5, listOf(narrator(9, "سالم", "راوٍ"), narrator(58, "عبد الله بن عباس", companion)), level = 3),
+            hadith(1, listOf(narrator(16, "ابن عمر", companion))),
+            hadith(4, listOf(narrator(5, "نافع", "راوٍ"), narrator(42, "ابن عباس", companion))),
+            hadith(5, listOf(narrator(9, "سالم", "راوٍ"), narrator(58, "عبد الله بن عباس", companion))),
         ),
     )
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }

@@ -51,7 +51,6 @@ class DailyDashboardScreensTest {
 
     private val arbaeen1 = NextToLearn(
         hadithId = 11,
-        level = 1,
         hadithNumber = 1,
         sourceBook = "الأربعون النووية",
         sahabiName = "عمر بن الخطاب",
@@ -144,7 +143,7 @@ class DailyDashboardScreensTest {
 
         compose.onNodeWithText("المحطة التالية في الحفظ").assertExists()
         compose.onNodeWithText("الحديث رقم 1").assertExists()
-        compose.onNodeWithText("المستوى 1").assertExists()
+        compose.onNodeWithText("المستوى 1").assertDoesNotExist()
         compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
         compose.onNodeWithText("إنما الأعمال بالنيات").assertExists()
 

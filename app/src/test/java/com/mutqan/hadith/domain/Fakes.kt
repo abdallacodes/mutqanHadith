@@ -1,10 +1,12 @@
 package com.mutqan.hadith.domain
 
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
+import com.mutqan.hadith.data.relation.HadithPlacement
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.relation.SanadEdgeWithNarrator
 import com.mutqan.hadith.data.text.ArabicNormalizer
@@ -24,21 +26,28 @@ const val DAY_MS = 86_400_000L
 fun narrator(id: Long, name: String = "راوي $id", tier: String = "تابعي") =
     NarratorEntity(id = id, primaryName = name, fullName = name, tier = tier, isPivot = false)
 
-/** A Hadith of curriculum [level] whose chain is [narrators] in order (index 0 = the collector's teacher). */
-fun hadith(id: Long, narrators: List<NarratorEntity>, level: Int = 3): HadithWithFullSanad =
+/**
+ * A Hadith whose chain is [narrators] in order (index 0 = the collector's teacher), filed under [groupId] and taught
+ * at [position]; both unset, as for a row the catalog has not placed.
+ */
+fun hadith(id: Long, narrators: List<NarratorEntity>, position: Int = 0, groupId: Long? = null): HadithWithFullSanad =
     HadithWithFullSanad(
         hadith = HadithEntity(
             id, "متن $id", "متن $id", "كتاب", id.toInt(), "باب", "صحيح", "جامع",
             takhrij = "متفق عليه",
             sahabi = narrators.lastOrNull()?.primaryName.orEmpty(),
-            level = level,
+            groupId = groupId,
+            position = position,
         ),
         edges = narrators.mapIndexed { i, n ->
             SanadEdgeWithNarrator(SanadEdgeEntity(id * 100 + i, id, n.id, i, "عن"), n)
         },
     )
 
-class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepository {
+class FakeHadithRepository(
+    hadiths: List<HadithWithFullSanad>,
+    private val groups: List<CatalogGroupEntity> = emptyList(),
+) : HadithRepository {
     private val all = hadiths.sortedBy { it.hadith.id }
     private val byId = all.associateBy { it.hadith.id }
 
@@ -58,14 +67,20 @@ class FakeHadithRepository(hadiths: List<HadithWithFullSanad>) : HadithRepositor
     override suspend fun getThroughNarrator(narratorId: Long) =
         all.filter { h -> h.edges.any { it.narrator.id == narratorId } }.sortedWith(compareBy(CurriculumOrder) { it.hadith })
 
-    override fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>> =
-        flowOf(all.map { it.hadith }.filter { it.level == level }.sortedWith(CurriculumOrder))
+    override fun observeGroups(): Flow<List<CatalogGroupEntity>> = flowOf(groups.sortedWith(compareBy({ it.position }, { it.id })))
 
-    override fun countHadithsByLevel(level: Int): Flow<Int> = flowOf(all.count { it.hadith.level == level })
+    override fun observePlacements(): Flow<List<HadithPlacement>> =
+        flowOf(all.map { it.hadith }.sortedWith(CurriculumOrder).map { HadithPlacement(it.id, it.groupId) })
 
-    override fun searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> {
+    override fun getHadithsInGroup(groupId: Long): Flow<List<HadithEntity>> =
+        flowOf(all.map { it.hadith }.filter { it.groupId == groupId }.sortedWith(CurriculumOrder))
+
+    override fun searchInGroups(groupIds: Collection<Long>, query: String): Flow<List<HadithEntity>> {
         val needle = ArabicNormalizer.normalize(query)
-        return flowOf(if (needle.isEmpty()) emptyList() else all.map { it.hadith }.filter { it.level == level && needle in it.matnClean }.sortedWith(CurriculumOrder))
+        return flowOf(
+            if (needle.isEmpty()) emptyList()
+            else all.map { it.hadith }.filter { it.groupId in groupIds && needle in it.matnClean }.sortedWith(CurriculumOrder),
+        )
     }
 }
 

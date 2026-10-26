@@ -19,8 +19,8 @@ import org.robolectric.annotation.Config
  * These tests hold the seed to that: it is structurally sound, complete, and every matn, narrator and chain order
  * can be found in the source text of its own record.
  *
- * The catalog is the Forty Hadith of an-Nawawi alone (catalog 4); the Bukhari selection and 'Umdat al-Ahkam of the
- * earlier catalogs were retired.
+ * The catalog is the Forty Hadith of an-Nawawi alone; the Bukhari selection and 'Umdat al-Ahkam of the earlier catalogs
+ * were retired in catalog 4, and catalog 5 files the hadiths in groups, the books and sections the library is browsed by.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -166,6 +166,75 @@ class SeedDataIntegrityTest {
         val narratorIds = selection.getJSONObject("narratorKeepIds")
         narratorIds.keys().forEach { name -> assertEquals(name, narratorIds.getLong(name), seed.narrators.single { it.primaryName == name }.id) }
         assertEquals(narratorIds.length(), seed.narrators.size)
+    }
+
+    // -- Groups ------------------------------------------------------------------------------
+
+    @Test
+    fun theGroupsFormATreeWithNamesInBothLanguages() {
+        val byId = seed.groups.associateBy { it.id }
+        assertEquals("duplicate group ids", seed.groups.size, byId.size)
+        seed.groups.forEach { group ->
+            assertTrue("group ${group.id}: Arabic title", group.title.isNotBlank())
+            assertTrue("group ${group.id}: English title", group.titleEn.isNotBlank())
+            assertTrue("group ${group.id}: parent ${group.parentId}", group.parentId == null || group.parentId in byId)
+            // Walking up from any group reaches a book without meeting a group twice.
+            val seen = mutableSetOf(group.id)
+            var at = group.parentId
+            while (at != null) {
+                assertTrue("group ${group.id}: its parents run in a circle", seen.add(at))
+                at = byId.getValue(at).parentId
+            }
+        }
+        seed.groups.groupBy { it.parentId }.forEach { (parent, siblings) ->
+            assertEquals("the sections of $parent share a position", siblings.size, siblings.map { it.position }.toSet().size)
+        }
+    }
+
+    @Test
+    fun theGroupsAreListedDepthFirstSoTheirOrderIsTheOrderOfTheShelves() {
+        val children = seed.groups.groupBy { it.parentId }
+        val depthFirst = buildList {
+            fun visit(parent: Long?) {
+                children[parent].orEmpty().sortedWith(compareBy({ it.position }, { it.id })).forEach {
+                    add(it.id)
+                    visit(it.id)
+                }
+            }
+            visit(null)
+        }
+
+        assertEquals(depthFirst, seed.groups.map { it.id })
+    }
+
+    @Test
+    fun everyHadithIsFiledInAGroupAndEveryBookWithoutSectionsHoldsSomething() {
+        val groupIds = seed.groups.map { it.id }.toSet()
+        seed.hadiths.forEach { assertTrue("${it.sourceBook} ${it.hadithNumber}: group ${it.groupId}", it.groupId in groupIds) }
+        val parents = seed.groups.mapNotNull { it.parentId }.toSet()
+        seed.groups.filter { it.id !in parents }.forEach { leaf ->
+            assertTrue("group ${leaf.id} is empty", seed.hadiths.any { it.groupId == leaf.id })
+        }
+    }
+
+    @Test
+    fun theHadithsAreNumberedInTheOrderTheyAreTaught() {
+        val rank = seed.groups.withIndex().associate { (index, group) -> group.id to index }
+        val taught = seed.hadiths.sortedBy { it.position }
+
+        assertEquals("positions run 1..n", (1..seed.hadiths.size).toList(), taught.map { it.position })
+        // By book, then by the number in the book, then by id: so the order does not depend on how rows were numbered.
+        assertEquals(seed.hadiths.sortedWith(compareBy({ rank.getValue(it.groupId!!) }, { it.hadithNumber }, { it.id })).map { it.id }, taught.map { it.id })
+    }
+
+    @Test
+    fun theSelectionFilesEveryBookTheSeedHasUnderTheGroupItWas() {
+        val bookGroups = selection.getJSONObject("bookGroups")
+        seed.hadiths.forEach { assertEquals("${it.sourceBook} ${it.hadithNumber}", bookGroups.getLong(it.sourceBook), it.groupId) }
+        val chosen = selection.getJSONArray("groups")
+        assertEquals(seed.groups.map { it.id }.toSet(), List(chosen.length()) { chosen.getJSONObject(it).getLong("id") }.toSet())
+        // A shipped group id is a key in users' databases: it is never renumbered, so these are pinned.
+        assertEquals(1L, seed.groups.single { it.title == "الأربعون النووية" }.id)
     }
 
     @Test

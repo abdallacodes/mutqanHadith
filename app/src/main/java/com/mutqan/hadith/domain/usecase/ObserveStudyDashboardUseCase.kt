@@ -35,7 +35,6 @@ data class DashboardItem(
 /** The first Hadith still unseen in curriculum order: where the memorization carries on. */
 data class NextToLearn(
     val hadithId: Long,
-    val level: Int,
     val hadithNumber: Int,
     val sourceBook: String,
     val sahabiName: String,
@@ -113,7 +112,6 @@ class ObserveStudyDashboardUseCase(
                 nextToLearn = next?.let {
                     NextToLearn(
                         hadithId = it.hadith.id,
-                        level = it.hadith.level,
                         hadithNumber = it.hadith.hadithNumber,
                         sourceBook = it.hadith.sourceBook,
                         sahabiName = NarratorAliases.canonicalName(it.sanad.lastOrNull()?.narrator?.primaryName.orEmpty()),

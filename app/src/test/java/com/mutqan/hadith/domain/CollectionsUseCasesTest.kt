@@ -25,7 +25,7 @@ class CollectionsUseCasesTest {
 
     private var clock = 1_700_000_000_000L
     private val chain = (1L..3L).map { narrator(it) }
-    private val library = (1L..6L).map { hadith(it, chain, level = 1) }
+    private val library = (1L..6L).map { hadith(it, chain) }
     private val hadiths = FakeHadithRepository(library)
     private val collections = FakeCollectionRepository(library)
     private val reviews = FakeReviewRepository()

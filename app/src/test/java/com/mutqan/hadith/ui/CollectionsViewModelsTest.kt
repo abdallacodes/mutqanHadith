@@ -58,7 +58,7 @@ class CollectionsViewModelsTest {
     private val scheduler = DualDecayScheduler()
 
     private val chain = listOf(narrator(1, "الحميدي"), narrator(2, "سفيان"), narrator(3, "عمر", tier = "صحابي"))
-    private val library = (1L..6L).map { hadith(it, chain, level = 1) }
+    private val library = (1L..6L).map { hadith(it, chain) }
     private val hadiths = FakeHadithRepository(library)
     private val collections = FakeCollectionRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }

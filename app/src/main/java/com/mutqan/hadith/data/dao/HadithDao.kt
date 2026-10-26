@@ -5,8 +5,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.SanadEdgeEntity
+import com.mutqan.hadith.data.relation.HadithPlacement
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.data.text.ArabicNormalizer
 import kotlinx.coroutines.flow.Flow
@@ -52,11 +54,11 @@ interface HadithDao {
     @Query("SELECT * FROM hadith ORDER BY id")
     fun observeAllWithSanad(): Flow<List<HadithWithFullSanad>>
 
-    /** Hadiths that were never reviewed (no mastery record), in curriculum order: by level, then number, then id. */
+    /** Hadiths that were never reviewed (no mastery record), in curriculum order: by position, then number, then id. */
     @Transaction
     @Query(
         "SELECT * FROM hadith h WHERE NOT EXISTS " +
-            "(SELECT 1 FROM mastery_record m WHERE m.hadithId = h.id) ORDER BY h.level, h.hadithNumber, h.id"
+            "(SELECT 1 FROM mastery_record m WHERE m.hadithId = h.id) ORDER BY h.position, h.hadithNumber, h.id"
     )
     suspend fun getUnseenWithSanad(): List<HadithWithFullSanad>
 
@@ -65,23 +67,31 @@ interface HadithDao {
     @Query("SELECT * FROM hadith WHERE matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY id")
     suspend fun searchByCleanText(pattern: String): List<HadithWithFullSanad>
 
-    /** The hadiths of one curriculum [level], by number then id; emits again when the library changes. */
-    @Query("SELECT * FROM hadith WHERE level = :level ORDER BY hadithNumber, id")
-    fun getHadithsByLevel(level: Int): Flow<List<HadithEntity>>
+    /** Every group of the catalog, books and sections alike, among their siblings' order; emits again when the catalog changes. */
+    @Query("SELECT * FROM catalog_group ORDER BY position, id")
+    fun observeGroups(): Flow<List<CatalogGroupEntity>>
 
-    @Query("SELECT COUNT(*) FROM hadith WHERE level = :level")
-    fun countHadithsByLevel(level: Int): Flow<Int>
+    /** Where every hadith is filed, in curriculum order; emits again when the library changes. */
+    @Query("SELECT id AS hadithId, groupId FROM hadith ORDER BY position, hadithNumber, id")
+    fun observePlacements(): Flow<List<HadithPlacement>>
 
-    /** [pattern] must already be normalized and LIKE-escaped (`\` is the escape character); prefer [searchInLevel]. */
-    @Query("SELECT * FROM hadith WHERE level = :level AND matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' ORDER BY hadithNumber, id")
-    fun searchInLevelByCleanText(level: Int, pattern: String): Flow<List<HadithEntity>>
+    /** The hadiths filed directly under [groupId], in curriculum order; emits again when the library changes. */
+    @Query("SELECT * FROM hadith WHERE groupId = :groupId ORDER BY position, hadithNumber, id")
+    fun getHadithsInGroup(groupId: Long): Flow<List<HadithEntity>>
+
+    /** [pattern] must already be normalized and LIKE-escaped (`\` is the escape character); prefer [searchInGroups]. */
+    @Query(
+        "SELECT * FROM hadith WHERE groupId IN (:groupIds) AND matnClean LIKE '%' || :pattern || '%' ESCAPE '\\' " +
+            "ORDER BY position, hadithNumber, id"
+    )
+    fun searchInGroupsByCleanText(groupIds: Collection<Long>, pattern: String): Flow<List<HadithEntity>>
 
     /** Every Hadith whose chain passes through [narratorId], at any position. */
     @Transaction
     @Query(
         "SELECT DISTINCT h.* FROM hadith h " +
             "INNER JOIN sanad_edge e ON e.hadithId = h.id " +
-            "WHERE e.narratorId = :narratorId ORDER BY h.level, h.hadithNumber, h.id"
+            "WHERE e.narratorId = :narratorId ORDER BY h.position, h.hadithNumber, h.id"
     )
     suspend fun getHadithsByNarrator(narratorId: Long): List<HadithWithFullSanad>
 }
@@ -97,6 +107,6 @@ private fun likePattern(query: String): String? {
 suspend fun HadithDao.search(query: String): List<HadithWithFullSanad> =
     likePattern(query)?.let { searchByCleanText(it) } ?: emptyList()
 
-/** [search] within one curriculum [level]; a query with nothing searchable in it matches nothing. */
-fun HadithDao.searchInLevel(level: Int, query: String): Flow<List<HadithEntity>> =
-    likePattern(query)?.let { searchInLevelByCleanText(level, it) } ?: flowOf(emptyList())
+/** [search] within the hadiths filed under any of [groupIds]; a query with nothing searchable in it matches nothing. */
+fun HadithDao.searchInGroups(groupIds: Collection<Long>, query: String): Flow<List<HadithEntity>> =
+    likePattern(query)?.let { searchInGroupsByCleanText(groupIds, it) } ?: flowOf(emptyList())

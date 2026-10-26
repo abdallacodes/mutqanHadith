@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.R
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.DAY_MS
 import com.mutqan.hadith.domain.FakeCollectionRepository
@@ -29,7 +30,7 @@ import com.mutqan.hadith.domain.usecase.CreateCollectionUseCase
 import com.mutqan.hadith.domain.usecase.DeleteCollectionUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
-import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.ObserveCollectionDetailUseCase
 import com.mutqan.hadith.domain.usecase.RenameCollectionUseCase
 import com.mutqan.hadith.domain.usecase.SetCollectionMembershipUseCase
@@ -90,12 +91,15 @@ abstract class CollectionsScreensBase {
     private val secondMatn = "الدِّينُ النَّصِيحَةُ"
     private val thirdMatn = "بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"
 
+    // One book holding all three, with no English title: in English the library shows the Arabic one.
+    private val bookTitle = "كتاب الاختبار"
+    private val groups = listOf(CatalogGroupEntity(1, null, bookTitle, "", 0))
     private val library = listOf(
-        hadith(1, listOf(companion), level = 1).withMatn(firstMatn),
-        hadith(2, listOf(companion), level = 1).withMatn(secondMatn),
-        hadith(3, listOf(teacher, middle, companion), level = 1).withMatn(thirdMatn),
+        hadith(1, listOf(companion), position = 1, groupId = 1).withMatn(firstMatn),
+        hadith(2, listOf(companion), position = 2, groupId = 1).withMatn(secondMatn),
+        hadith(3, listOf(teacher, middle, companion), position = 3, groupId = 1).withMatn(thirdMatn),
     )
-    private val hadiths = FakeHadithRepository(library)
+    private val hadiths = FakeHadithRepository(library, groups)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
     protected val collections = FakeCollectionRepository(library)
 
@@ -113,14 +117,17 @@ abstract class CollectionsScreensBase {
         collections, CreateCollectionUseCase(collections) { now }, SetCollectionMembershipUseCase(collections) { now },
     )
 
+    /** The library with its book already opened: the hadiths are inside it. */
     private fun libraryScreen(withCollections: Boolean = true, onOpenHadith: (Long) -> Unit = {}, onOpenCollection: (Long) -> Unit = {}) {
-        val vm = LibraryViewModel(GetLibraryByLevelUseCase(hadiths, reviews, scheduler) { now })
+        val vm = LibraryViewModel(GetLibraryPageUseCase(hadiths, reviews, scheduler) { now })
         val collectionsVm = if (withCollections) collectionsVm() else null
         compose.setContent {
             MutqanHadithTheme {
                 LibraryRoute(vm, onClose = {}, onOpenHadith = onOpenHadith, collectionsViewModel = collectionsVm, onOpenCollection = onOpenCollection)
             }
         }
+        compose.onNodeWithText(bookTitle).performClick()
+        compose.waitForIdle()
     }
 
     private fun detailScreen(

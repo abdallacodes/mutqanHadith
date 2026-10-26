@@ -218,21 +218,19 @@
     <string name="library_title">Library</string>
     <string name="library_search_hint">Search the hadith text…</string>
     <string name="library_search_clear">Clear search</string>
-    <string name="level_1_title">Level 1: Core Foundations</string>
-    <string name="level_2_title">Level 2: Hadiths of Rulings</string>
-    <string name="level_3_title">Level 3: The Sunnah Collections</string>
-    <string name="level_1_desc">The Forty Hadith of al-Nawawi: comprehensive texts with their Companion narrators and sources</string>
-    <string name="level_2_desc">Umdat al-Ahkam: hadiths of legal rulings</string>
-    <string name="level_3_desc">The musnad collections, studied with their full chains</string>
-    <string name="level_badge">Level %1$d</string>
     <string name="library_status_count">%1$s: %2$d</string>
+    <string name="library_books_label">Books</string>
+    <string name="library_sections_label">Sections</string>
+    <string name="library_hadiths_label">Hadiths</string>
+    <string name="library_group_size">%1$s · %2$s</string>
+    <string name="library_group_empty">No hadiths in this section yet</string>
+    <string name="library_more_title">Coming soon</string>
+    <string name="library_more_body">More books of the Sunnah will be added in future updates.</string>
+    <string name="library_no_results">No results for “%1$s” in “%2$s”</string>
+    <string name="library_no_results_hint">Try another word, or a shorter part of the hadith.</string>
     <string name="progress_new">New</string>
     <string name="progress_learning">Learning</string>
     <string name="progress_mastered">Mastered</string>
-    <string name="library_level_empty_title">Coming soon</string>
-    <string name="library_level_empty_body">This level has no hadiths yet. They will appear here once they are added.</string>
-    <string name="library_no_results">No results for “%1$s” in this level</string>
-    <string name="library_no_results_hint">Try another word, or check the other levels; the tabs show how many results each one has.</string>
 
     <!-- Hadith study -->
     <string name="study_title">Hadith Reader</string>
@@ -353,6 +351,10 @@
     <string name="pacing_body">Mastering one or two hadiths a day keeps what you learn for the long term and stops reviews from piling up on you. You have reached today\'s comfortable amount of new hadiths.</string>
     <string name="pacing_proceed">Proceed anyway</string>
     <string name="pacing_defer">Save for tomorrow</string>
+    <plurals name="library_section_count">
+        <item quantity="one">%1$d section</item>
+        <item quantity="other">%1$d sections</item>
+    </plurals>
     <plurals name="hadith_count">
         <item quantity="one">%1$d hadith</item>
         <item quantity="other">%1$d hadiths</item>

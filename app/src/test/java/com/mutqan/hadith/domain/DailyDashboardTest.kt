@@ -23,14 +23,14 @@ class DailyDashboardTest {
 
     private val chain = listOf(narrator(1, "الحميدي"), narrator(2, "سفيان"))
 
-    // Ids are not in curriculum order, and the hadith numbers are the ids: the order must come from the level first.
-    // Level 3: nos. 1 and 5; level 2: no. 4; level 1: nos. 2 and 3.
+    // Ids are not in curriculum order, and the hadith numbers are the ids: the order must come from the position first.
+    // Taught in the order 2, 3, 4, 1, 5.
     private val library = listOf(
-        hadith(1, chain + narrator(10, "أبو هريرة", tier = "صحابي"), level = 3),
-        hadith(5, chain + narrator(11, "أنس", tier = "صحابي"), level = 3),
-        hadith(4, chain + narrator(12, "ابن عمر", tier = "صحابي"), level = 2),
-        hadith(3, listOf(narrator(13, "عائشة", tier = "صحابي")), level = 1),
-        hadith(2, listOf(narrator(14, "عمر بن الخطاب", tier = "صحابي")), level = 1),
+        hadith(1, chain + narrator(10, "أبو هريرة", tier = "صحابي"), position = 4),
+        hadith(5, chain + narrator(11, "أنس", tier = "صحابي"), position = 5),
+        hadith(4, chain + narrator(12, "ابن عمر", tier = "صحابي"), position = 3),
+        hadith(3, listOf(narrator(13, "عائشة", tier = "صحابي")), position = 2),
+        hadith(2, listOf(narrator(14, "عمر بن الخطاب", tier = "صحابي")), position = 1),
     )
     private val hadiths = FakeHadithRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
@@ -44,20 +44,19 @@ class DailyDashboardTest {
     // -- The next hadith to learn ----------------------------------------------------------
 
     @Test
-    fun nextToLearn_startsAtTheFirstHadithOfTheFirstLevel() = runBlocking {
+    fun nextToLearn_startsAtTheFirstHadithOfTheCurriculum() = runBlocking {
         val next = dashboard().first().nextToLearn
 
         assertNotNull(next)
         assertEquals(2L, next!!.hadithId)
-        assertEquals(1, next.level)
         assertEquals(2, next.hadithNumber)
         assertEquals("عمر بن الخطاب", next.sahabiName)
         assertEquals("متن 2", next.matn)
     }
 
     @Test
-    fun nextToLearn_putsTheLevelBeforeTheHadithNumberAndSkipsWhatWasStarted() = runBlocking {
-        // Hadith no. 1 of level 3 comes after everything of levels 1 and 2 although its number is the lowest.
+    fun nextToLearn_followsThePositionBeforeTheHadithNumberAndSkipsWhatWasStarted() = runBlocking {
+        // Hadith no. 1 is taught fourth although its number is the lowest.
         val order = mutableListOf<Long>()
         while (true) {
             val next = dashboard().first().nextToLearn ?: break
@@ -79,7 +78,7 @@ class DailyDashboardTest {
 
     @Test
     fun nextToLearn_isNotChosenByWhatIsDue() = runBlocking {
-        // A level-3 hadith that is due now does not take the place of the level-1 hadith still to learn.
+        // A hadith taught later that is due now does not take the place of the one still to learn first.
         started(1, reviewedDaysAgo = 5, dueInDays = -1)
 
         val d = dashboard().first()

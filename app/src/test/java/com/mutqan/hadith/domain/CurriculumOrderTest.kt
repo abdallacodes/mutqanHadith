@@ -11,8 +11,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * "Curriculum order" is level first, then the number in the book, then the id, so the Forty Hadith (level 1)
- * come before the collections (level 3) however the rows were numbered when they were added.
+ * "Curriculum order" is the position the catalog gives each hadith, then the number in the book, then the id, so a book
+ * comes before the next however the rows were numbered when they were added.
  */
 class CurriculumOrderTest {
 
@@ -20,18 +20,18 @@ class CurriculumOrderTest {
     private val companion = narrator(1, "عمر بن الخطاب", tier = "صحابي")
     private val chain = listOf(narrator(2, "الحميدي", tier = "شيخ المصنف"), companion)
 
-    private fun numbered(id: Long, number: Int, level: Int) = hadith(id, chain, level).let {
+    private fun numbered(id: Long, number: Int, position: Int, groupId: Long? = null) = hadith(id, chain, position, groupId).let {
         it.copy(hadith = it.hadith.copy(hadithNumber = number))
     }
 
-    // Ids run the other way round to the curriculum: the level 3 rows were added first.
+    // Ids run the other way round to the curriculum: the rows taught last were added first.
     private val library = listOf(
-        numbered(id = 1, number = 50, level = 3),
-        numbered(id = 2, number = 8, level = 3),
-        numbered(id = 3, number = 7, level = 1),
-        numbered(id = 4, number = 1, level = 1),
-        numbered(id = 5, number = 8, level = 3), // the same number as id 2: the id breaks the tie
-        numbered(id = 6, number = 2, level = 2),
+        numbered(id = 1, number = 50, position = 5, groupId = 7),
+        numbered(id = 2, number = 8, position = 4, groupId = 7),
+        numbered(id = 3, number = 7, position = 2),
+        numbered(id = 4, number = 1, position = 1),
+        numbered(id = 5, number = 8, position = 4, groupId = 7), // the same position and number as id 2: the id breaks the tie
+        numbered(id = 6, number = 2, position = 3),
     )
     private val hadiths = FakeHadithRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
@@ -39,12 +39,19 @@ class CurriculumOrderTest {
     private val expected = listOf(4L, 3L, 6L, 2L, 5L, 1L)
 
     @Test
-    fun theComparatorOrdersByLevelThenNumberThenId() {
+    fun theComparatorOrdersByPositionThenNumberThenId() {
         assertEquals(expected, library.map { it.hadith }.sortedWith(CurriculumOrder).map { it.id })
     }
 
     @Test
-    fun newHadithsComeLevelByLevel() = runBlocking {
+    fun aHadithTheCatalogHasNotNumberedFallsBackToItsNumberInTheBookAndThenItsId() {
+        val unplaced = listOf(numbered(1, 3, 0), numbered(2, 1, 0), numbered(3, 1, 0)).map { it.hadith }
+
+        assertEquals(listOf(2L, 3L, 1L), unplaced.sortedWith(CurriculumOrder).map { it.id })
+    }
+
+    @Test
+    fun newHadithsComeInTheOrderTheyAreTaught() = runBlocking {
         assertEquals(expected, GetUnseenHadithsUseCase(hadiths)().map { it.hadith.id })
         assertEquals(listOf(4L, 3L), GetUnseenHadithsUseCase(hadiths)(limit = 2).map { it.hadith.id })
     }
@@ -72,7 +79,7 @@ class CurriculumOrderTest {
     }
 
     @Test
-    fun theHadithsOfALevelAreInBookOrder() = runBlocking {
-        assertEquals(listOf(2L, 5L, 1L), hadiths.getHadithsByLevel(3).first().map { it.id })
+    fun theHadithsOfOneGroupAreInBookOrder() = runBlocking {
+        assertEquals(listOf(2L, 5L, 1L), hadiths.getHadithsInGroup(7).first().map { it.id })
     }
 }

@@ -284,7 +284,7 @@ class NarratorIdentityTest {
         val long = narrator(36, "عبد الله بن عمر", companion)
         val other = narrator(6, "عمر بن الخطاب", companion)
         val repository = FakeHadithRepository(
-            listOf(hadith(1, listOf(short), level = 1), hadith(2, listOf(long), level = 2), hadith(3, listOf(other), level = 1)),
+            listOf(hadith(1, listOf(short)), hadith(2, listOf(long)), hadith(3, listOf(other))),
         )
 
         assertEquals(listOf(1L, 2L), repository.getThroughPerson(36).map { it.hadith.id }.sorted())

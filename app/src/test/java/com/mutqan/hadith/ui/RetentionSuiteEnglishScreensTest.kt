@@ -65,7 +65,7 @@ class RetentionSuiteEnglishScreensTest {
     val compose = createComposeRule()
 
     private val chain = listOf(narrator(1, "Al-Humaydi"), narrator(4, "Umar", tier = "صحابي"))
-    private val hadiths = FakeHadithRepository((1L..12L).map { hadith(it, chain, level = 1) })
+    private val hadiths = FakeHadithRepository((1L..12L).map { hadith(it, chain) })
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
     private val scheduler = DualDecayScheduler()
     private val calls = mutableListOf<String>()

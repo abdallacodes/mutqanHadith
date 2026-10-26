@@ -26,7 +26,7 @@ class HadithStudyUseCasesTest {
     private val teacher = narrator(2, "الحميدي", tier = "شيخ المصنف")
 
     private val hadiths = FakeHadithRepository(
-        listOf(hadith(1, listOf(companion), level = 1), hadith(2, listOf(teacher, companion), level = 3)),
+        listOf(hadith(1, listOf(companion)), hadith(2, listOf(teacher, companion))),
     )
     private val reviews = LiveReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
     private val start = StartMemorizingUseCase(hadiths, reviews) { now }

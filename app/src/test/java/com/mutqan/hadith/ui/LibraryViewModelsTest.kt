@@ -1,27 +1,27 @@
 package com.mutqan.hadith.ui
 
+import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.DAY_MS
 import com.mutqan.hadith.domain.FakeHadithRepository
 import com.mutqan.hadith.domain.LiveReviewRepository
 import com.mutqan.hadith.domain.hadith
-import com.mutqan.hadith.domain.model.HadithLevel
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
-import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
 import com.mutqan.hadith.domain.usecase.HadithProgress
+import com.mutqan.hadith.domain.usecase.LibraryPage
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.domain.withMatn
 import com.mutqan.hadith.ui.common.UiState
-import com.mutqan.hadith.ui.library.LibraryUi
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.review.CardStage
 import com.mutqan.hadith.ui.review.ReviewMode
@@ -59,13 +59,19 @@ class LibraryViewModelsTest {
     private val companion = narrator(1, "عمر بن الخطاب", tier = "صحابي")
     private val teacher = narrator(2, "الحميدي", tier = "شيخ المصنف")
 
-    private val library = listOf(
-        hadith(1, listOf(companion), level = 1).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"),
-        hadith(2, listOf(companion), level = 1).withMatn("الدِّينُ النَّصِيحَةُ"),
-        hadith(10, listOf(teacher, companion), level = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ"),
-        hadith(11, listOf(teacher, companion), level = 3).withMatn("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"),
+    // Two books; the second has a section, and the section a hadith of its own.
+    private val groups = listOf(
+        CatalogGroupEntity(1, null, "الكتاب الأول", "First book", 0),
+        CatalogGroupEntity(2, null, "الكتاب الثاني", "Second book", 1),
+        CatalogGroupEntity(3, 2, "باب الإيمان", "Faith", 0),
     )
-    private val hadiths = FakeHadithRepository(library)
+    private val library = listOf(
+        hadith(1, listOf(companion), position = 1, groupId = 1).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"),
+        hadith(2, listOf(companion), position = 2, groupId = 1).withMatn("الدِّينُ النَّصِيحَةُ"),
+        hadith(11, listOf(teacher, companion), position = 4, groupId = 2).withMatn("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"),
+        hadith(10, listOf(teacher, companion), position = 3, groupId = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ"),
+    )
+    private val hadiths = FakeHadithRepository(library, groups)
     private val reviews = LiveReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
 
     @Before
@@ -77,79 +83,133 @@ class LibraryViewModelsTest {
     // -- LibraryViewModel -------------------------------------------------------------------
 
     private fun libraryVm(repo: HadithRepository = hadiths) =
-        LibraryViewModel(GetLibraryByLevelUseCase(repo, reviews, scheduler) { now })
+        LibraryViewModel(GetLibraryPageUseCase(repo, reviews, scheduler) { now })
 
-    private fun LibraryViewModel.ui(): LibraryUi = (state.value as UiState.Success).data
+    private fun LibraryViewModel.page(): LibraryPage = (state.value as UiState.Success).data
+
+    private fun LibraryPage.hadithIds() = hadiths.map { it.hadith.id }
 
     @Test
-    fun library_startsOnTheFirstLevelWithEveryLevelListed() = runTest {
+    fun library_startsOnTheShelfOfBooks() = runTest {
         val vm = libraryVm()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
 
-        assertEquals(HadithLevel.FOUNDATION, vm.selected.value)
+        assertNull(vm.openGroupId.value)
         assertEquals("", vm.query.value)
-        assertEquals(listOf(2, 0, 2), vm.ui().levels.map { it.hadiths.size })
-        assertEquals("", vm.ui().searched)
+        assertEquals(listOf(1L, 2L), vm.page().groups.map { it.group.id })
+        assertNull(vm.page().open)
+        assertEquals("", vm.page().searched)
     }
 
     @Test
-    fun library_searchNarrowsEveryLevelAndSelectionIsKept() = runTest {
+    fun library_openingAGroupListsItsSectionsAndItsOwnHadiths() = runTest {
         val vm = libraryVm()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
-        vm.onSelectLevel(HadithLevel.MUSNAD)
+
+        vm.onOpenGroup(2)
+
+        assertEquals(2L, vm.openGroupId.value)
+        assertEquals(listOf(3L), vm.page().groups.map { it.group.id })
+        assertEquals(listOf(11L), vm.page().hadithIds())
+        assertEquals(listOf(2L), vm.page().trail.map { it.id })
+    }
+
+    @Test
+    fun library_searchStaysInsideTheOpenGroupAndItsSections() = runTest {
+        val vm = libraryVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.onOpenGroup(2)
 
         vm.onQueryChange("الاعمال")
 
         assertEquals("الاعمال", vm.query.value)
-        assertEquals("الاعمال", vm.ui().searched)
-        assertEquals(HadithLevel.MUSNAD, vm.selected.value)
-        assertEquals(listOf(1, 0, 1), vm.ui().levels.map { it.hadiths.size })
-        assertEquals(listOf(10L), vm.ui().level(HadithLevel.MUSNAD)!!.hadiths.map { it.hadith.id })
-        // The level's full size is still known while a search narrows what is listed.
-        assertEquals(2, vm.ui().level(HadithLevel.MUSNAD)!!.totalInLevel)
+        assertEquals("الاعمال", vm.page().searched)
+        assertEquals(2L, vm.openGroupId.value)
+        // «إنما الأعمال بالنية» is in the section of the second book; the first book's hadith is not looked in.
+        assertEquals(listOf(10L), vm.page().hadithIds())
+        // The whole group's size is still known while a search narrows what is listed.
+        assertEquals(2, vm.page().status.total)
     }
 
     @Test
-    fun library_searchIgnoresTashkeelAndClearingRestoresTheLevel() = runTest {
+    fun library_searchIgnoresTashkeelAndClearingRestoresTheGroup() = runTest {
         val vm = libraryVm()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.onOpenGroup(1)
 
         vm.onQueryChange("النَّصِيحَةُ")
-        assertEquals(listOf(2L), vm.ui().level(HadithLevel.FOUNDATION)!!.hadiths.map { it.hadith.id })
+        assertEquals(listOf(2L), vm.page().hadithIds())
 
         vm.onQueryChange("")
-        assertEquals(listOf(1L, 2L), vm.ui().level(HadithLevel.FOUNDATION)!!.hadiths.map { it.hadith.id })
+        assertEquals(listOf(1L, 2L), vm.page().hadithIds())
     }
 
     @Test
-    fun library_aSearchThatFindsNothingEmptiesEveryLevel() = runTest {
+    fun library_aSearchThatFindsNothingEmptiesTheGroup() = runTest {
         val vm = libraryVm()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.onOpenGroup(1)
 
         vm.onQueryChange("زززز")
 
-        assertTrue(vm.ui().levels.all { it.hadiths.isEmpty() })
-        assertEquals(listOf(2, 0, 2), vm.ui().levels.map { it.totalInLevel })
+        assertTrue(vm.page().hadiths.isEmpty())
+        assertEquals(2, vm.page().status.total)
+    }
+
+    @Test
+    fun library_aSearchBelongsToTheGroupItWasTypedInAndDoesNotFollowToAnother() = runTest {
+        val vm = libraryVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.onOpenGroup(1)
+        vm.onQueryChange("الدين")
+
+        vm.onOpenGroup(2)
+
+        assertEquals("", vm.query.value)
+        assertEquals(listOf(11L), vm.page().hadithIds())
+    }
+
+    @Test
+    fun library_upLeavesASearchThenGoesUpOneGroupAtATimeAndSaysWhenThereIsNoFurther() = runTest {
+        val vm = libraryVm()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.onOpenGroup(2)
+        vm.onOpenGroup(3)
+        vm.onQueryChange("الاعمال")
+
+        assertTrue(vm.onUp())
+        assertEquals("", vm.query.value)
+        assertEquals(3L, vm.openGroupId.value)
+
+        assertTrue(vm.onUp())
+        assertEquals(2L, vm.openGroupId.value)
+
+        assertTrue(vm.onUp())
+        assertNull(vm.openGroupId.value)
+        assertEquals(listOf(1L, 2L), vm.page().groups.map { it.group.id })
+
+        assertFalse("nothing above the shelf", vm.onUp())
     }
 
     @Test
     fun library_followsTheUsersProgress() = runTest {
         val vm = libraryVm()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
-        assertEquals(HadithProgress.NEW, vm.ui().level(HadithLevel.FOUNDATION)!!.hadiths.first().progress)
+        vm.onOpenGroup(1)
+        assertEquals(HadithProgress.NEW, vm.page().hadiths.first().progress)
 
         SubmitReviewUseCase(hadiths, reviews, scheduler) { now }(1, ReviewRating.GOOD, ReviewRating.GOOD)
 
-        val first = vm.ui().level(HadithLevel.FOUNDATION)!!.hadiths.first()
-        assertEquals(HadithProgress.LEARNING, first.progress)
+        assertEquals(HadithProgress.LEARNING, vm.page().hadiths.first().progress)
+        assertEquals(1, vm.page().status.learning)
     }
 
     @Test
     fun library_surfacesFailuresAndCanTryAgain() = runTest {
         var failing = true
         val flaky = object : HadithRepository by hadiths {
-            override fun getHadithsByLevel(level: Int): Flow<List<com.mutqan.hadith.data.entity.HadithEntity>> =
-                flow { if (failing) throw IllegalStateException("db closed") else emitAll(hadiths.getHadithsByLevel(level)) }
+            override fun observeGroups(): Flow<List<CatalogGroupEntity>> =
+                flow { if (failing) throw IllegalStateException("db closed") else emitAll(hadiths.observeGroups()) }
         }
         val vm = libraryVm(flaky)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
@@ -158,7 +218,7 @@ class LibraryViewModelsTest {
         failing = false
         vm.retry()
 
-        assertEquals(listOf(2, 0, 2), vm.ui().levels.map { it.hadiths.size })
+        assertEquals(listOf(1L, 2L), vm.page().groups.map { it.group.id })
     }
 
     // -- HadithStudyViewModel ---------------------------------------------------------------

@@ -19,7 +19,7 @@ import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
-import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
+import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.ui.library.LibraryRoute
 import com.mutqan.hadith.ui.library.LibraryViewModel
@@ -88,8 +88,17 @@ class EnglishScreensTest {
     private val n5 = narrator(5, "مسدد", "شيخ المصنف")
 
     //   h1: n4 -> n3 -> n2 -> n1      h2: n4 -> n3 -> n2 -> n5      h3: n4 -> n5
-    private val library = listOf(hadith(1, listOf(n1, n2, n3, n4)), hadith(2, listOf(n5, n2, n3, n4)), hadith(3, listOf(n5, n4)))
-    private val hadiths = FakeHadithRepository(library)
+    // Two books for the library: the first has an English title, the second has none and shows its Arabic one.
+    private val groups = listOf(
+        com.mutqan.hadith.data.entity.CatalogGroupEntity(1, null, "الكتاب الأول", "First book", 0),
+        com.mutqan.hadith.data.entity.CatalogGroupEntity(2, null, "الكتاب الثاني", "", 1),
+    )
+    private val library = listOf(
+        hadith(1, listOf(n1, n2, n3, n4), position = 1, groupId = 1),
+        hadith(2, listOf(n5, n2, n3, n4), position = 2, groupId = 1),
+        hadith(3, listOf(n5, n4), position = 3, groupId = 1),
+    )
+    private val hadiths = FakeHadithRepository(library, groups)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
 
     @Before
@@ -155,7 +164,7 @@ class EnglishScreensTest {
 
     @Test
     fun home_withReviewsDue_isEnglishWhileTheHadithDataStaysArabic() {
-        val next = NextToLearn(11, 1, 1, "الأربعون النووية", "عمر بن الخطاب", "إنما الأعمال بالنيات")
+        val next = NextToLearn(11, 1, "الأربعون النووية", "عمر بن الخطاب", "إنما الأعمال بالنيات")
         val streak = StudyStreak(current = 5, longest = 5, studiedToday = true, studyDays = 5, lastSevenDays = List(7) { true })
         compose.setContent {
             MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(due = 3, learning = 4, streak = streak, next = next, retention = 0.834f)), noActions) {} }
@@ -167,7 +176,6 @@ class EnglishScreensTest {
         compose.onNodeWithText("Start Daily Review").assertExists()
         compose.onNodeWithText("Next Step in Memorization").assertExists()
         compose.onNodeWithText("Hadith no. 1").assertExists()
-        compose.onNodeWithText("Level 1").assertExists()
         compose.onNodeWithText("Companion: عمر بن الخطاب").assertExists()
         compose.onNodeWithText("إنما الأعمال بالنيات").assertExists()
         compose.onNodeWithText("Learn This Hadith").assertExists()
@@ -316,20 +324,23 @@ class EnglishScreensTest {
 
     @Test
     fun library_isEnglishWhileTheHadithTextStaysArabic() {
-        val vm = LibraryViewModel(GetLibraryByLevelUseCase(hadiths, reviews, DualDecayScheduler()) { 1_700_000_000_000L })
+        val vm = LibraryViewModel(GetLibraryPageUseCase(hadiths, reviews, DualDecayScheduler()) { 1_700_000_000_000L })
         compose.setContent { MutqanHadithTheme { LibraryRoute(vm, onClose = {}, onOpenHadith = {}) } }
 
         compose.onNodeWithText("Library").assertExists()
-        compose.onNodeWithText("Search the hadith text…").assertExists()
-        listOf("Level 1: Core Foundations", "Level 2: Hadiths of Rulings", "Level 3: The Sunnah Collections").forEach {
-            compose.onNodeWithText(it).assertExists()
-        }
-        // Level 1 has none of the fixtures: it says so, in English.
+        compose.onNodeWithText("Books").assertExists()
+        compose.onNodeWithText("First book").assertExists()
+        compose.onNodeWithText("3 hadiths").assertExists()
+        // A book the catalog has no English title for shows its Arabic one.
+        compose.onNodeWithText("الكتاب الثاني").assertExists()
         compose.onNodeWithText("Coming soon").assertExists()
+        compose.onNodeWithText("More books of the Sunnah will be added in future updates.").assertExists()
+        compose.onAllNodesWithText("Level", substring = true).assertCountEquals(0)
 
-        compose.onNodeWithText("Level 3: The Sunnah Collections").performClick()
+        compose.onNodeWithText("First book").performClick()
         compose.waitForIdle()
 
+        compose.onNodeWithText("Search the hadith text…").assertExists()
         compose.onNodeWithText("New: 3").assertExists()
         compose.onNodeWithText("Learning: 0").assertExists()
         compose.onAllNodesWithText("New").assertCountEquals(3)

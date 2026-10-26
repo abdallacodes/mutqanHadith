@@ -231,11 +231,6 @@ private fun StudyHeader(hadith: HadithEntity) {
                 container = MaterialTheme.colorScheme.primaryContainer,
                 content = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            InfoChip(
-                stringResource(R.string.level_badge, hadith.level),
-                container = MaterialTheme.colorScheme.surfaceVariant,
-                content = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             if (hadith.takhrij.isNotBlank()) InfoChip(stringResource(R.string.study_takhrij, hadith.takhrij))
             if (hadith.grade.isNotBlank()) {
                 InfoChip(

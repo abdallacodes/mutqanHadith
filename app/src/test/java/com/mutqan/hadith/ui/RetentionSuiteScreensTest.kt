@@ -82,7 +82,7 @@ class RetentionSuiteScreensTest {
 
     private val chain = listOf(narrator(1, "الحميدي"), narrator(2, "سفيان"), narrator(3, "يحيى"), narrator(4, "عمر", tier = "صحابي"))
     private val library = (1L..12L).map { id ->
-        hadith(id, chain, level = 1).let { if (id == 1L) it.copy(hadith = it.hadith.copy(matnWithTashkeel = MATN)) else it }
+        hadith(id, chain).let { if (id == 1L) it.copy(hadith = it.hadith.copy(matnWithTashkeel = MATN)) else it }
     }
     private val hadiths = FakeHadithRepository(library)
     private val reviews = FakeReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }

@@ -191,7 +191,7 @@ class BottomNavigationTest {
     }
 
     @Test
-    fun theAppOpensOnTheDailyHubWhichPointsAtTheFirstHadithOfTheFirstLevel() {
+    fun theAppOpensOnTheDailyHubWhichPointsAtTheFirstHadithOfTheCurriculum() {
         showApp()
 
         tab("الورد اليومي").assertIsSelected()
@@ -201,7 +201,8 @@ class BottomNavigationTest {
         compose.onNodeWithText("لا مراجعات بعد؛ تبدأ مراجعاتك حين تحفظ أول حديث").assertExists()
         compose.onNodeWithText("المحطة التالية في الحفظ").assertExists()
         compose.onNodeWithText("الحديث رقم 1").assertExists()
-        compose.onNodeWithText("المستوى 1").assertExists()
+        // There are no levels any more: the hadith is told by its number alone.
+        compose.onNodeWithText("المستوى 1").assertDoesNotExist()
     }
 
     @Test
@@ -209,7 +210,10 @@ class BottomNavigationTest {
         showApp()
 
         tab("المكتبة").performClick()
-        compose.onNodeWithText("ابحث في نص الحديث…").assertExists()
+        // The shelf of books: the Forty Hadith, and a note that more will come. Nothing is searched from here.
+        compose.onNodeWithText("الأربعون النووية").assertExists()
+        compose.onNodeWithText("قريبًا بإذن الله").assertExists()
+        compose.onNodeWithText("ابحث في نص الحديث…").assertDoesNotExist()
         compose.onNodeWithContentDescription("رجوع").assertDoesNotExist()
         tab("المكتبة").assertIsSelected()
 
@@ -225,11 +229,14 @@ class BottomNavigationTest {
     fun theLibraryKeepsItsSearchAcrossTabs() {
         showApp()
         tab("المكتبة").performClick()
+        compose.onNodeWithText("الأربعون النووية").performClick()
+        compose.waitForIdle()
         compose.onNode(hasSetTextAction()).performTextInput("الأعمال")
 
         tab("الورد اليومي").performClick()
         tab("المكتبة").performClick()
 
+        // The library is still in the book, with the search in it.
         compose.onNode(hasSetTextAction()).assertTextContains("الأعمال")
     }
 
