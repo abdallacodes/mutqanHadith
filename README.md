@@ -110,6 +110,11 @@ The app has three tabs — **Home**, **Library** and **Insights** — and these 
   placement checked at once). A drill a chain is too short for is not offered, and the screen says why.
 - **Insights:** the *Narrator Network* graph (narrators your chains share and where each stands), *Mastery Analytics*
   (how well the matn and the sanad hold right now), and *Memory Clocks* (how long your memory holds before a review).
+- **Starting point:** asked once at the first launch and in Settings (*Your starting point*): beginner starts from zero; an
+  intermediate (memorized the Forty once, now rusty) or an expert can grade each hadith from its opening words (weak /
+  good / very good / excellent) or skip and let every hadith start as weak or good. Grading writes the same mastery
+  records a review would, never touches a hadith that already has progress, and does not count against the daily limit.
+  Library rows and the reader show the word for how well the matn is held.
 - **Settings** (opened from Insights): language (Arabic / English, switched at runtime and persisted), *Unlock All
   Layers* for advanced students (opens the Sanad tree and transmission terms on every hadith), JSON **backup export
   and restore** through the system file picker, reset, and an About page.
@@ -197,7 +202,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **952 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **981 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.
