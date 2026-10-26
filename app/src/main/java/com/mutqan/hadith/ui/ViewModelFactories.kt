@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mutqan.hadith.di.AppContainer
+import com.mutqan.hadith.ui.booktest.BookTestViewModel
 import com.mutqan.hadith.ui.collections.CollectionDetailViewModel
 import com.mutqan.hadith.ui.collections.CollectionPracticeViewModel
 import com.mutqan.hadith.ui.collections.CollectionsViewModel
@@ -86,4 +87,8 @@ fun AppContainer.settingsViewModelFactory(): ViewModelProvider.Factory = viewMod
 
 fun AppContainer.placementViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
     initializer { PlacementViewModel(placement, hadithRepository, studyPreferences.startingPoint.value) }
+}
+
+fun AppContainer.bookTestViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+    initializer { BookTestViewModel(placement, hadithRepository) }
 }

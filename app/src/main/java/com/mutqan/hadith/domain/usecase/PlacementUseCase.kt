@@ -36,6 +36,18 @@ class PlacementUseCase(
         return true
     }
 
+    /**
+     * One answer of the whole-book test: unlike [place] it overwrites, so the test can lower a hadith's status as well as
+     * raise it. The Matn is set to [band] (null, "not memorized", counts as [RecallBand.WEAK] for a hadith that has a
+     * record and leaves one without a record unmarked); the Sanad's own state is kept.
+     */
+    suspend fun grade(hadithId: Long, band: RecallBand?) {
+        val previous = reviews.getMastery(hadithId)
+        val graded = band ?: if (previous != null) RecallBand.WEAK else return
+        hadiths.getWithSanad(hadithId) ?: throw NoSuchElementException("No Hadith with id $hadithId")
+        reviews.saveReview(scheduler.place(hadithId, graded, now(), previous), narratorEvents = emptyList())
+    }
+
     /** Marks every hadith still without a record as held at [band]; returns how many were marked. */
     suspend fun placeRemaining(band: RecallBand): Int =
         hadiths.getUnseen().count { place(it.hadith.id, band) }

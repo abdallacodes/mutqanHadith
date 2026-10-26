@@ -43,3 +43,15 @@ enum class RecallBand(val placedStabilityDays: Float, private val fromStabilityD
             if (stabilityDays <= 0f) null else entries.last { stabilityDays >= it.fromStabilityDays }
     }
 }
+
+/** The points a band is worth in the whole-book test: weak 1 up to excellent 4; "not memorized" is worth none. */
+val RecallBand.points: Int get() = ordinal + 1
+
+/** How the whole-book test went: how many hadiths came out in each band, and how many were not memorized. */
+data class BookTestResult(val tally: Map<RecallBand, Int>, val notMemorized: Int) {
+    val total: Int get() = tally.values.sum() + notMemorized
+
+    /** The score out of 100: every hadith counts for the points of its band against the best band, rounded. */
+    val percent: Int
+        get() = if (total == 0) 0 else Math.round(tally.entries.sumOf { it.key.points * it.value } * 100f / (RecallBand.entries.size * total))
+}

@@ -115,19 +115,25 @@ class DualDecayScheduler(
         return ScheduleResult(record, matnInterval, sanadInterval)
     }
 
-    override fun place(hadithId: Long, band: RecallBand, now: Long): MasteryRecordEntity {
+    override fun place(hadithId: Long, band: RecallBand, now: Long, previous: MasteryRecordEntity?): MasteryRecordEntity {
         val matnStability = clamp(band.placedStabilityDays.toDouble())
-        val layer = layerFor(matnStability, 0.0, null).layer
+        val sanadStability = previous?.sanadStability?.toDouble() ?: 0.0
+        val sanadLastReviewedAt = previous?.sanadLastReviewedAt
+        val layer = layerFor(matnStability, sanadStability, sanadLastReviewedAt).layer
         val matnDue = dueAt(now, intervalFor(matnStability, decay = 1.0), matnStability, now)
-        val sanadDue = if (layer.opensSanad) now + (config.sanadIntroDelayDays * DAY_MS).roundToLong() else Long.MAX_VALUE
+        val sanadDue = when {
+            !layer.opensSanad -> Long.MAX_VALUE
+            sanadLastReviewedAt == null -> now + (config.sanadIntroDelayDays * DAY_MS).roundToLong()
+            else -> dueAt(sanadLastReviewedAt, intervalFor(sanadStability, config.sanadDecayMultiplier), sanadStability, now)
+        }
         return MasteryRecordEntity(
             hadithId = hadithId,
             matnStability = matnStability.toFloat(),
-            sanadStability = 0f,
+            sanadStability = sanadStability.toFloat(),
             matnLastReviewedAt = now,
-            sanadLastReviewedAt = null,
+            sanadLastReviewedAt = sanadLastReviewedAt,
             nextReviewDue = minOf(matnDue, sanadDue),
-            repetitionCount = 1,
+            repetitionCount = (previous?.repetitionCount ?: 0) + 1,
         )
     }
 

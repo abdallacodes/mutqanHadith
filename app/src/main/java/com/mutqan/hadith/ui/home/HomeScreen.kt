@@ -73,6 +73,8 @@ data class HomeActions(
     val onOrderChain: (Long) -> Unit = {},
     /** Reviews the weakest hadiths that are not due yet, for the learner who does not want to wait. */
     val onStartAheadReview: () -> Unit = {},
+    /** Opens the test on the whole book. */
+    val onStartBookTest: () -> Unit = {},
 )
 
 @Composable
@@ -120,8 +122,23 @@ fun HomeContent(dashboard: StudyDashboard, actions: HomeActions, modifier: Modif
         item { DailyReviewSection(dashboard, actions.onStartDueReview, actions.onStartAheadReview) }
         item { NextStepSection(dashboard.nextToLearn, primary = dashboard.dueCount == 0, onStudy = actions.onStudyHadith) }
         item { QuickStatsRow(dashboard) }
+        if (dashboard.newCount + dashboard.studiedCount > 0) item { BookTestSection(actions.onStartBookTest) }
         item { DrillActions(dashboard, actions) }
         item { Box(Modifier.size(8.dp)) }
+    }
+}
+
+/** The test on the whole book: a self-graded pass over every hadith that leaves each one with the status it earned. */
+@Composable
+private fun BookTestSection(onStart: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SectionTitle(stringResource(R.string.booktest_section_title))
+        Text(
+            stringResource(R.string.booktest_section_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.booktest_start)) }
     }
 }
 

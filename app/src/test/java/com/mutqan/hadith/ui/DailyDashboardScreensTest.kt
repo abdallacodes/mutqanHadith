@@ -44,6 +44,7 @@ class DailyDashboardScreensTest {
     private val actions = HomeActions(
         onStartDueReview = { calls += "due" },
         onStartAheadReview = { calls += "ahead" },
+        onStartBookTest = { calls += "booktest" },
         onStudyHadith = { calls += "study$it" },
         onSanadBuilder = { calls += "builder$it" },
         onMissingLink = { calls += "link$it" },
@@ -107,6 +108,23 @@ class DailyDashboardScreensTest {
 
         compose.onNodeWithText("ابدأ ورد اليوم").assertExists()
         compose.onNodeWithText("راجع الآن").assertExists()
+    }
+
+    @Test
+    fun home_offersTheTestOnTheWholeBook() {
+        showHome(dashboard(learning = 2, next = arbaeen1))
+
+        compose.onNodeWithText("اختبر نفسك في الأربعين").assertExists()
+        compose.onNodeWithText("ابدأ الاختبار").performClick()
+
+        assertEquals(listOf("booktest"), calls)
+    }
+
+    @Test
+    fun home_withNothingInTheLibraryOffersNoBookTest() {
+        showHome(dashboard())
+
+        compose.onNodeWithText("ابدأ الاختبار").assertDoesNotExist()
     }
 
     @Test

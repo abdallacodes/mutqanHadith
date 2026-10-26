@@ -118,6 +118,9 @@ The app has three tabs — **Home**, **Library** and **Insights** — and these 
 - **Settings** (opened from Insights): language (Arabic / English, switched at runtime and persisted), *Unlock All
   Layers* for advanced students (opens the Sanad tree and transmission terms on every hadith), JSON **backup export
   and restore** through the system file picker, reset, and an About page.
+- **Test on the whole book:** a *Test yourself on the Forty* section on Home runs the self-graded check over every hadith in
+  order, ten per sitting with a break to stop at; each answer sets that hadith's status (it can lower one too), and a score
+  closes the test.
 - **Review now:** a *Review now* button on Home (shown whenever studied hadiths are not due yet, due ones or not) starts a
   sitting over the hadiths held least firmly, five at a time with the usual "enough for today" break, so the app still
   nudges toward coming back tomorrow. Reviews done early feed the scheduler like any other.
@@ -205,7 +208,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **991 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **1002 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.

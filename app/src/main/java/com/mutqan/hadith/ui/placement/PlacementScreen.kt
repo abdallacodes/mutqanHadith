@@ -157,13 +157,28 @@ private fun OfferStep(point: StartingPoint, busy: Boolean, actions: PlacementAct
 
 @Composable
 private fun CheckStep(step: PlacementStep.Check, busy: Boolean, actions: PlacementActions) {
-    val card = step.card
     LinearProgressIndicator(progress = { step.index.toFloat() / step.cards.size }, modifier = Modifier.fillMaxWidth())
     Text(
         stringResource(R.string.placement_check_progress, step.index + 1, step.cards.size),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+    CheckCardView(step.card, step.revealed)
+    if (!step.revealed) {
+        Button(onClick = actions.onReveal, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.placement_check_reveal)) }
+    } else {
+        BandAnswerButtons(busy, actions.onRate)
+    }
+    step.point.defaultBand?.let { band ->
+        TextButton(onClick = actions.onFinishRest, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.placement_check_finish, stringResource(band.labelRes)))
+        }
+    }
+}
+
+/** One hadith of a self-check: its number and opening words as the cue, the whole text once it is revealed. */
+@Composable
+internal fun CheckCardView(card: CheckCard, revealed: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -172,7 +187,7 @@ private fun CheckStep(step: PlacementStep.Check, busy: Boolean, actions: Placeme
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.hadith_number, card.hadithNumber), style = MaterialTheme.typography.titleLarge)
-            if (step.revealed) {
+            if (revealed) {
                 Text(card.matn, style = MatnTextStyle, modifier = Modifier.fillMaxWidth())
             } else {
                 Text(card.cue, style = MatnTextStyle, modifier = Modifier.fillMaxWidth())
@@ -184,24 +199,19 @@ private fun CheckStep(step: PlacementStep.Check, busy: Boolean, actions: Placeme
             }
         }
     }
-    if (!step.revealed) {
-        Button(onClick = actions.onReveal, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.placement_check_reveal)) }
-    } else {
-        Text(stringResource(R.string.placement_check_ask), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        // Best first, so the answer that needs no further thought is the first one.
-        RecallBand.entries.reversed().forEach { band ->
-            OutlinedButton(onClick = { actions.onRate(band) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(band.labelRes))
-            }
-        }
-        OutlinedButton(onClick = { actions.onRate(null) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.placement_check_none))
+}
+
+/** "How well did you know it?": the four bands, best first, and "not memorized". */
+@Composable
+internal fun BandAnswerButtons(busy: Boolean, onRate: (RecallBand?) -> Unit) {
+    Text(stringResource(R.string.placement_check_ask), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    RecallBand.entries.reversed().forEach { band ->
+        OutlinedButton(onClick = { onRate(band) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(band.labelRes))
         }
     }
-    step.point.defaultBand?.let { band ->
-        TextButton(onClick = actions.onFinishRest, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.placement_check_finish, stringResource(band.labelRes)))
-        }
+    OutlinedButton(onClick = { onRate(null) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.placement_check_none))
     }
 }
 

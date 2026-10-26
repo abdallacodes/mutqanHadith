@@ -50,10 +50,11 @@ interface SpacedRepetitionScheduler {
     fun schedule(request: ScheduleRequest): ScheduleResult
 
     /**
-     * The record of a hadith the learner says they already hold at [band], as if its Matn had been reviewed at
-     * [now] and come out with the band's stability. The Sanad is left unlearned, so it opens by the usual rules.
+     * The record of a hadith the learner says they hold at [band], as if its Matn had been reviewed at [now] and come
+     * out with the band's stability, whatever it was before (a test can lower it as well as raise it). Without a
+     * [previous] record the Sanad is left unlearned and opens by the usual rules; with one, its Sanad is kept as it is.
      */
-    fun place(hadithId: Long, band: RecallBand, now: Long): MasteryRecordEntity
+    fun place(hadithId: Long, band: RecallBand, now: Long, previous: MasteryRecordEntity? = null): MasteryRecordEntity
 
     /** Recall probability of each component at [now], from the stored state. */
     fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability

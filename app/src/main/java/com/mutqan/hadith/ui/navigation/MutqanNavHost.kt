@@ -32,6 +32,9 @@ import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.analyticsViewModelFactory
 import com.mutqan.hadith.ui.collectionDetailViewModelFactory
 import com.mutqan.hadith.ui.collectionPracticeViewModelFactory
+import com.mutqan.hadith.ui.booktest.BookTestRoute
+import com.mutqan.hadith.ui.booktest.BookTestViewModel
+import com.mutqan.hadith.ui.bookTestViewModelFactory
 import com.mutqan.hadith.ui.collections.CollectionDetailRoute
 import com.mutqan.hadith.ui.collections.CollectionDetailViewModel
 import com.mutqan.hadith.ui.collections.CollectionPracticeRoute
@@ -99,6 +102,7 @@ object Routes {
     const val LIBRARY = "library"
     const val INSIGHTS = "insights"
     const val SETTINGS = "settings"
+    const val BOOK_TEST = "book_test"
 
     /** Where the learner tells the app their starting point; [ARG_FIRST_RUN] is true when it is the first thing shown. */
     const val PLACEMENT = "placement?$ARG_FIRST_RUN={$ARG_FIRST_RUN}"
@@ -202,6 +206,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 actions = HomeActions(
                     onStartDueReview = { navController.navigate(Routes.review(ReviewMode.DUE)) },
                     onStartAheadReview = { navController.navigate(Routes.review(ReviewMode.AHEAD)) },
+                    onStartBookTest = { navController.navigate(Routes.BOOK_TEST) },
                     onStudyHadith = { navController.navigate(Routes.hadithStudy(it)) },
                     onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                     onMissingLink = { navController.navigate(Routes.missingLink(it)) },
@@ -363,6 +368,11 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 onClose = { navController.popBackStack() },
                 onOpenPlacement = { navController.navigate(Routes.placement()) },
             )
+        }
+
+        composable(Routes.BOOK_TEST) {
+            val viewModel: BookTestViewModel = viewModel(factory = container.bookTestViewModelFactory())
+            BookTestRoute(viewModel, onClose = { navController.popBackStack() })
         }
 
         composable(
