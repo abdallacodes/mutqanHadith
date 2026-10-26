@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mutqan.hadith.di.AppContainer
+import com.mutqan.hadith.ui.collections.CollectionDetailViewModel
+import com.mutqan.hadith.ui.collections.CollectionPracticeViewModel
+import com.mutqan.hadith.ui.collections.CollectionsViewModel
 import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
@@ -54,6 +57,18 @@ fun AppContainer.libraryViewModelFactory(): ViewModelProvider.Factory = viewMode
 
 fun AppContainer.hadithStudyViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
     initializer { HadithStudyViewModel(hadithId, getHadithStudy, startMemorizing, readerSettings, dailyPacing) }
+}
+
+fun AppContainer.collectionsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+    initializer { CollectionsViewModel(collectionRepository, createCollection, setCollectionMembership) }
+}
+
+fun AppContainer.collectionDetailViewModelFactory(collectionId: Long): ViewModelProvider.Factory = viewModelFactory {
+    initializer { CollectionDetailViewModel(collectionId, observeCollectionDetail, renameCollection, deleteCollection, setCollectionMembership) }
+}
+
+fun AppContainer.collectionPracticeViewModelFactory(collectionId: Long): ViewModelProvider.Factory = viewModelFactory {
+    initializer { CollectionPracticeViewModel(collectionId, collectionRepository, hadithRepository, getLayerStatuses) }
 }
 
 fun AppContainer.analyticsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

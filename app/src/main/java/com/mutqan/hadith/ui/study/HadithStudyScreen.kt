@@ -61,6 +61,9 @@ import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
 import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.usecase.HadithStudy
+import com.mutqan.hadith.ui.collections.AddToCollectionHost
+import com.mutqan.hadith.ui.collections.CollectButton
+import com.mutqan.hadith.ui.collections.CollectionsViewModel
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
 import com.mutqan.hadith.ui.common.LayerLockSheet
@@ -88,8 +91,20 @@ fun HadithStudyRoute(
     onSanadBuilder: (Long) -> Unit = {},
     onMissingLink: (Long) -> Unit = {},
     onOrderChain: (Long) -> Unit = {},
+    /** Personal collections; without them the page has no "add to collection" action. */
+    collectionsViewModel: CollectionsViewModel? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var filing by rememberSaveable { mutableStateOf(false) }
+    var onCollect: (() -> Unit)? = null
+    var filed = false
+    val hadithId = (state as? UiState.Success)?.data?.study?.hadith?.hadith?.id
+    if (collectionsViewModel != null && hadithId != null) {
+        val collected by collectionsViewModel.collected.collectAsStateWithLifecycle()
+        filed = hadithId in collected
+        onCollect = { filing = true }
+        if (filing) AddToCollectionHost(hadithId, collectionsViewModel, onDismiss = { filing = false })
+    }
     HadithStudyScreen(
         state = state,
         onRetry = viewModel::retry,
@@ -104,6 +119,8 @@ fun HadithStudyRoute(
         onToggleTashkeel = viewModel::toggleTashkeel,
         onConfirmPacing = { viewModel.confirmPacing(onStartLearning) },
         onDismissPacing = viewModel::dismissPacing,
+        onCollect = onCollect,
+        isFiled = filed,
     )
 }
 
@@ -151,6 +168,10 @@ fun HadithStudyScreen(
     onConfirmPacing: () -> Unit = {},
     /** The user left the hadith for another day. */
     onDismissPacing: () -> Unit = {},
+    /** Opens the "add to collection" sheet; null hides the action. */
+    onCollect: (() -> Unit)? = null,
+    /** The hadith is already in a collection, which the action shows. */
+    isFiled: Boolean = false,
 ) {
     (state as? UiState.Success)?.data?.takeIf { it.pacingPrompt }?.let { PacingDialog(onConfirmPacing, onDismissPacing) }
     Scaffold(
@@ -160,6 +181,7 @@ fun HadithStudyScreen(
                 title = stringResource(R.string.study_title),
                 onBack = onClose,
                 actions = {
+                    if (onCollect != null && state is UiState.Success) CollectButton(isFiled, onCollect)
                     (state as? UiState.Success)?.data?.let { TashkeelAction(it.showTashkeel, onToggleTashkeel) }
                 },
             )

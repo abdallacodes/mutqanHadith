@@ -7,7 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -73,5 +77,23 @@ fun LibraryIcon(modifier: Modifier = Modifier, tint: Color = LocalContentColor.c
             )
         }
         drawLine(tint, Offset(w * 0.08f, h * 0.88f), Offset(w * 0.92f, h * 0.88f), strokeWidth = h * 0.07f, cap = StrokeCap.Round)
+    }
+}
+
+/** A bookmark ribbon, outlined, or filled once the hadith is filed in a collection: the "collections" glyph, which the core icon set lacks. */
+@Composable
+fun BookmarkIcon(filled: Boolean, modifier: Modifier = Modifier, tint: Color = LocalContentColor.current, size: Dp = 24.dp) {
+    Canvas(modifier.size(size)) {
+        val w = this.size.width
+        val h = this.size.height
+        val ribbon = Path().apply {
+            moveTo(w * 0.25f, h * 0.12f)
+            lineTo(w * 0.75f, h * 0.12f)
+            lineTo(w * 0.75f, h * 0.88f)
+            lineTo(w * 0.5f, h * 0.68f)
+            lineTo(w * 0.25f, h * 0.88f)
+            close()
+        }
+        drawPath(ribbon, tint, style = if (filled) Fill else Stroke(width = w * 0.085f, join = StrokeJoin.Round))
     }
 }

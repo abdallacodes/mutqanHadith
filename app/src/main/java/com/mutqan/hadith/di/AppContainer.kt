@@ -4,6 +4,7 @@ import android.content.Context
 import com.mutqan.hadith.data.backup.ContentResolverBackupFileStore
 import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.data.repository.RoomBackupRepository
+import com.mutqan.hadith.data.repository.RoomCollectionRepository
 import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomNarratorRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
@@ -14,12 +15,15 @@ import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
 import com.mutqan.hadith.domain.pacing.DailyPacing
+import com.mutqan.hadith.domain.repository.CollectionRepository
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
 import com.mutqan.hadith.domain.settings.StudyPreferences
+import com.mutqan.hadith.domain.usecase.CreateCollectionUseCase
+import com.mutqan.hadith.domain.usecase.DeleteCollectionUseCase
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
@@ -30,7 +34,10 @@ import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
+import com.mutqan.hadith.domain.usecase.ObserveCollectionDetailUseCase
 import com.mutqan.hadith.domain.usecase.ObserveStudyDashboardUseCase
+import com.mutqan.hadith.domain.usecase.RenameCollectionUseCase
+import com.mutqan.hadith.domain.usecase.SetCollectionMembershipUseCase
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
@@ -50,6 +57,7 @@ class AppContainer(
     val hadithRepository: HadithRepository by lazy { RoomHadithRepository(database) }
     val reviewRepository: ReviewRepository by lazy { RoomReviewRepository(database) }
     val narratorRepository: NarratorRepository by lazy { RoomNarratorRepository(database) }
+    val collectionRepository: CollectionRepository by lazy { RoomCollectionRepository(database) }
     val backupRepository: BackupRepository by lazy { RoomBackupRepository(database) }
     val backupFiles: BackupFileStore by lazy { ContentResolverBackupFileStore(appContext.contentResolver) }
     val studyPreferences: StudyPreferences by lazy { SharedPreferencesStudyPreferences(appContext) }
@@ -71,6 +79,11 @@ class AppContainer(
     val getNarratorGraph by lazy { GetNarratorGraphUseCase(hadithRepository, reviewRepository) }
     val getHadithsByNarrator by lazy { GetHadithsByNarratorUseCase(hadithRepository, reviewRepository) }
     val getMasteryAnalytics by lazy { GetMasteryAnalyticsUseCase(hadithRepository, narratorRepository, reviewRepository, scheduler) }
+    val createCollection by lazy { CreateCollectionUseCase(collectionRepository) }
+    val renameCollection by lazy { RenameCollectionUseCase(collectionRepository) }
+    val deleteCollection by lazy { DeleteCollectionUseCase(collectionRepository) }
+    val setCollectionMembership by lazy { SetCollectionMembershipUseCase(collectionRepository) }
+    val observeCollectionDetail by lazy { ObserveCollectionDetailUseCase(collectionRepository, reviewRepository, scheduler) }
     val exportUserData by lazy { ExportUserDataUseCase(backupRepository) }
     val importUserData by lazy { ImportUserDataUseCase(backupRepository) }
     val resetProgress by lazy { ResetProgressUseCase(backupRepository) }

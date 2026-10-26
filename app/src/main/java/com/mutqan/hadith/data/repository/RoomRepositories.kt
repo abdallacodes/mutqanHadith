@@ -3,17 +3,22 @@ package com.mutqan.hadith.data.repository
 import androidx.room.withTransaction
 import com.mutqan.hadith.data.dao.searchInLevel
 import com.mutqan.hadith.data.db.MutqanDatabase
+import com.mutqan.hadith.data.entity.CollectionEntity
+import com.mutqan.hadith.data.entity.HadithCollectionCrossRef
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.model.CollectionSummary
 import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
+import com.mutqan.hadith.domain.repository.CollectionRepository
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class RoomHadithRepository(private val db: MutqanDatabase) : HadithRepository {
     override suspend fun getWithSanad(id: Long): HadithWithFullSanad? =
@@ -74,4 +79,35 @@ class RoomReviewRepository(private val db: MutqanDatabase) : ReviewRepository {
         db.reviewHistoryDao().getOutcomeCountsByHadith(narratorId)
 
     override suspend fun getReviewTimestamps(): List<Long> = db.reviewHistoryDao().getReviewTimestamps()
+}
+
+class RoomCollectionRepository(private val db: MutqanDatabase) : CollectionRepository {
+    private val dao get() = db.collectionDao()
+
+    override fun observeAll(): Flow<List<CollectionSummary>> = dao.observeSummaries()
+
+    override fun observe(id: Long): Flow<CollectionEntity?> = dao.observe(id)
+
+    override fun observeHadiths(collectionId: Long): Flow<List<HadithEntity>> = dao.observeHadiths(collectionId)
+
+    override fun observeCollectionIdsOf(hadithId: Long): Flow<Set<Long>> = dao.observeCollectionIdsOf(hadithId).map { it.toSet() }
+
+    override fun observeCollectedHadithIds(): Flow<Set<Long>> = dao.observeCollectedHadithIds().map { it.toSet() }
+
+    override suspend fun getHadithIds(collectionId: Long): List<Long> = dao.getHadithIds(collectionId)
+
+    override suspend fun isTitleTaken(title: String, exceptId: Long): Boolean = dao.countTitled(title, exceptId) > 0
+
+    override suspend fun create(title: String, accent: Int, createdAt: Long, firstHadithId: Long?): Long =
+        dao.insertWith(CollectionEntity(title = title, createdAt = createdAt, accent = accent), firstHadithId)
+
+    override suspend fun update(id: Long, title: String, accent: Int) = dao.update(id, title, accent)
+
+    override suspend fun delete(id: Long) = dao.delete(id)
+
+    override suspend fun add(collectionId: Long, hadithId: Long, addedAt: Long) {
+        dao.addReference(HadithCollectionCrossRef(collectionId, hadithId, addedAt))
+    }
+
+    override suspend fun remove(collectionId: Long, hadithId: Long) = dao.removeReference(collectionId, hadithId)
 }

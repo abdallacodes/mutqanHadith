@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.mutqan.hadith.domain.model.HadithLevel
 import com.mutqan.hadith.domain.usecase.GetLibraryByLevelUseCase
 import com.mutqan.hadith.domain.usecase.LibraryLevel
+import com.mutqan.hadith.ui.collections.LibrarySection
 import com.mutqan.hadith.ui.common.UiState
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +42,11 @@ class LibraryViewModel(getLibrary: GetLibraryByLevelUseCase) : ViewModel() {
     /** The level whose hadiths are listed. It survives the search: typing never leaves the level. */
     val selected: StateFlow<HadithLevel> = _selected.asStateFlow()
 
+    private val _section = MutableStateFlow(LibrarySection.HADITHS)
+
+    /** Whether the library shows the hadiths of the levels or the user's collections. */
+    val section: StateFlow<LibrarySection> = _section.asStateFlow()
+
     private val retryTick = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,6 +64,10 @@ class LibraryViewModel(getLibrary: GetLibraryByLevelUseCase) : ViewModel() {
 
     fun onSelectLevel(level: HadithLevel) {
         _selected.value = level
+    }
+
+    fun onSelectSection(section: LibrarySection) {
+        _section.value = section
     }
 
     fun retry() = retryTick.update { it + 1 }

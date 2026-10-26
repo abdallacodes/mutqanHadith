@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -29,6 +30,15 @@ import com.mutqan.hadith.di.AppContainer
 import com.mutqan.hadith.ui.analytics.AnalyticsRoute
 import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.analyticsViewModelFactory
+import com.mutqan.hadith.ui.collectionDetailViewModelFactory
+import com.mutqan.hadith.ui.collectionPracticeViewModelFactory
+import com.mutqan.hadith.ui.collections.CollectionDetailRoute
+import com.mutqan.hadith.ui.collections.CollectionDetailViewModel
+import com.mutqan.hadith.ui.collections.CollectionPracticeRoute
+import com.mutqan.hadith.ui.collections.CollectionPracticeViewModel
+import com.mutqan.hadith.ui.collections.CollectionsViewModel
+import com.mutqan.hadith.ui.collections.LibrarySection
+import com.mutqan.hadith.ui.collectionsViewModelFactory
 import com.mutqan.hadith.ui.details.HadithDetailsRoute
 import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphRoute
@@ -72,6 +82,7 @@ object Routes {
     const val ARG_MODE = "mode"
     const val ARG_ID = "id"
     const val ARG_HADITH_ID = "hadithId"
+    const val ARG_COLLECTION_ID = "collectionId"
     const val NO_ID = -1L
 
     /** [ARG_ID] is the Hadith for a single review and the narrator for a narrator review. */
@@ -86,6 +97,8 @@ object Routes {
     const val SETTINGS = "settings"
     const val HADITH_DETAILS = "hadith_details/{$ARG_HADITH_ID}"
     const val HADITH_STUDY = "hadith_study/{$ARG_HADITH_ID}"
+    const val COLLECTION = "collection/{$ARG_COLLECTION_ID}"
+    const val COLLECTION_PRACTICE = "collection_practice/{$ARG_COLLECTION_ID}"
 
     fun review(mode: ReviewMode, id: Long? = null): String =
         "review/${mode.route}" + if (id != null) "?$ARG_ID=$id" else ""
@@ -99,6 +112,10 @@ object Routes {
     fun hadithDetails(hadithId: Long): String = "hadith_details/$hadithId"
 
     fun hadithStudy(hadithId: Long): String = "hadith_study/$hadithId"
+
+    fun collection(collectionId: Long): String = "collection/$collectionId"
+
+    fun collectionPractice(collectionId: Long): String = "collection_practice/$collectionId"
 }
 
 private const val TRANSITION_MS = 300
@@ -262,12 +279,49 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
 
         composable(Routes.LIBRARY) {
             val viewModel: LibraryViewModel = viewModel(factory = container.libraryViewModelFactory())
+            val collections: CollectionsViewModel = viewModel(factory = container.collectionsViewModelFactory())
             LibraryRoute(
                 viewModel = viewModel,
                 // A tab, not a page above another: there is nowhere to go back to.
                 onClose = null,
                 onOpenHadith = { navController.navigate(Routes.hadithStudy(it)) },
+                collectionsViewModel = collections,
+                onOpenCollection = { navController.navigate(Routes.collection(it)) },
             )
+        }
+
+        composable(
+            route = Routes.COLLECTION,
+            arguments = listOf(navArgument(Routes.ARG_COLLECTION_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val collectionId = entry.arguments?.getLong(Routes.ARG_COLLECTION_ID) ?: return@composable
+            val viewModel: CollectionDetailViewModel = viewModel(factory = container.collectionDetailViewModelFactory(collectionId))
+            CollectionDetailRoute(
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() },
+                onOpenHadith = { navController.navigate(Routes.hadithStudy(it)) },
+                onReview = { navController.navigate(Routes.collectionPractice(collectionId)) },
+                onBrowseLibrary = {
+                    // Back to the library, on the hadiths: that is where an empty collection is filled from.
+                    val library = runCatching { navController.getBackStackEntry(Routes.LIBRARY) }.getOrNull()
+                    if (library != null) {
+                        ViewModelProvider(library, container.libraryViewModelFactory())[LibraryViewModel::class.java]
+                            .onSelectSection(LibrarySection.HADITHS)
+                        navController.popBackStack(Routes.LIBRARY, inclusive = false)
+                    } else {
+                        navController.navigateToTab(TopLevelTab.LIBRARY)
+                    }
+                },
+            )
+        }
+
+        composable(
+            route = Routes.COLLECTION_PRACTICE,
+            arguments = listOf(navArgument(Routes.ARG_COLLECTION_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val collectionId = entry.arguments?.getLong(Routes.ARG_COLLECTION_ID) ?: return@composable
+            val viewModel: CollectionPracticeViewModel = viewModel(factory = container.collectionPracticeViewModelFactory(collectionId))
+            CollectionPracticeRoute(viewModel, onClose = { navController.popBackStack() })
         }
 
         composable(
@@ -276,8 +330,10 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
         ) { entry ->
             val hadithId = entry.arguments?.getLong(Routes.ARG_HADITH_ID) ?: return@composable
             val viewModel: HadithStudyViewModel = viewModel(factory = container.hadithStudyViewModelFactory(hadithId))
+            val collections: CollectionsViewModel = viewModel(factory = container.collectionsViewModelFactory())
             HadithStudyRoute(
                 viewModel = viewModel,
+                collectionsViewModel = collections,
                 onClose = { navController.popBackStack() },
                 // Back from the learning flow returns to the study page, which by then shows the hadith as in study.
                 onStartLearning = { navController.navigate(Routes.review(ReviewMode.NEW, it)) },

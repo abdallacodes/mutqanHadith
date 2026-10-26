@@ -5,11 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.mutqan.hadith.data.dao.CollectionDao
 import com.mutqan.hadith.data.dao.HadithDao
 import com.mutqan.hadith.data.dao.MasteryDao
 import com.mutqan.hadith.data.dao.NarratorDao
 import com.mutqan.hadith.data.dao.ReviewHistoryDao
 import com.mutqan.hadith.data.entity.CatalogStateEntity
+import com.mutqan.hadith.data.entity.CollectionEntity
+import com.mutqan.hadith.data.entity.HadithCollectionCrossRef
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
@@ -25,8 +28,10 @@ import com.mutqan.hadith.data.seed.SeedLoader
         NarratorReviewEventEntity::class,
         MasteryRecordEntity::class,
         CatalogStateEntity::class,
+        CollectionEntity::class,
+        HadithCollectionCrossRef::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {
@@ -34,6 +39,7 @@ abstract class MutqanDatabase : RoomDatabase() {
     abstract fun narratorDao(): NarratorDao
     abstract fun masteryDao(): MasteryDao
     abstract fun reviewHistoryDao(): ReviewHistoryDao
+    abstract fun collectionDao(): CollectionDao
 
     companion object {
         private const val NAME = "mutqan_hadith.db"

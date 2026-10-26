@@ -37,6 +37,9 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,11 +54,20 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.domain.model.CollectionAccent
 import com.mutqan.hadith.domain.model.HadithLevel
 import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.usecase.HadithProgress
 import com.mutqan.hadith.domain.usecase.LibraryHadith
 import com.mutqan.hadith.domain.usecase.LibraryLevel
+import com.mutqan.hadith.ui.collections.AddToCollectionHost
+import com.mutqan.hadith.ui.collections.CollectButton
+import com.mutqan.hadith.ui.collections.CollectionEditorSheet
+import com.mutqan.hadith.ui.collections.CollectionsSection
+import com.mutqan.hadith.ui.collections.CollectionsViewModel
+import com.mutqan.hadith.ui.collections.LibraryCollections
+import com.mutqan.hadith.ui.collections.LibrarySection
+import com.mutqan.hadith.ui.collections.LibrarySectionChips
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.MasteryRing
 import com.mutqan.hadith.ui.common.MutqanTopBar
@@ -88,10 +100,47 @@ fun HadithProgress.labelRes(): Int = when (this) {
 }
 
 @Composable
-fun LibraryRoute(viewModel: LibraryViewModel, onClose: (() -> Unit)?, onOpenHadith: (Long) -> Unit) {
+fun LibraryRoute(
+    viewModel: LibraryViewModel,
+    onClose: (() -> Unit)?,
+    onOpenHadith: (Long) -> Unit,
+    /** Personal collections; a library given none shows only the levels. */
+    collectionsViewModel: CollectionsViewModel? = null,
+    onOpenCollection: (Long) -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
+    val section by viewModel.section.collectAsStateWithLifecycle()
+    var filing by rememberSaveable { mutableStateOf<Long?>(null) }
+    var naming by rememberSaveable { mutableStateOf(false) }
+
+    var collections: LibraryCollections? = null
+    if (collectionsViewModel != null) {
+        val list by collectionsViewModel.list.collectAsStateWithLifecycle()
+        val collected by collectionsViewModel.collected.collectAsStateWithLifecycle()
+        val editor by collectionsViewModel.editor.collectAsStateWithLifecycle()
+        collections = LibraryCollections(
+            state = list,
+            collected = collected,
+            onCollect = { filing = it },
+            onNew = { naming = true },
+            onOpen = onOpenCollection,
+        )
+        filing?.let { hadithId -> AddToCollectionHost(hadithId, collectionsViewModel, onDismiss = { filing = null }) }
+        if (naming) {
+            CollectionEditorSheet(
+                editing = false,
+                initialTitle = "",
+                // The next tone after the ones in use, as in the sheet, so collections tell apart without being asked.
+                initialAccent = ((list as? UiState.Success)?.data?.size ?: 0) % CollectionAccent.COUNT,
+                editor = editor,
+                onSave = { title, accent -> collectionsViewModel.create(title, accent) { naming = false } },
+                onEdited = collectionsViewModel::clearEditor,
+                onDismiss = { naming = false; collectionsViewModel.clearEditor() },
+            )
+        }
+    }
     LibraryScreen(
         state = state,
         selected = selected,
@@ -101,6 +150,9 @@ fun LibraryRoute(viewModel: LibraryViewModel, onClose: (() -> Unit)?, onOpenHadi
         onRetry = viewModel::retry,
         onClose = onClose,
         onOpenHadith = onOpenHadith,
+        collections = collections,
+        section = section,
+        onSelectSection = viewModel::onSelectSection,
     )
 }
 
@@ -116,6 +168,10 @@ fun LibraryScreen(
     /** Null when the library is a tab of its own, which has no page to go back to. */
     onClose: (() -> Unit)?,
     onOpenHadith: (Long) -> Unit,
+    /** The user's collections, shown beside the levels; null leaves the library as the levels alone. */
+    collections: LibraryCollections? = null,
+    section: LibrarySection = LibrarySection.HADITHS,
+    onSelectSection: (LibrarySection) -> Unit = {},
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -123,9 +179,14 @@ fun LibraryScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(Modifier.contentWidth().fillMaxSize()) {
-                SearchField(query, onQueryChange)
-                UiStateHost(state, onRetry, Modifier.weight(1f).fillMaxWidth()) { ui ->
-                    LibraryBody(ui, selected, onSelectLevel, onOpenHadith)
+                if (collections != null) LibrarySectionChips(section, collections.count, onSelectSection)
+                if (collections != null && section == LibrarySection.COLLECTIONS) {
+                    CollectionsSection(collections, Modifier.weight(1f).fillMaxWidth())
+                } else {
+                    SearchField(query, onQueryChange)
+                    UiStateHost(state, onRetry, Modifier.weight(1f).fillMaxWidth()) { ui ->
+                        LibraryBody(ui, selected, onSelectLevel, onOpenHadith, collections)
+                    }
                 }
             }
         }
@@ -161,6 +222,7 @@ private fun LibraryBody(
     selected: HadithLevel,
     onSelectLevel: (HadithLevel) -> Unit,
     onOpenHadith: (Long) -> Unit,
+    collections: LibraryCollections? = null,
 ) {
     val level = ui.level(selected)
     Column(Modifier.fillMaxSize()) {
@@ -175,7 +237,13 @@ private fun LibraryBody(
                 item(key = "empty") { EmptyLevel(searched = ui.searched) }
             } else {
                 items(level.hadiths, key = { it.hadith.id }) { item ->
-                    LibraryHadithCard(item, onClick = { onOpenHadith(item.hadith.id) })
+                    LibraryHadithCard(
+                        item,
+                        onClick = { onOpenHadith(item.hadith.id) },
+                        trailing = collections?.let { c ->
+                            { CollectButton(filed = item.hadith.id in c.collected, onClick = { c.onCollect(item.hadith.id) }) }
+                        },
+                    )
                 }
             }
         }
@@ -271,7 +339,13 @@ private fun EmptyLevel(searched: String) {
 }
 
 @Composable
-fun LibraryHadithCard(item: LibraryHadith, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun LibraryHadithCard(
+    item: LibraryHadith,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** A control at the end of the header, e.g. the bookmark that files the hadith into a collection. */
+    trailing: (@Composable () -> Unit)? = null,
+) {
     val hadith = item.hadith
     Card(
         onClick = onClick,
@@ -307,6 +381,7 @@ fun LibraryHadithCard(item: LibraryHadith, onClick: () -> Unit, modifier: Modifi
                     container = MaterialTheme.colorScheme.surfaceVariant,
                     content = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                trailing?.invoke()
             }
             Text(
                 hadith.matnWithTashkeel,

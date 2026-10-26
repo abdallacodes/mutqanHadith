@@ -24,5 +24,25 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5)
+    /**
+     * Personal collections: two new tables and nothing else. No existing table is altered, so the progress in
+     * `mastery_record` and `narrator_review_event` and the library itself are untouched by construction.
+     */
+    val V5_TO_V6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `collections` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`title` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `accent` INTEGER NOT NULL DEFAULT 0)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `hadith_collection_cross_ref` (`collectionId` INTEGER NOT NULL, " +
+                    "`hadithId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`collectionId`, `hadithId`), " +
+                    "FOREIGN KEY(`collectionId`) REFERENCES `collections`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                    "FOREIGN KEY(`hadithId`) REFERENCES `hadith`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_hadith_collection_cross_ref_hadithId` ON `hadith_collection_cross_ref` (`hadithId`)")
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6)
 }

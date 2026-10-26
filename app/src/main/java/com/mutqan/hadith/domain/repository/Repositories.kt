@@ -1,10 +1,12 @@
 package com.mutqan.hadith.domain.repository
 
+import com.mutqan.hadith.data.entity.CollectionEntity
 import com.mutqan.hadith.data.entity.HadithEntity
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
+import com.mutqan.hadith.domain.model.CollectionSummary
 import com.mutqan.hadith.domain.model.HadithOutcomeCount
 import com.mutqan.hadith.domain.model.NarratorOutcomeCount
 import kotlinx.coroutines.flow.Flow
@@ -35,6 +37,46 @@ interface HadithRepository {
 
 interface NarratorRepository {
     suspend fun getAll(): List<NarratorEntity>
+}
+
+/**
+ * The user's personal collections of hadiths. A collection only ever refers to hadiths: nothing here creates, changes
+ * or removes a hadith, a mastery record or any other study data.
+ */
+interface CollectionRepository {
+    /** Every collection with its size, newest first. */
+    fun observeAll(): Flow<List<CollectionSummary>>
+
+    /** One collection; emits null when it does not exist or is deleted. */
+    fun observe(id: Long): Flow<CollectionEntity?>
+
+    /** The hadiths of a collection in the order they were added. */
+    fun observeHadiths(collectionId: Long): Flow<List<HadithEntity>>
+
+    /** The ids of the collections a hadith is in. */
+    fun observeCollectionIdsOf(hadithId: Long): Flow<Set<Long>>
+
+    /** The ids of all hadiths that are in some collection. */
+    fun observeCollectedHadithIds(): Flow<Set<Long>>
+
+    /** The ids of a collection's hadiths in the order they were added. */
+    suspend fun getHadithIds(collectionId: Long): List<Long>
+
+    /** Whether another collection than [exceptId] already has this name, whatever its case. */
+    suspend fun isTitleTaken(title: String, exceptId: Long = 0): Boolean
+
+    /** Creates a collection, together with its first hadith if one is given, or not at all; returns its id. */
+    suspend fun create(title: String, accent: Int, createdAt: Long, firstHadithId: Long? = null): Long
+
+    suspend fun update(id: Long, title: String, accent: Int)
+
+    /** Deletes the collection and its references to hadiths; the hadiths themselves stay. */
+    suspend fun delete(id: Long)
+
+    /** Puts a hadith in a collection; nothing happens if it is there already. */
+    suspend fun add(collectionId: Long, hadithId: Long, addedAt: Long)
+
+    suspend fun remove(collectionId: Long, hadithId: Long)
 }
 
 interface ReviewRepository {
