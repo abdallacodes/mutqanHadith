@@ -27,6 +27,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -45,8 +49,11 @@ import com.mutqan.hadith.ui.common.ChainNodeState
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
 import com.mutqan.hadith.ui.common.LockedHint
+import com.mutqan.hadith.ui.common.MukhrijCard
+import com.mutqan.hadith.ui.common.SahabiCard
 import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
+import com.mutqan.hadith.ui.study.SanadTimeline
 import com.mutqan.hadith.ui.theme.MatnTextStyle
 
 // The card of a review, shared with the practice of a collection: the recall prompt, the matn with its cues, and the chain.
@@ -102,7 +109,12 @@ internal fun CardPane(
         if (!frame.practice) LayerBadge(card.layer)
         // At layer 1 the Companion and the takhrij are cues for the matn: given as hints while it is being recalled,
         // and in full once it is on screen.
-        if (core) CoreCues(card, stage, frame.hints, frame.canHint, onHint)
+        if (core) {
+            CoreCues(card, stage, frame.hints, frame.canHint, onHint)
+        } else if (stage != CardStage.RECALL && card.sahabi.isNotBlank()) {
+            // As in the reader: the Companion first. Held back while the matn is recalled.
+            SahabiCard(card.sahabi)
+        }
 
         Card(
             modifier = Modifier
@@ -149,9 +161,12 @@ internal fun CardPane(
             }
         }
 
+        // And the collectors last, after the matn, once it is on screen.
+        if (stage != CardStage.RECALL && card.takhrij.isNotBlank()) MukhrijCard(card.takhrij)
+
         if (core) {
             if (stage != CardStage.RECALL) TashkeelToggle(frame.hideTashkeel, onToggleTashkeel)
-            SanadLockedPanel(onExplainLock)
+            SanadLockedPanel(onExplainLock, card, canPeek = stage != CardStage.RECALL)
         } else if (stage == CardStage.SANAD && !frame.practice) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(stringResource(R.string.home_drills), style = MaterialTheme.typography.titleMedium)
@@ -177,21 +192,7 @@ internal fun CoreCues(card: ReviewCard, stage: CardStage, hints: List<HintKind>,
         HintPanel(card, hints, canHint, onHint)
         return
     }
-    if (card.sahabi.isBlank() && card.takhrij.isBlank()) return
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-    ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            if (card.sahabi.isNotBlank()) {
-                Text(stringResource(R.string.sahabi_label, card.sahabi), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            }
-            if (card.takhrij.isNotBlank()) {
-                Text(stringResource(R.string.study_takhrij, card.takhrij), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
+    if (card.sahabi.isNotBlank()) SahabiCard(card.sahabi)
 }
 
 /** The hint button of a layer 1 card and the hints it has given so far. */
@@ -257,9 +258,13 @@ internal fun TashkeelToggle(hidden: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** The chain, folded away until the core of the hadith holds; a tap says why. */
+/**
+ * The chain at layer 1. It is not recalled or rated yet, so it is folded away as in the reader and can be opened to look
+ * at once the matn is on screen; a tap on the hint says why it is not asked for yet.
+ */
 @Composable
-internal fun SanadLockedPanel(onExplain: () -> Unit) {
+internal fun SanadLockedPanel(onExplain: () -> Unit, card: ReviewCard, canPeek: Boolean) {
+    var shown by rememberSaveable(card.hadithId) { mutableStateOf(false) }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -267,7 +272,15 @@ internal fun SanadLockedPanel(onExplain: () -> Unit) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.layer_2_name), style = MaterialTheme.typography.titleSmall)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.layer_2_name), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                if (canPeek && card.links.isNotEmpty()) {
+                    TextButton(onClick = { shown = !shown }) {
+                        Text(stringResource(if (shown) R.string.study_sanad_hide else R.string.study_sanad_show))
+                    }
+                }
+            }
+            if (shown && canPeek) SanadTimeline(collector = card.collector, links = card.links)
             LockedHint(stringResource(R.string.layer_sanad_locked_hint), onClick = onExplain)
         }
     }

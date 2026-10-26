@@ -378,8 +378,8 @@ class RetentionSuiteScreensTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("تلميح").assertDoesNotExist()
-        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
     }
 
     // -- The explanation behind a locked Sanad ---------------------------------------------

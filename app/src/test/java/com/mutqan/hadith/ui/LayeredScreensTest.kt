@@ -126,6 +126,29 @@ class LayeredScreensTest {
     // -- layer 1 ---------------------------------------------------------------------------
 
     @Test
+    fun layerOne_theChainCanBeLookedAtOnceTheMatnIsOnScreenAndStaysHiddenUntilThen() {
+        core(1)
+        showReview(ReviewMode.DUE)
+
+        // While the matn is recalled nothing of the chain is offered.
+        compose.onNodeWithText("إظهار السند").assertDoesNotExist()
+
+        compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("الحميدي").assertDoesNotExist()
+        compose.onNodeWithText("إظهار السند").performClick()
+        compose.waitForIdle()
+
+        compose.onAllNodesWithText("الحميدي")[0].assertExists()
+        // Looking is all it is: still no drills, and no chain rating.
+        compose.onNodeWithText("بناء السند").assertDoesNotExist()
+
+        compose.onNodeWithText("إخفاء السند").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("الحميدي").assertDoesNotExist()
+    }
+
+    @Test
     fun layerOne_foldsTheChainAwayBehindALockAndOffersNoDrills() {
         showReview(ReviewMode.NEW, targetId = 1)
 
@@ -149,8 +172,8 @@ class LayeredScreensTest {
     fun layerOne_putsTheCompanionAndTheTakhrijInFront() {
         showReview(ReviewMode.NEW, targetId = 1)
 
-        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
     }
 
     @Test
@@ -160,16 +183,16 @@ class LayeredScreensTest {
 
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").assertExists()
         compose.onNodeWithText("تلميح").assertExists()
-        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertDoesNotExist()
-        compose.onNodeWithText("التخريج: متفق عليه").assertDoesNotExist()
+        compose.onNodeWithText("عمر بن الخطاب").assertDoesNotExist()
+        compose.onNodeWithText("متفق عليه").assertDoesNotExist()
         compose.onNodeWithText(TASHKEEL).assertDoesNotExist()
 
         // Once the matn is shown the cues are there in full, to check against.
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("الصحابي: عمر بن الخطاب").assertExists()
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
         compose.onNodeWithText("تلميح").assertDoesNotExist()
     }
 

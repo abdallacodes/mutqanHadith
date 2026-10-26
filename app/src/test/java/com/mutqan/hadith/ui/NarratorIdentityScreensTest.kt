@@ -102,8 +102,8 @@ class NarratorIdentityScreensTest {
         compose.onNodeWithText("استحضر المتن من ذاكرتك، ثم اضغط لكشفه").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("الصحابي: عبد الله بن عمر").assertExists()
-        compose.onNodeWithText("الصحابي: ابن عمر").assertDoesNotExist()
+        compose.onNodeWithText("عبد الله بن عمر").assertExists()
+        compose.onNodeWithText("ابن عمر").assertDoesNotExist()
     }
 
     private fun showGraph() {

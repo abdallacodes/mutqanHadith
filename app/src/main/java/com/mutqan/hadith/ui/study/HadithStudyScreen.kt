@@ -69,8 +69,10 @@ import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
 import com.mutqan.hadith.ui.common.LayerLockSheet
 import com.mutqan.hadith.ui.common.LockedHint
+import com.mutqan.hadith.ui.common.MukhrijCard
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.PacingDialog
+import com.mutqan.hadith.ui.common.SahabiCard
 import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
@@ -221,42 +223,6 @@ private fun StudyContent(
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
         if (hadith.takhrij.isNotBlank()) MukhrijCard(hadith.takhrij)
         SanadCard(ui.study)
-    }
-}
-
-/** The Companion who narrates the hadith, first on the page and in large type: it is what the learner is asked for first. */
-@Composable
-private fun SahabiCard(name: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-    ) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                stringResource(R.string.study_sahabi_title),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-            )
-            Text(name, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-        }
-    }
-}
-
-/** The collectors who recorded the hadith, after the matn and before the chain, in large type, worded as the author gives them («رواه مسلم»). */
-@Composable
-private fun MukhrijCard(takhrij: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-    ) {
-        Text(
-            takhrij,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-        )
     }
 }
 

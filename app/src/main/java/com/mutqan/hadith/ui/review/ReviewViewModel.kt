@@ -65,6 +65,8 @@ data class ReviewCard(
     val sahabi: String = "",
     val takhrij: String = "",
     val layer: LayerStatus = LayerStatus.Fresh,
+    /** The compiler the chain is read from, the head of its timeline; blank when the hadith has no chain to show. */
+    val collector: String = "",
 ) {
     val activeLayer: MemorizationLayer get() = layer.layer
 
@@ -83,6 +85,7 @@ fun HadithWithFullSanad.toReviewCard(layer: LayerStatus = LayerStatus.Fresh) = R
     sahabi = NarratorAliases.canonicalName(hadith.sahabi.ifBlank { sanad.lastOrNull()?.narrator?.primaryName.orEmpty() }),
     takhrij = hadith.takhrij,
     layer = layer,
+    collector = hadith.collector,
 )
 
 /** A review that opened [layer] for a hadith. */
