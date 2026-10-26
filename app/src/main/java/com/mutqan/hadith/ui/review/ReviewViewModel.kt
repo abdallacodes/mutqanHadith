@@ -38,7 +38,10 @@ enum class ReviewMode(val route: String) {
     SINGLE("single"),
 
     /** Every Hadith whose chain passes through one narrator, e.g. a pivot (مدار). */
-    NARRATOR("narrator");
+    NARRATOR("narrator"),
+
+    /** Studied hadiths that are not due yet, weakest first: the learner chose to review now and not wait. */
+    AHEAD("ahead");
 
     companion object {
         fun fromRoute(route: String?) = entries.firstOrNull { it.route == route } ?: DUE
@@ -205,6 +208,7 @@ class ReviewViewModel(
             _state.value = try {
                 val found = when (mode) {
                     ReviewMode.DUE -> getDue().map { it.hadith }
+                    ReviewMode.AHEAD -> getDue.ahead().map { it.hadith }
                     ReviewMode.NEW ->
                         if (targetId != null) {
                             listOfNotNull(hadiths.getWithSanad(targetId))
@@ -315,7 +319,7 @@ class ReviewViewModel(
 
     /** A session over [cards]: the due reviews are cut into batches, every other mode is one. */
     private fun newSession(cards: List<ReviewCard>, lockedSkipped: Int, notStarted: Boolean = false): ReviewSession {
-        val batches = if (mode == ReviewMode.DUE) ReviewBatching.batches(cards) else listOf(cards)
+        val batches = if (mode == ReviewMode.DUE || mode == ReviewMode.AHEAD) ReviewBatching.batches(cards) else listOf(cards)
         return ReviewSession(
             mode = mode,
             queue = batches.firstOrNull().orEmpty(),

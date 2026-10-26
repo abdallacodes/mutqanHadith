@@ -61,6 +61,8 @@
         <item quantity="other">لديك %1$d حديث مستحق للمراجعة</item>
     </plurals>
     <string name="home_review_start">ابدأ ورد اليوم</string>
+    <string name="home_review_ahead">راجع الآن</string>
+    <string name="home_review_ahead_hint">يبدأ بالأحاديث الأضعف حفظًا، في جلسات قصيرة من خمسة أحاديث. والأفضل أن تعود غدًا لمزيد.</string>
     <string name="home_review_done">أتممت ورد اليوم بنجاح</string>
     <string name="home_review_done_hint">عُد غدًا بإذن الله، أو تقدّم إلى حديث جديد</string>
     <string name="home_review_empty">لا مراجعات بعد؛ تبدأ مراجعاتك حين تحفظ أول حديث</string>
@@ -86,6 +88,7 @@
 
     <!-- Review -->
     <string name="review_title_due">ورد المراجعة</string>
+    <string name="review_title_ahead">مراجعة الآن</string>
     <string name="review_title_new">حفظ جديد</string>
     <string name="review_title_single">مراجعة حديث</string>
     <string name="review_title_narrator">أحاديث الراوي</string>
@@ -106,6 +109,7 @@
     <string name="review_done_title">أحسنت!</string>
     <string name="review_done_body">أنهيت %1$d من المراجعات</string>
     <string name="review_empty_due">لا توجد أحاديث مستحقة للمراجعة الآن. عُد لاحقًا بإذن الله.</string>
+    <string name="review_empty_ahead">لا أحاديث أخرى تحتاج إلى مراجعة الآن. عُد غدًا بإذن الله.</string>
     <string name="review_empty_new">لا توجد أحاديث جديدة للحفظ.</string>
     <string name="review_not_started">لم يدخل هذا الحديث وِرد حفظك بعد. ابدأ حفظه من صفحته أولًا ليُحتسب ضمن أحاديث اليوم الجديدة.</string>
     <string name="review_empty_narrator">لا توجد أحاديث تمر بهذا الراوي.</string>

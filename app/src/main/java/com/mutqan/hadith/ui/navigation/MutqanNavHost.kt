@@ -201,6 +201,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                 viewModel = viewModel,
                 actions = HomeActions(
                     onStartDueReview = { navController.navigate(Routes.review(ReviewMode.DUE)) },
+                    onStartAheadReview = { navController.navigate(Routes.review(ReviewMode.AHEAD)) },
                     onStudyHadith = { navController.navigate(Routes.hadithStudy(it)) },
                     onSanadBuilder = { navController.navigate(Routes.sanadBuilder(it)) },
                     onMissingLink = { navController.navigate(Routes.missingLink(it)) },

@@ -53,6 +53,8 @@
         <item quantity="other">%1$d hadiths are due for review</item>
     </plurals>
     <string name="home_review_start">Start Daily Review</string>
+    <string name="home_review_ahead">Review now</string>
+    <string name="home_review_ahead_hint">Starts with the hadiths you hold least firmly, in short sittings of five. Coming back tomorrow for more is better.</string>
     <string name="home_review_done">You completed today\'s review</string>
     <string name="home_review_done_hint">Come back tomorrow, or move on to a new hadith</string>
     <string name="home_review_empty">No reviews yet; they begin once you memorize your first hadith</string>
@@ -78,6 +80,7 @@
 
     <!-- Review -->
     <string name="review_title_due">Review Session</string>
+    <string name="review_title_ahead">Review Now</string>
     <string name="review_title_new">Learn New</string>
     <string name="review_title_single">Review Hadith</string>
     <string name="review_title_narrator">Narrator\'s Hadiths</string>
@@ -98,6 +101,7 @@
     <string name="review_done_title">Well done!</string>
     <string name="review_done_body">Reviews completed: %1$d</string>
     <string name="review_empty_due">No hadiths are due for review right now. Come back later, God willing.</string>
+    <string name="review_empty_ahead">No other hadiths need reviewing right now. Come back tomorrow, God willing.</string>
     <string name="review_empty_new">There are no new hadiths to memorize.</string>
     <string name="review_not_started">This hadith is not in your memorization yet. Start it from its page first so it counts toward today\'s new hadiths.</string>
     <string name="review_empty_narrator">No hadiths pass through this narrator.</string>

@@ -57,6 +57,8 @@ data class StudyDashboard(
     /** Mean probability of recalling the studied Hadiths right now, 0..1; null until something has been studied. */
     val retention: Float? = null,
     val streak: StudyStreak = StudyStreak.None,
+    /** Studied hadiths that are not due yet and could be reviewed ahead of time, if the learner wants to. */
+    val aheadCount: Int = 0,
     /** Null once every Hadith in the library has been started. */
     val nextToLearn: NextToLearn? = null,
     /** The drills open on [drillSuggestionId]; all of them unless the use case says otherwise. */
@@ -100,6 +102,7 @@ class ObserveStudyDashboardUseCase(
 
             StudyDashboard(
                 dueCount = items.count { it.isDue },
+                aheadCount = studied.count { !it.isDue && it.metrics!!.matnStability > 0f },
                 newCount = items.count { it.isNew },
                 overallMastery = if (items.isEmpty()) 0f else items.map { it.metrics?.overallMastery ?: 0f }.average().toFloat(),
                 items = items,

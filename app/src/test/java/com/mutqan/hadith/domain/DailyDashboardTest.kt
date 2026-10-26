@@ -41,6 +41,26 @@ class DailyDashboardTest {
         reviews.mastery[id] = MasteryRecordEntity(id, stability, stability, at, at, now + dueInDays * DAY_MS, 1)
     }
 
+    // -- Reviewing now ---------------------------------------------------------------------
+
+    @Test
+    fun aheadCount_countsStudiedHadithsThatAreNotDueAndWhoseMatnWasLearned() = runBlocking {
+        started(1, dueInDays = 1) // not due
+        started(2, dueInDays = 2) // not due
+        started(3, dueInDays = -1) // due
+        reviews.mastery[4] = MasteryRecordEntity(4, 0f, 0f, null, null, now + DAY_MS, 0) // started, never reviewed
+
+        val board = dashboard().first()
+
+        assertEquals(1, board.dueCount)
+        assertEquals(2, board.aheadCount)
+    }
+
+    @Test
+    fun aheadCount_isZeroBeforeAnythingIsStudied() = runBlocking {
+        assertEquals(0, dashboard().first().aheadCount)
+    }
+
     // -- The next hadith to learn ----------------------------------------------------------
 
     @Test

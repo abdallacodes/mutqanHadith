@@ -96,6 +96,55 @@ class RetentionSuiteViewModelsTest {
         onEvent(ReviewEvent.Submit)
     }
 
+    /** A hadith whose Matn is learned and whose next review is tomorrow: not due, but it can be reviewed now. */
+    private fun upcoming(id: Long, matnReviewedDaysAgo: Int = 1, stability: Float = 4f) {
+        reviews.mastery[id] = MasteryRecordEntity(id, stability, 0f, now - matnReviewedDaysAgo * DAY_MS, null, now + DAY_MS, 1)
+    }
+
+    // -- Review now --------------------------------------------------------------------------
+
+    @Test
+    fun reviewingNowBringsTheWeakestHadithsThatAreNotDueInSmallBatches() {
+        // Ids 1..7 were last reviewed 1..7 days ago at the same stability: the longer ago, the lower the recall.
+        (1L..7L).forEach { upcoming(it, matnReviewedDaysAgo = it.toInt()) }
+
+        val session = reviewVm(ReviewMode.AHEAD).session()
+
+        assertEquals(listOf(7L, 6L, 5L, 4L, 3L), session.queue.map { it.hadithId })
+        assertEquals(listOf(2), session.laterBatches.map { it.size })
+        assertEquals(2, session.batchCount)
+    }
+
+    @Test
+    fun reviewingNowLeavesOutDueHadithsAndOnesWhoseMatnWasNeverLearned() {
+        core(1) // due: the daily review's business
+        upcoming(2)
+        reviews.mastery[3] = MasteryRecordEntity(3, 0f, 0f, null, null, now + DAY_MS, 0) // started, never reviewed
+
+        val session = reviewVm(ReviewMode.AHEAD).session()
+
+        assertEquals(listOf(2L), session.queue.map { it.hadithId })
+    }
+
+    @Test
+    fun reviewingNowWithNothingToReviewIsAnEmptySession() {
+        val session = reviewVm(ReviewMode.AHEAD).session()
+
+        assertTrue(session.queue.isEmpty())
+        assertTrue(session.isFinished)
+    }
+
+    @Test
+    fun aReviewDoneNowPushesTheHadithsNextReviewFurther() {
+        upcoming(1, matnReviewedDaysAgo = 3)
+        val before = reviews.mastery.getValue(1).nextReviewDue
+        val vm = reviewVm(ReviewMode.AHEAD)
+
+        vm.reviewCurrent()
+
+        assertTrue(reviews.mastery.getValue(1).nextReviewDue > before)
+    }
+
     // -- Backlog batches ---------------------------------------------------------------------
 
     @Test

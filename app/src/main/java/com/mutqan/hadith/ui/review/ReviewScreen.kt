@@ -123,6 +123,7 @@ fun ReviewScreen(
             ReviewMode.NEW -> R.string.review_title_new
             ReviewMode.SINGLE -> R.string.review_title_single
             ReviewMode.NARRATOR -> R.string.review_title_narrator
+            ReviewMode.AHEAD -> R.string.review_title_ahead
         },
     )
     Scaffold(
@@ -355,6 +356,7 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
                     when {
                         session.notStarted -> R.string.review_not_started
                         session.mode == ReviewMode.NEW -> R.string.review_empty_new
+                        session.mode == ReviewMode.AHEAD -> R.string.review_empty_ahead
                         session.mode == ReviewMode.NARRATOR ->
                             if (session.lockedSkipped > 0) R.string.review_empty_narrator_locked else R.string.review_empty_narrator
                         else -> R.string.review_empty_due

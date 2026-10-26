@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -70,6 +71,8 @@ data class HomeActions(
     val onMissingLink: (Long) -> Unit,
     val onOpenSettings: () -> Unit,
     val onOrderChain: (Long) -> Unit = {},
+    /** Reviews the weakest hadiths that are not due yet, for the learner who does not want to wait. */
+    val onStartAheadReview: () -> Unit = {},
 )
 
 @Composable
@@ -114,7 +117,7 @@ fun HomeContent(dashboard: StudyDashboard, actions: HomeActions, modifier: Modif
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { StreakHeader(dashboard.streak) }
-        item { DailyReviewSection(dashboard, actions.onStartDueReview) }
+        item { DailyReviewSection(dashboard, actions.onStartDueReview, actions.onStartAheadReview) }
         item { NextStepSection(dashboard.nextToLearn, primary = dashboard.dueCount == 0, onStudy = actions.onStudyHadith) }
         item { QuickStatsRow(dashboard) }
         item { DrillActions(dashboard, actions) }
@@ -156,7 +159,7 @@ private fun StreakHeader(streak: StudyStreak) {
 }
 
 @Composable
-private fun DailyReviewSection(dashboard: StudyDashboard, onStart: () -> Unit) {
+private fun DailyReviewSection(dashboard: StudyDashboard, onStart: () -> Unit, onStartAhead: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionTitle(stringResource(R.string.home_review_title))
         when {
@@ -197,6 +200,22 @@ private fun DailyReviewSection(dashboard: StudyDashboard, onStart: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        if (dashboard.aheadCount > 0) ReviewAheadOption(onStartAhead)
+    }
+}
+
+/** The way to review now and not tomorrow: small sittings, weakest first, with the gentle nudge to come back later still in place. */
+@Composable
+private fun ReviewAheadOption(onStart: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        OutlinedButton(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.home_review_ahead))
+        }
+        Text(
+            stringResource(R.string.home_review_ahead_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

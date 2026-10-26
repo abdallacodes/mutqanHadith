@@ -43,6 +43,7 @@ class DailyDashboardScreensTest {
 
     private val actions = HomeActions(
         onStartDueReview = { calls += "due" },
+        onStartAheadReview = { calls += "ahead" },
         onStudyHadith = { calls += "study$it" },
         onSanadBuilder = { calls += "builder$it" },
         onMissingLink = { calls += "link$it" },
@@ -65,8 +66,10 @@ class DailyDashboardScreensTest {
         streak: StudyStreak = StudyStreak.None,
         next: NextToLearn? = null,
         drill: Long? = null,
+        ahead: Int = 0,
     ) = StudyDashboard(
         dueCount = due,
+        aheadCount = ahead,
         newCount = if (next == null) 0 else 5,
         overallMastery = 0f,
         items = emptyList(),
@@ -85,6 +88,33 @@ class DailyDashboardScreensTest {
         StudyStreak(current = days, longest = days, studiedToday = studiedToday, studyDays = days, lastSevenDays = List(7) { true })
 
     // -- Daily review ----------------------------------------------------------------------
+
+    @Test
+    fun home_whenNothingIsDueStillOffersToReviewNowAndSaysHowItGoes() {
+        showHome(dashboard(learning = 4, ahead = 4))
+
+        compose.onNodeWithText("أتممت ورد اليوم بنجاح").assertExists()
+        compose.onNodeWithText("يبدأ بالأحاديث الأضعف حفظًا، في جلسات قصيرة من خمسة أحاديث. والأفضل أن تعود غدًا لمزيد.").assertExists()
+
+        compose.onNodeWithText("راجع الآن").performClick()
+
+        assertEquals(listOf("ahead"), calls)
+    }
+
+    @Test
+    fun home_withReviewsDueTheReviewNowOptionIsThereToo() {
+        showHome(dashboard(due = 3, learning = 4, ahead = 2))
+
+        compose.onNodeWithText("ابدأ ورد اليوم").assertExists()
+        compose.onNodeWithText("راجع الآن").assertExists()
+    }
+
+    @Test
+    fun home_withNothingToReviewAheadThereIsNoReviewNowOption() {
+        showHome(dashboard(learning = 4, ahead = 0))
+
+        compose.onNodeWithText("راجع الآن").assertDoesNotExist()
+    }
 
     @Test
     fun home_withReviewsDue_countsThemAndStartsTheDailyReview() {

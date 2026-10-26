@@ -31,7 +31,21 @@ class GetDueHadithsUseCase(
      */
     suspend operator fun invoke(limit: Int? = null): List<DueHadith> {
         val at = now()
-        val due = reviews.getDueMastery(at)
+        return rank(reviews.getDueMastery(at), at, limit)
+    }
+
+    /**
+     * The hadiths that are not due yet but whose Matn has been learned, weakest first: what is worth reviewing
+     * right now for the learner who does not want to wait for tomorrow. Ranked like the due ones, by the lowest
+     * current recall of the layer's components.
+     */
+    suspend fun ahead(limit: Int? = null): List<DueHadith> {
+        val at = now()
+        val upcoming = reviews.getAllMastery().filter { it.nextReviewDue > at && it.matnLastReviewedAt != null }
+        return rank(upcoming, at, limit)
+    }
+
+    private suspend fun rank(due: List<MasteryRecordEntity>, at: Long, limit: Int?): List<DueHadith> {
         val byId = hadiths.getWithSanad(due.map { it.hadithId }).associateBy { it.hadith.id }
         val ranked = due.mapNotNull { record ->
             val hadith = byId[record.hadithId] ?: return@mapNotNull null
