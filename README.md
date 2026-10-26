@@ -70,7 +70,7 @@ their own. There is no ranking of books into levels: the library shows what is t
 
 | Book | Arabic | Source | Status |
 |------|--------|--------|--------|
-| **The Forty Hadith of an-Nawawi** | **الأربعون النووية** | The **42 hadiths** of *Al-Arba'in An-Nawawiyya* (Imam an-Nawawi's forty-hadith collection, as numbered in the Arabic edition used), each with its Companion and the takhrij the author gives | The only book today. |
+| **The Forty Hadith of an-Nawawi** | **الأربعون النووية** | The **42 hadiths** of *Al-Arba'in An-Nawawiyya* (Imam an-Nawawi's forty-hadith collection, as numbered in the Arabic edition used), each with its Companion and the takhrij the author gives, and, for 19 of them, the full chain of a narration in the six books | The only book today. |
 
 The shelf says that more books will be added in future updates, and the structure is ready for them: a book is a row of
 `catalog_group`, a section is a row whose parent is another group, and each hadith is filed in the deepest group that
@@ -134,8 +134,8 @@ existing hadith rows are never replaced, and the learner's review state is untou
 catalog version makes once (catalog 4 retired Bukhari and 'Umdat al-Ahkam), not a standing rule that deletes whatever a
 catalog omits, so a later catalog can bring a book back. Groups carry no foreign key to or from a hadith, so a catalog
 can move a hadith between sections or drop a section without a cascade ever reaching the learner's progress. Schema
-changes ship as real Room migrations (the current schema is **v7**, migrating from v4), and `CatalogMigrationTest`,
-`CollectionsMigrationTest` and `GroupsMigrationTest` exercise the upgrade paths — from each earlier schema and from a
+changes ship as real Room migrations (the current schema is **v8**, migrating from v4), and `CatalogMigrationTest`,
+`CollectionsMigrationTest`, `GroupsMigrationTest` and `ChainSourceMigrationTest` exercise the upgrade paths — from each earlier schema and from a
 stale catalog — asserting that the learner's progress survives each one. A backup that holds progress on a retired
 hadith still restores: the retired hadiths are skipped and the import says how many.
 
@@ -147,7 +147,14 @@ hadith still restores: the retired hadiths are skipped and the import says how m
   standard library. Texts, chains, and takhrij are never written by hand or generated.
 - The Forty Hadith come with the author's own takhrij note, from which the collector is read (*agreed upon*, *narrated
   by Muslim*, or the author's wording where he cites a book outside the two Sahihs); the Companion is the name an-Nawawi
-  gives, and the chain is that Companion alone, since no audited dataset carries a longer one for these hadith.
+  gives.
+- **Chains** are read from the [LK Hadith Corpus](https://github.com/ShathaTm/LK-Hadith-Corpus) (the six books with the
+  isnad apart from the matn). An-Nawawi quotes the wording of the books, so a chain is the isnad of the narration whose
+  wording he quotes: `tools/choose_narrations.py` takes the narration that holds his words best (at least 0.85 in the
+  book of a collector he names, 0.99 in any other), and the build refuses it unless its isnad is one line of named
+  narrators ending with his Companion. Nothing is repaired or guessed: a hadith whose best narration cannot be followed
+  (a relative named only as «أبيه», parallel chains that never meet) keeps the Companion alone, and the reader names the
+  book each chain comes from. 19 of the 42 have a full chain today.
 - What *is* curated by hand is limited to the ids that keep a hadith, a narrator and a group the same row from one
   catalog to the next, the books and sections with their titles, and the neutral wording of fields that no dataset
   provides (`tools/data/selection.json`).
@@ -159,9 +166,9 @@ hadith still restores: the retired hadiths are skipped and the import says how m
 ### One narrator, one identity
 
 The Forty Hadith spell the same Companion differently (*Ibn 'Umar* in two hadiths, *Abu 'Abd ar-Rahman 'Abd Allah ibn
-'Umar ibn al-Khattab* in a third), so the catalog's 32 narrator rows name only **23 different people**. The app resolves
-this at read time and changes no row, so the database, its foreign keys and the learner's per-narrator history stay
-exactly as they were (no migration):
+'Umar ibn al-Khattab* in a third), so the catalog's 123 narrator rows (the Companions and the narrators of the chains) name only **112 different people**.
+The app resolves this at read time and changes no row, so the database, its foreign keys and the learner's per-narrator
+history stay as the catalog wrote them (no migration):
 
 - `NarratorNormalizer` reads a name the way a narration writes it: «عن أبي هريرة رضي الله عنه» becomes «أبو هريرة»
   (no «عن», blessing or tashkeel; the noun of a kunya in the nominative; «ابن» as «بن»). Titles such as *Amir
@@ -190,7 +197,7 @@ exactly as they were (no migration):
 
 ### Testing
 
-The suite holds **942 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **950 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.
@@ -244,6 +251,7 @@ installs. No keys or passwords are stored in this repository.
 python -I tools/import_hadiths.py build   # regenerate the seed from the committed snapshot and audit it (offline)
 python -I tools/import_hadiths.py audit   # check the seed on disk is exactly what the snapshot produces, and is sound
 python -I tools/import_hadiths.py fetch   # re-download the pinned source files and refresh the snapshot (network)
+python -I tools/choose_narrations.py <LK clone>   # which narration holds each hadith's chain (needs a clone at the pinned commit)
 ```
 
 Whenever the seed's content changes, bump `CATALOG_VERSION` in both `tools/import_hadiths.py` and `SeedLoader.kt` so
@@ -270,6 +278,7 @@ existing installs pick it up.
 │       └── androidTest/       # instrumented test scaffold
 ├── tools/
 │   ├── import_hadiths.py      # the data pipeline: fetch / build / audit
+│   ├── choose_narrations.py   # picks the narration whose isnad is each hadith's chain
 │   └── data/                  # selection.json (which hadiths) and source_snapshot.json (the source records used)
 ├── licenses/                  # third-party license texts (Amiri font, SIL OFL 1.1)
 ├── .github/workflows/         # CI: tests, signed release APK, GitHub Release on tags
@@ -292,6 +301,10 @@ existing installs pick it up.
   `tools/import_hadiths.py` and recorded in the seed's `provenance` block:
   - [`fawazahmed0/hadith-api`](https://github.com/fawazahmed0/hadith-api) — the Arabic edition of the Forty Hadith with
     Tashkeel (`ara-nawawi`); released under the Unlicense.
+  - [`ShathaTm/LK-Hadith-Corpus`](https://github.com/ShathaTm/LK-Hadith-Corpus) — the chains of the hadiths, read
+    from the isnad of the narration in the six books. The repository states no licence; its README asks for
+    citation: Altammami, Atwell & Alsalka, "The Arabic-English Parallel Corpus of Authentic Hadith", IJASAT 2019.
+    The app credits it in *About*.
 
 This app is a study aid. It is not a substitute for learning hadith from qualified teachers, and the grading and
 takhrij it shows are those of the sources above.

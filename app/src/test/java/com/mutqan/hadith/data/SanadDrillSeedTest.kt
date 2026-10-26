@@ -27,9 +27,10 @@ import kotlin.random.Random
  * four different people to choose from out of the people the catalog holds, none of them in the chain or a spelling of
  * someone in it, and an order of the chain can be made and checked.
  *
- * The catalog is the Forty Hadith, whose chains are the Companion alone, so no hadith can be drilled today and the
- * checks below have nothing to run on until a book with longer chains is added; [noHadithOfTheCatalogCanBeDrilledYet]
- * says so, and fails when that changes, as the reminder to look at these checks again.
+ * The catalog is the Forty Hadith. Those with a narration in the six books whose wording is the author's carry its full
+ * chain, from the collector's teacher to the Companion, and can be drilled; the others are the Companion alone and
+ * cannot ([onlyTheHadithWithALongChainCanBeDrilled] says which, and fails when that changes, as the reminder to look at
+ * these checks again).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -52,10 +53,13 @@ class SanadDrillSeedTest {
     private val orderable = library.filter { SanadDrillPolicy.access(SanadDrill.ORDER_CHAIN, layer2, it.sanad).isOpen }
 
     @Test
-    fun noHadithOfTheCatalogCanBeDrilledYet() {
-        assertTrue(library.all { it.sanad.size == 1 })
-        assertEquals(0, askable.size)
-        assertEquals(0, orderable.size)
+    fun onlyTheHadithWithALongChainCanBeDrilled() {
+        val longChains = library.filter { it.sanad.size > 1 }
+        assertEquals(19, longChains.size)
+        assertEquals(longChains.map { it.hadith.id }, askable.map { it.hadith.id })
+        assertEquals(longChains.map { it.hadith.id }, orderable.map { it.hadith.id })
+        assertTrue(library.filter { it.sanad.size == 1 }.none { it in askable || it in orderable })
+        assertTrue("every long chain has at least three narrators", longChains.all { it.sanad.size >= 3 })
     }
 
     @Test
@@ -69,7 +73,7 @@ class SanadDrillSeedTest {
 
     @Test
     fun everyQuestionHasFourDifferentPeopleOfTheCanonicalPoolAndNoOneFromTheChain() {
-        assertEquals(23, directory.narrators.size)
+        assertEquals(112, directory.narrators.size)
         val canonicalIds = directory.narrators.map { it.id }.toSet()
         var questions = 0
 

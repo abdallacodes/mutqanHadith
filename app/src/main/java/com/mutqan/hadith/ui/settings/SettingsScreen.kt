@@ -381,7 +381,7 @@ private fun LanguageDialog(selected: AppLanguage, onSelect: (AppLanguage) -> Uni
     )
 }
 
-/** The about dialog: the app, the suite it belongs to, and the method it is built on. */
+/** The about dialog: the app, the suite it belongs to, the method it is built on and where its hadiths come from. */
 @Composable
 fun AboutDialog(appVersion: String, onDismiss: () -> Unit) {
     AlertDialog(
@@ -418,6 +418,14 @@ internal fun AboutBody(appVersion: String) {
                 stringResource(R.string.about_method_decay),
                 stringResource(R.string.about_method_pivots),
                 stringResource(R.string.about_method_privacy),
+            ),
+        )
+        AboutSection(
+            stringResource(R.string.about_sources_title),
+            listOf(
+                stringResource(R.string.about_sources_lk),
+                stringResource(R.string.about_sources_text),
+                stringResource(R.string.about_sources_credits),
             ),
         )
     }

@@ -1,14 +1,18 @@
 {
- "catalogVersion": 5,
+ "catalogVersion": 6,
  "provenance": {
   "generatedBy": "tools/import_hadiths.py",
   "sources": {
    "fawazahmed0/hadith-api": {
     "commit": "df57907be35291c91ad6a6691180e22ca9920784",
     "license": "Unlicense"
+   },
+   "ShathaTm/LK-Hadith-Corpus": {
+    "commit": "c45fa64aa40bf1d4a34b9b35359640a583b02881",
+    "license": "none stated in the repository; attribution requested by its README"
    }
   },
-  "notes": "No hadith text, chain or takhrij here was written by hand; see tools/import_hadiths.py. A chain is the Companion alone, so every narrator is a Companion, and no narrator is flagged as a pivot: no audited dataset provides either."
+  "notes": "No hadith text, chain or takhrij here was written by hand; see tools/import_hadiths.py. A chain is the isnad of one narration of the hadith in one of the six books, named in `sanadSource` and located in `source.chain`, where the corpus holds one that can be followed to the Companion the author names; otherwise it is the Companion alone. A narrator's tier is structural and no narrator is flagged as a pivot: no audited dataset provides either."
  },
  "groups": [
   {
@@ -243,6 +247,643 @@
    "fullName": "أنس بن مالك",
    "tier": "صحابي",
    "isPivot": false
+  },
+  {
+   "id": 73,
+   "primaryName": "قتيبة بن سعيد",
+   "fullName": "قتيبة بن سعيد",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 74,
+   "primaryName": "عبد الوهاب",
+   "fullName": "عبد الوهاب",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 75,
+   "primaryName": "يحيى بن سعيد",
+   "fullName": "يحيى بن سعيد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 76,
+   "primaryName": "محمد بن إبراهيم",
+   "fullName": "محمد بن إبراهيم",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 77,
+   "primaryName": "علقمة بن وقاص الليثي",
+   "fullName": "علقمة بن وقاص الليثي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 78,
+   "primaryName": "أبو كريب محمد بن العلاء",
+   "fullName": "أبو كريب محمد بن العلاء",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 79,
+   "primaryName": "أبو أسامة",
+   "fullName": "أبو أسامة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 80,
+   "primaryName": "فضيل بن مرزوق",
+   "fullName": "فضيل بن مرزوق",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 81,
+   "primaryName": "عدي بن ثابت",
+   "fullName": "عدي بن ثابت",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 82,
+   "primaryName": "أبو حازم",
+   "fullName": "أبو حازم",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 83,
+   "primaryName": "أحمد بن نصر النيسابوري",
+   "fullName": "أحمد بن نصر النيسابوري",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 84,
+   "primaryName": "أبو مسهر",
+   "fullName": "أبو مسهر",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 85,
+   "primaryName": "إسماعيل بن عبد الله بن سماعة",
+   "fullName": "إسماعيل بن عبد الله بن سماعة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 86,
+   "primaryName": "الأوزاعي",
+   "fullName": "الأوزاعي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 87,
+   "primaryName": "قرة",
+   "fullName": "قرة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 88,
+   "primaryName": "الزهري",
+   "fullName": "الزهري",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 89,
+   "primaryName": "أبو سلمة",
+   "fullName": "أبو سلمة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 90,
+   "primaryName": "مسدد",
+   "fullName": "مسدد",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 91,
+   "primaryName": "يحيى",
+   "fullName": "يحيى",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 92,
+   "primaryName": "شعبة",
+   "fullName": "شعبة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 93,
+   "primaryName": "قتادة",
+   "fullName": "قتادة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 94,
+   "primaryName": "هناد",
+   "fullName": "هناد",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 95,
+   "primaryName": "أبو معاوية",
+   "fullName": "أبو معاوية",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 96,
+   "primaryName": "الأعمش",
+   "fullName": "الأعمش",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 97,
+   "primaryName": "عبد الله بن مرة",
+   "fullName": "عبد الله بن مرة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 98,
+   "primaryName": "مسروق",
+   "fullName": "مسروق",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 99,
+   "primaryName": "حرملة بن يحيى",
+   "fullName": "حرملة بن يحيى",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 100,
+   "primaryName": "ابن وهب",
+   "fullName": "ابن وهب",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 101,
+   "primaryName": "يونس",
+   "fullName": "يونس",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 102,
+   "primaryName": "ابن شهاب",
+   "fullName": "ابن شهاب",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 103,
+   "primaryName": "أبو سلمة بن عبد الرحمن",
+   "fullName": "أبو سلمة بن عبد الرحمن",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 104,
+   "primaryName": "يحيى بن يوسف",
+   "fullName": "يحيى بن يوسف",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 105,
+   "primaryName": "أبو بكر بن عياش",
+   "fullName": "أبو بكر بن عياش",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 106,
+   "primaryName": "أبو حصين",
+   "fullName": "أبو حصين",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 107,
+   "primaryName": "أبو صالح",
+   "fullName": "أبو صالح",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 108,
+   "primaryName": "علي بن حجر",
+   "fullName": "علي بن حجر",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 109,
+   "primaryName": "إسماعيل",
+   "fullName": "إسماعيل",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 110,
+   "primaryName": "خالد",
+   "fullName": "خالد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 111,
+   "primaryName": "أبو قلابة",
+   "fullName": "أبو قلابة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 112,
+   "primaryName": "أبو الأشعث",
+   "fullName": "أبو الأشعث",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 113,
+   "primaryName": "محمد بن بشار",
+   "fullName": "محمد بن بشار",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 114,
+   "primaryName": "عبد الرحمن بن مهدي",
+   "fullName": "عبد الرحمن بن مهدي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 115,
+   "primaryName": "سفيان",
+   "fullName": "سفيان",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 116,
+   "primaryName": "حبيب بن أبي ثابت",
+   "fullName": "حبيب بن أبي ثابت",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 117,
+   "primaryName": "ميمون بن أبي شبيب",
+   "fullName": "ميمون بن أبي شبيب",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 118,
+   "primaryName": "أحمد بن محمد بن موسى",
+   "fullName": "أحمد بن محمد بن موسى",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 119,
+   "primaryName": "عبد الله بن المبارك",
+   "fullName": "عبد الله بن المبارك",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 120,
+   "primaryName": "ليث بن سعد",
+   "fullName": "ليث بن سعد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 121,
+   "primaryName": "قيس بن الحجاج",
+   "fullName": "قيس بن الحجاج",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 122,
+   "primaryName": "حنش الصنعاني",
+   "fullName": "حنش الصنعاني",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 123,
+   "primaryName": "سلمة بن شبيب",
+   "fullName": "سلمة بن شبيب",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 124,
+   "primaryName": "الحسن بن أعين",
+   "fullName": "الحسن بن أعين",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 125,
+   "primaryName": "معقل بن عبيد الله",
+   "fullName": "معقل بن عبيد الله",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 126,
+   "primaryName": "أبو الزبير",
+   "fullName": "أبو الزبير",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 127,
+   "primaryName": "عبد الله بن عبد الرحمن بن بهرام الدارمي",
+   "fullName": "عبد الله بن عبد الرحمن بن بهرام الدارمي",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 128,
+   "primaryName": "مروان بن محمد الدمشقي",
+   "fullName": "مروان بن محمد الدمشقي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 129,
+   "primaryName": "سعيد بن عبد العزيز",
+   "fullName": "سعيد بن عبد العزيز",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 130,
+   "primaryName": "ربيعة بن يزيد",
+   "fullName": "ربيعة بن يزيد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 131,
+   "primaryName": "أبو إدريس الخولاني",
+   "fullName": "أبو إدريس الخولاني",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 132,
+   "primaryName": "عبد الله بن محمد بن أسماء الضبعي",
+   "fullName": "عبد الله بن محمد بن أسماء الضبعي",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 133,
+   "primaryName": "مهدي بن ميمون",
+   "fullName": "مهدي بن ميمون",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 134,
+   "primaryName": "واصل مولى أبي عيينة",
+   "fullName": "واصل مولى أبي عيينة",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 135,
+   "primaryName": "يحيى بن عقيل",
+   "fullName": "يحيى بن عقيل",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 136,
+   "primaryName": "يحيى بن يعمر",
+   "fullName": "يحيى بن يعمر",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 137,
+   "primaryName": "أبو الأسود الديلي",
+   "fullName": "أبو الأسود الديلي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 138,
+   "primaryName": "ابن أبي عمر",
+   "fullName": "ابن أبي عمر",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 139,
+   "primaryName": "عبد الله بن معاذ الصنعاني",
+   "fullName": "عبد الله بن معاذ الصنعاني",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 140,
+   "primaryName": "معمر",
+   "fullName": "معمر",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 141,
+   "primaryName": "عاصم بن أبي النجود",
+   "fullName": "عاصم بن أبي النجود",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 142,
+   "primaryName": "أبو وائل",
+   "fullName": "أبو وائل",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 143,
+   "primaryName": "عبد الله بن مسلمة بن قعنب",
+   "fullName": "عبد الله بن مسلمة بن قعنب",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 144,
+   "primaryName": "داود بن قيس",
+   "fullName": "داود بن قيس",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 145,
+   "primaryName": "أبو سعيد مولى عامر بن كريز",
+   "fullName": "أبو سعيد مولى عامر بن كريز",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 146,
+   "primaryName": "شيبان بن فروخ",
+   "fullName": "شيبان بن فروخ",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 147,
+   "primaryName": "عبد الوارث",
+   "fullName": "عبد الوارث",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 148,
+   "primaryName": "الجعد أبي عثمان",
+   "fullName": "الجعد أبي عثمان",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 149,
+   "primaryName": "أبو رجاء العطاردي",
+   "fullName": "أبو رجاء العطاردي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 150,
+   "primaryName": "محمد بن عثمان",
+   "fullName": "محمد بن عثمان",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 151,
+   "primaryName": "خالد بن مخلد",
+   "fullName": "خالد بن مخلد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 152,
+   "primaryName": "سليمان بن بلال",
+   "fullName": "سليمان بن بلال",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 153,
+   "primaryName": "شريك بن عبد الله بن أبي نمر",
+   "fullName": "شريك بن عبد الله بن أبي نمر",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 154,
+   "primaryName": "عطاء",
+   "fullName": "عطاء",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 155,
+   "primaryName": "علي بن عبد الله",
+   "fullName": "علي بن عبد الله",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 156,
+   "primaryName": "محمد بن عبد الرحمن أبو المنذر الطفاوي",
+   "fullName": "محمد بن عبد الرحمن أبو المنذر الطفاوي",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 157,
+   "primaryName": "سليمان الأعمش",
+   "fullName": "سليمان الأعمش",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 158,
+   "primaryName": "مجاهد",
+   "fullName": "مجاهد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 159,
+   "primaryName": "عبد الله بن إسحاق الجوهري البصري",
+   "fullName": "عبد الله بن إسحاق الجوهري البصري",
+   "tier": "شيخ المصنف",
+   "isPivot": false
+  },
+  {
+   "id": 160,
+   "primaryName": "أبو عاصم",
+   "fullName": "أبو عاصم",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 161,
+   "primaryName": "كثير بن فائد",
+   "fullName": "كثير بن فائد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 162,
+   "primaryName": "سعيد بن عبيد",
+   "fullName": "سعيد بن عبيد",
+   "tier": "راوٍ",
+   "isPivot": false
+  },
+  {
+   "id": 163,
+   "primaryName": "بكر بن عبد الله المزني",
+   "fullName": "بكر بن عبد الله المزني",
+   "tier": "راوٍ",
+   "isPivot": false
   }
  ],
  "hadiths": [
@@ -253,22 +894,48 @@
    "hadithNumber": 1,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "البخاري",
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أمير المؤمنين أبي حفص عمر بن الخطاب",
+   "sanadSource": "صحيح البخاري",
    "groupId": 1,
    "position": 1,
    "sanad": [
     {
+     "narratorId": 73,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 74,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 75,
+     "transmissionTerm": "سمعت"
+    },
+    {
+     "narratorId": 76,
+     "transmissionTerm": "أخبرني"
+    },
+    {
+     "narratorId": 77,
+     "transmissionTerm": "سمع"
+    },
+    {
      "narratorId": 46,
-     "transmissionTerm": "عن"
+     "transmissionTerm": "سمعت"
     }
    ],
    "source": {
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 1,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Bukhari/Chapter83.csv",
+     "hadithNumber": 6689
+    },
     "takhrijNote": "رَوَاهُ إِمَامَا الْمُحَدِّثِينَ أَبُو عَبْدِ اللهِ مُحَمَّدُ بنُ إِسْمَاعِيل بن إِبْرَاهِيم بن الْمُغِيرَة بن بَرْدِزبَه الْبُخَارِيُّ الْجُعْفِيُّ [رقم:1]، وَأَبُو الْحُسَيْنِ مُسْلِمٌ بنُ الْحَجَّاج بن مُسْلِم الْقُشَيْرِيُّ النَّيْسَابُورِيُّ [رقم:1907] رَضِيَ اللهُ عَنْهُمَا فِي \"صَحِيحَيْهِمَا\" اللذَينِ هُمَا أَصَحُّ الْكُتُبِ الْمُصَنَّفَةِ"
    }
   },
@@ -283,6 +950,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الرحمن عبد الله بن عمر بن الخطاب",
+   "sanadSource": "",
    "groupId": 1,
    "position": 3,
    "sanad": [
@@ -309,6 +977,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو رقية تميم بن أوس الداري",
+   "sanadSource": "",
    "groupId": 1,
    "position": 7,
    "sanad": [
@@ -335,6 +1004,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "عمر",
+   "sanadSource": "",
    "groupId": 1,
    "position": 2,
    "sanad": [
@@ -361,6 +1031,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الرحمن عبد الله بن مسعود",
+   "sanadSource": "",
    "groupId": 1,
    "position": 4,
    "sanad": [
@@ -387,6 +1058,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أم المؤمنين أم عبد الله عائشة",
+   "sanadSource": "",
    "groupId": 1,
    "position": 5,
    "sanad": [
@@ -413,6 +1085,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو عبد الله النعمان بن بشير",
+   "sanadSource": "",
    "groupId": 1,
    "position": 6,
    "sanad": [
@@ -439,6 +1112,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن عمر",
+   "sanadSource": "",
    "groupId": 1,
    "position": 8,
    "sanad": [
@@ -465,6 +1139,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة عبد الرحمن بن صخر",
+   "sanadSource": "",
    "groupId": 1,
    "position": 9,
    "sanad": [
@@ -487,13 +1162,34 @@
    "hadithNumber": 10,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 10,
    "sanad": [
+    {
+     "narratorId": 78,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 79,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 80,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 81,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 82,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -503,6 +1199,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 10,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter12.csv",
+     "hadithNumber": 2287
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -517,6 +1218,7 @@
    "level": 1,
    "takhrij": "رواه الترمذي والنسائي",
    "sahabi": "أبو محمد الحسن بن علي بن أبي طالب",
+   "sanadSource": "",
    "groupId": 1,
    "position": 11,
    "sanad": [
@@ -539,13 +1241,42 @@
    "hadithNumber": 12,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "رواه الترمذي وابن ماجه",
    "sahabi": "أبو هريرة",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 12,
    "sanad": [
+    {
+     "narratorId": 83,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 84,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 85,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 86,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 87,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 88,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 89,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -555,6 +1286,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 12,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter36.csv",
+     "hadithNumber": 2402
+    },
     "takhrijNote": "حَدِيثٌ حَسَنٌ، رَوَاهُ التِّرْمِذِيُّ [رقم: 2318] ، ابن ماجه [رقم:]"
    }
   },
@@ -565,13 +1301,30 @@
    "hadithNumber": 13,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "البخاري",
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو حمزة أنس بن مالك",
+   "sanadSource": "صحيح البخاري",
    "groupId": 1,
    "position": 13,
    "sanad": [
+    {
+     "narratorId": 90,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 91,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 92,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 93,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 54,
      "transmissionTerm": "عن"
@@ -581,6 +1334,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 13,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Bukhari/Chapter2.csv",
+     "hadithNumber": 13
+    },
     "takhrijNote": "رَوَاهُ الْبُخَارِيُّ [رقم:13]، وَمُسْلِمٌ [رقم:45]. [رَوَاهُ الْبُخَارِيُّ] ، [وَمُسْلِمٌ]"
    }
   },
@@ -591,13 +1349,34 @@
    "hadithNumber": 14,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن مسعود",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 14,
    "sanad": [
+    {
+     "narratorId": 94,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 95,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 96,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 97,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 98,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 55,
      "transmissionTerm": "عن"
@@ -607,6 +1386,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 14,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter16.csv",
+     "hadithNumber": 1416
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ] ، [وَمُسْلِمٌ]"
    }
   },
@@ -617,13 +1401,34 @@
    "hadithNumber": 15,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 15,
    "sanad": [
+    {
+     "narratorId": 99,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 100,
+     "transmissionTerm": "أنبأنا"
+    },
+    {
+     "narratorId": 101,
+     "transmissionTerm": "أخبرني"
+    },
+    {
+     "narratorId": 102,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 103,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -633,6 +1438,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 15,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter1.csv",
+     "hadithNumber": 172
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ] ، [وَمُسْلِمٌ]"
    }
   },
@@ -643,13 +1453,30 @@
    "hadithNumber": 16,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "البخاري",
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو هريرة",
+   "sanadSource": "صحيح البخاري",
    "groupId": 1,
    "position": 16,
    "sanad": [
+    {
+     "narratorId": 104,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 105,
+     "transmissionTerm": "أخبرنا"
+    },
+    {
+     "narratorId": 106,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 107,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -659,6 +1486,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 16,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Bukhari/Chapter78.csv",
+     "hadithNumber": 6112
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ]"
    }
   },
@@ -669,13 +1501,34 @@
    "hadithNumber": 17,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "النسائي",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو يعلى شداد بن أوس",
+   "sanadSource": "سنن النسائي",
    "groupId": 1,
    "position": 17,
    "sanad": [
+    {
+     "narratorId": 108,
+     "transmissionTerm": "أخبرنا"
+    },
+    {
+     "narratorId": 109,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 110,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 111,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 112,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 56,
      "transmissionTerm": "عن"
@@ -685,6 +1538,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 17,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Nesai/Chapter43.csv",
+     "hadithNumber": 4410
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -695,13 +1553,34 @@
    "hadithNumber": 18,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "أبو ذر جندب بن جنادة",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 18,
    "sanad": [
+    {
+     "narratorId": 113,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 114,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 115,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 116,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 117,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 57,
      "transmissionTerm": "عن"
@@ -711,6 +1590,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 18,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter27.csv",
+     "hadithNumber": 2054
+    },
     "takhrijNote": "رَوَاهُ التِّرْمِذِيُّ [رقم:1987] وَقَالَ: حَدِيثٌ حَسَنٌ، وَفِي بَعْضِ النُّسَخِ: حَسَنٌ صَحِيحٌ"
    }
   },
@@ -721,13 +1605,34 @@
    "hadithNumber": 19,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "عبد الله بن عباس",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 19,
    "sanad": [
+    {
+     "narratorId": 118,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 119,
+     "transmissionTerm": "أخبرنا"
+    },
+    {
+     "narratorId": 120,
+     "transmissionTerm": "أخبرنا"
+    },
+    {
+     "narratorId": 121,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 122,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 58,
      "transmissionTerm": "عن"
@@ -737,6 +1642,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 19,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter37.csv",
+     "hadithNumber": 2608
+    },
     "takhrijNote": "رَوَاهُ التِّرْمِذِيُّ [رقم:2516] وَقَالَ: حَدِيثٌ حَسَنٌ صَحِيحٌ. وَفِي رِوَايَةِ غَيْرِ التِّرْمِذِيِّ: \"احْفَظْ اللَّهَ تَجِدْهُ أمامك، تَعَرَّفْ إلَى اللَّهِ فِي الرَّخَاءِ يَعْرِفُك فِي الشِّدَّةِ، وَاعْلَمْ أَنَّ مَا أَخْطَأَك لَمْ يَكُنْ لِيُصِيبَك، وَمَا أَصَابَك لَمْ يَكُنْ لِيُخْطِئَك، وَاعْلَمْ أَنَّ النَّصْرَ مَعَ الصَّبْرِ، وَأَنْ الْفَرَجَ مَعَ الْكَرْبِ، وَأَنَّ مَعَ الْعُسْرِ يُسْرًا"
    }
   },
@@ -751,6 +1661,7 @@
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو مسعود عقبة بن عمرو الأنصاري البدري",
+   "sanadSource": "",
    "groupId": 1,
    "position": 20,
    "sanad": [
@@ -777,6 +1688,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو عمرو سفيان بن عبد الله",
+   "sanadSource": "",
    "groupId": 1,
    "position": 21,
    "sanad": [
@@ -799,13 +1711,30 @@
    "hadithNumber": 22,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو عبد الله جابر بن عبد الله الأنصاري",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 22,
    "sanad": [
+    {
+     "narratorId": 123,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 124,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 125,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 126,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 61,
      "transmissionTerm": "عن"
@@ -815,6 +1744,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 22,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter1.csv",
+     "hadithNumber": 110
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -829,6 +1763,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو مالك الحارث بن عاصم الأشعري",
+   "sanadSource": "",
    "groupId": 1,
    "position": 23,
    "sanad": [
@@ -851,13 +1786,34 @@
    "hadithNumber": 24,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو ذر الغفاري",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 24,
    "sanad": [
+    {
+     "narratorId": 127,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 128,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 129,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 130,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 131,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 63,
      "transmissionTerm": "عن"
@@ -867,6 +1823,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 24,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter45.csv",
+     "hadithNumber": 6442
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -877,13 +1838,38 @@
    "hadithNumber": 25,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو ذر",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 25,
    "sanad": [
+    {
+     "narratorId": 132,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 133,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 134,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 135,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 136,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 137,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 64,
      "transmissionTerm": "عن"
@@ -893,6 +1879,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 25,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter12.csv",
+     "hadithNumber": 2270
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -907,6 +1898,7 @@
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "أبو هريرة",
+   "sanadSource": "",
    "groupId": 1,
    "position": 26,
    "sanad": [
@@ -933,6 +1925,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "النواس بن سمعان",
+   "sanadSource": "",
    "groupId": 1,
    "position": 27,
    "sanad": [
@@ -959,6 +1952,7 @@
    "level": 1,
    "takhrij": "رواه أبو داود والترمذي",
    "sahabi": "أبو نجيح العرباض بن سارية",
+   "sanadSource": "",
    "groupId": 1,
    "position": 28,
    "sanad": [
@@ -981,13 +1975,34 @@
    "hadithNumber": 29,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "معاذ بن جبل",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 29,
    "sanad": [
+    {
+     "narratorId": 138,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 139,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 140,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 141,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 142,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 67,
      "transmissionTerm": "عن"
@@ -997,6 +2012,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 29,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter40.csv",
+     "hadithNumber": 2723
+    },
     "takhrijNote": "رَوَاهُ التِّرْمِذِيُّ [رقم:2616] وَقَالَ: حَدِيثٌ حَسَنٌ صَحِيحٌ"
    }
   },
@@ -1011,6 +2031,7 @@
    "level": 1,
    "takhrij": "رواه الدارقطني",
    "sahabi": "أبو ثعلبة الخشني جرثوم بن ناشر",
+   "sanadSource": "",
    "groupId": 1,
    "position": 30,
    "sanad": [
@@ -1037,6 +2058,7 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه",
    "sahabi": "أبو العباس سهل بن سعد الساعدي",
+   "sanadSource": "",
    "groupId": 1,
    "position": 31,
    "sanad": [
@@ -1063,6 +2085,7 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه والدارقطني",
    "sahabi": "أبو سعيد سعد بن مالك بن سنان الخدري",
+   "sanadSource": "",
    "groupId": 1,
    "position": 32,
    "sanad": [
@@ -1089,6 +2112,7 @@
    "level": 1,
    "takhrij": "رواه البيهقي",
    "sahabi": "ابن عباس",
+   "sanadSource": "",
    "groupId": 1,
    "position": 33,
    "sanad": [
@@ -1115,6 +2139,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو سعيد الخدري",
+   "sanadSource": "",
    "groupId": 1,
    "position": 34,
    "sanad": [
@@ -1137,13 +2162,26 @@
    "hadithNumber": 35,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 35,
    "sanad": [
+    {
+     "narratorId": 143,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 144,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 145,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -1153,6 +2191,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 35,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter45.csv",
+     "hadithNumber": 6412
+    },
     "takhrijNote": "[رَوَاهُ مُسْلِمٌ]"
    }
   },
@@ -1167,6 +2210,7 @@
    "level": 1,
    "takhrij": "رواه مسلم",
    "sahabi": "أبو هريرة",
+   "sanadSource": "",
    "groupId": 1,
    "position": 36,
    "sanad": [
@@ -1189,13 +2233,30 @@
    "hadithNumber": 37,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "مسلم",
    "level": 1,
    "takhrij": "متفق عليه",
    "sahabi": "ابن عباس",
+   "sanadSource": "صحيح مسلم",
    "groupId": 1,
    "position": 37,
    "sanad": [
+    {
+     "narratorId": 146,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 147,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 148,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 149,
+     "transmissionTerm": "حدثنا"
+    },
     {
      "narratorId": 42,
      "transmissionTerm": "عن"
@@ -1205,6 +2266,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 37,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Muslim/Chapter1.csv",
+     "hadithNumber": 337
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ] ، [وَمُسْلِمٌ]، في \"صحيحيهما\" بهذه الحروف"
    }
   },
@@ -1215,13 +2281,34 @@
    "hadithNumber": 38,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "البخاري",
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "أبو هريرة",
+   "sanadSource": "صحيح البخاري",
    "groupId": 1,
    "position": 38,
    "sanad": [
+    {
+     "narratorId": 150,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 151,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 152,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 153,
+     "transmissionTerm": "حدثني"
+    },
+    {
+     "narratorId": 154,
+     "transmissionTerm": "عن"
+    },
     {
      "narratorId": 34,
      "transmissionTerm": "عن"
@@ -1231,6 +2318,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 38,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Bukhari/Chapter81.csv",
+     "hadithNumber": 6502
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ]"
    }
   },
@@ -1245,6 +2337,7 @@
    "level": 1,
    "takhrij": "رواه ابن ماجه والبيهقي",
    "sahabi": "ابن عباس",
+   "sanadSource": "",
    "groupId": 1,
    "position": 39,
    "sanad": [
@@ -1267,13 +2360,30 @@
    "hadithNumber": 40,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "البخاري",
    "level": 1,
    "takhrij": "رواه البخاري",
    "sahabi": "ابن عمر",
+   "sanadSource": "صحيح البخاري",
    "groupId": 1,
    "position": 40,
    "sanad": [
+    {
+     "narratorId": 155,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 156,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 157,
+     "transmissionTerm": "عن"
+    },
+    {
+     "narratorId": 158,
+     "transmissionTerm": "حدثني"
+    },
     {
      "narratorId": 16,
      "transmissionTerm": "عن"
@@ -1283,6 +2393,11 @@
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 40,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Bukhari/Chapter81.csv",
+     "hadithNumber": 6416
+    },
     "takhrijNote": "[رَوَاهُ الْبُخَارِيُّ]"
    }
   },
@@ -1297,6 +2412,7 @@
    "level": 1,
    "takhrij": "رويناه في كتاب \"الحجة\" بإسناد صحيح",
    "sahabi": "أبو محمد عبد الله بن عمرو بن العاص",
+   "sanadSource": "",
    "groupId": 1,
    "position": 41,
    "sanad": [
@@ -1319,22 +2435,48 @@
    "hadithNumber": 42,
    "chapter": "",
    "grade": "",
-   "collector": "النووي",
+   "collector": "الترمذي",
    "level": 1,
    "takhrij": "رواه الترمذي",
    "sahabi": "أنس بن مالك",
+   "sanadSource": "سنن الترمذي",
    "groupId": 1,
    "position": 42,
    "sanad": [
     {
+     "narratorId": 159,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 160,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 161,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 162,
+     "transmissionTerm": "حدثنا"
+    },
+    {
+     "narratorId": 163,
+     "transmissionTerm": "سمعت"
+    },
+    {
      "narratorId": 72,
-     "transmissionTerm": "عن"
+     "transmissionTerm": "حدثنا"
     }
    ],
    "source": {
     "dataset": "fawazahmed0/hadith-api",
     "file": "editions/ara-nawawi.json",
     "hadithNumber": 42,
+    "chain": {
+     "dataset": "ShathaTm/LK-Hadith-Corpus",
+     "file": "Tirmizi/Chapter48.csv",
+     "hadithNumber": 3754
+    },
     "takhrijNote": "رَوَاهُ التِّرْمِذِيُّ [رقم:3540]، وَقَالَ: حَدِيثٌ حَسَنٌ صَحِيحٌ"
    }
   }

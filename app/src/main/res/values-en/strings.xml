@@ -238,7 +238,8 @@
     <string name="study_sanad_title">Chain of Transmission</string>
     <string name="study_sanad_hint">From the compiler down to the Companion; pivot narrators are highlighted</string>
     <string name="study_sanad_compiler">Compiler</string>
-    <string name="study_sanad_short_note">Here the hadith is given without its long chain: the single link is the Companion who narrated it.</string>
+    <string name="study_sanad_source">Chain from: %1$s</string>
+    <string name="study_sanad_short_note">This hadith is shown with the Companion alone: no narration in the chains\' source could be followed all the way to him.</string>
     <string name="study_takhrij">Takhrij: %1$s</string>
     <string name="study_grade">Grade: %1$s</string>
     <string name="study_chapter">Chapter: %1$s</string>
@@ -308,6 +309,9 @@
     <string name="about_method_decay">• Spaced repetition on two curves: forgetting is modelled separately for the matn and the sanad, the sanad fades faster, and a mistake on a single narrator weakens the whole sanad.</string>
     <string name="about_method_pivots">• Pivots and narrators: the isnad network and the list of most slippery narrators point your review at your weak spots.</string>
     <string name="about_method_privacy">• Your data is yours: everything works offline, and your backups are JSON files you hold yourself.</string>
+    <string name="about_sources_title">Sources</string>
+    <string name="about_sources_lk">• The chains of the hadiths: the LK corpus of hadith. Each hadith\'s chain of narrators is read from it, from the narration found in the six books, and the book it comes from is shown with the chain.</string>
+    <string name="about_sources_text">• The text and takhrij of the Forty Hadith: an open dataset released without a licence restriction.</string>
     <string name="about_ok">OK</string>
 
     <!-- Layers: the staged memorization of a hadith (core, Sanad tree, transmission terms) -->

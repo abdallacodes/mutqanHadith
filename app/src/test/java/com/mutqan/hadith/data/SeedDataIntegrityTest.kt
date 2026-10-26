@@ -77,7 +77,9 @@ class SeedDataIntegrityTest {
             assertTrue("$label: takhrij", h.takhrij.isNotBlank())
             assertTrue("$label: number", h.hadithNumber > 0)
             assertTrue("$label: matnClean is the normalized matn", h.matnClean.isNotBlank() && !h.matnClean.contains('َ'))
-            assertEquals("$label: Arba'in", "الأربعون النووية" to "النووي", h.sourceBook to h.collector)
+            assertEquals("$label: book", "الأربعون النووية", h.sourceBook)
+            // The compiler at the head of the chain is the author of the book the chain is read from, else the author himself.
+            assertEquals("$label: compiler", if (h.sanadSource.isBlank()) "النووي" else collectorOf.getValue(h.sanadSource), h.collector)
         }
         assertEquals("a hadith is identified by its book and number", seed.hadiths.size, seed.hadiths.map { it.sourceBook to it.hadithNumber }.toSet().size)
         assertEquals(seed.hadiths.size, seed.hadiths.map { it.id }.toSet().size)
@@ -105,21 +107,100 @@ class SeedDataIntegrityTest {
     }
 
     @Test
-    fun everyHadithIsAnchoredToItsCompanionAloneInTheOrderOfItsSource() {
+    fun everyChainEndsWithTheCompanionTheAuthorNames() {
         seed.hadiths.forEach { h ->
             val label = "${h.sourceBook} ${h.hadithNumber}"
             val chain = edgesByHadith[h.id].orEmpty()
-            assertEquals("$label: the chain is the Companion", 1, chain.size)
+            assertTrue("$label: a chain", chain.isNotEmpty())
             assertEquals("$label: positions run 0..n-1", chain.indices.toList(), chain.map { it.orderIndex })
             assertTrue("$label: unknown narrator", chain.all { it.narratorId in narrators })
             assertTrue("$label: transmission term", chain.all { it.transmissionTerm.isNotBlank() })
+            assertEquals("$label: a narrator twice", chain.size, chain.map { it.narratorId }.toSet().size)
+            assertEquals("$label: the chain ends with the Sahabi", h.sahabi, narrators.getValue(chain.last().narratorId).primaryName)
 
             val source = " ${comparable(sourceTextOf(h))} "
-            val name = comparable(narrators.getValue(chain.single().narratorId).primaryName)
-            assertTrue("$label: $name is not in the source", source.indexOf(" $name ") >= 0)
-            assertEquals("$label: the chain ends with the Sahabi", h.sahabi, narrators.getValue(chain.last().narratorId).primaryName)
+            val companion = comparable(h.sahabi)
+            assertTrue("$label: $companion is not in the source", source.indexOf(" $companion ") >= 0)
         }
     }
+
+    @Test
+    fun aHadithWithNoNarrationInTheSixBooksKeepsTheCompanionAloneAndNamesNoBook() {
+        val withChain = snapshot.getJSONObject("narrations").keys().asSequence().map { it.toInt() }.toSet()
+        seed.hadiths.filter { it.hadithNumber !in withChain }.forEach { h ->
+            val label = "${h.sourceBook} ${h.hadithNumber}"
+            assertEquals("$label: the Companion alone", 1, edgesByHadith[h.id].orEmpty().size)
+            assertEquals("$label: no book", "", h.sanadSource)
+            assertEquals("$label: compiled by the author", "النووي", h.collector)
+            assertTrue("$label: no chain is cited", !rawByHadith.getValue(h.id).getJSONObject("source").has("chain"))
+        }
+    }
+
+    @Test
+    fun aLongChainIsTheIsnadOfANarrationInTheBookItNamesInTheOrderOfThatIsnad() {
+        val narrations = snapshot.getJSONObject("narrations")
+        val chosen = selection.getJSONObject("narrations")
+        assertEquals("the snapshot holds the narrations the selection names", chosen.keys().asSequence().toSet(), narrations.keys().asSequence().toSet())
+        assertTrue("the Forty Hadith have long chains", narrations.length() > 0)
+        seed.hadiths.filter { it.hadithNumber.toString() in narrations.keys().asSequence().toSet() }.forEach { h ->
+            val label = "${h.sourceBook} ${h.hadithNumber}"
+            val record = narrations.getJSONObject(h.hadithNumber.toString())
+            val folder = record.getString("file").substringBefore('/')
+            assertEquals("$label: the book", bookOf.getValue(folder), h.sanadSource)
+            assertEquals("$label: the compiler at the head of the chain", collectorOf.getValue(h.sanadSource), h.collector)
+            val cited = rawByHadith.getValue(h.id).getJSONObject("source").getJSONObject("chain")
+            assertEquals("$label: the cited file", record.getString("file"), cited.getString("file"))
+            assertEquals("$label: the cited number", record.getInt("hadithNumber"), cited.getInt("hadithNumber"))
+
+            val chain = edgesByHadith.getValue(h.id)
+            assertTrue("$label: a chain of more than the Companion", chain.size > 1)
+            // Every word of every narrator is in the isnad, in the order of the chain; the Companion is named as the author does.
+            val isnad = words(record.getString("isnad"))
+            var at = 0
+            chain.dropLast(1).forEach { link ->
+                words(narrators.getValue(link.narratorId).primaryName).forEach { word ->
+                    val found = isnad.subList(at, isnad.size).indexOf(word)
+                    assertTrue("$label: «$word» of ${narrators.getValue(link.narratorId).primaryName} is not in the isnad after the narrator before", found >= 0)
+                    at += found + 1
+                }
+            }
+            // The wording the chain belongs to is the wording the author quotes.
+            val matn = wording(record.getString("matn"))
+            val ours = wording(h.matnWithTashkeel)
+            assertTrue("$label: the narration does not hold the author's wording", sharedWords(ours, matn) >= ours.size * (if (namesCollector(folder, h.takhrij)) 0.85 else 0.99))
+        }
+    }
+
+    private val bookOf = mapOf(
+        "Bukhari" to "صحيح البخاري", "Muslim" to "صحيح مسلم", "Tirmizi" to "سنن الترمذي",
+        "IbnMaja" to "سنن ابن ماجه", "AbuDaud" to "سنن أبي داود", "Nesai" to "سنن النسائي",
+    )
+    private val collectorOf = mapOf(
+        "صحيح البخاري" to "البخاري", "صحيح مسلم" to "مسلم", "سنن الترمذي" to "الترمذي",
+        "سنن ابن ماجه" to "ابن ماجه", "سنن أبي داود" to "أبو داود", "سنن النسائي" to "النسائي",
+    )
+
+    /** The words of a text in the form names are compared in (the importer's `words_in_order`). */
+    private fun words(text: String): List<String> =
+        letters(text).replace(Regex("(^|\\s)عبد(ال)"), "$1عبد $2").split(" ").filter { it.isNotEmpty() }
+            .map { if (it == "ابن") "بن" else if (it == "ابي" || it == "ابا") "ابو" else it }
+
+    /** The words of a matn that tell one wording from another: the blessings a book may or may not write are left out. */
+    private fun wording(text: String): List<String> =
+        letters(text).replace(Regex("صلي الله عليه و ?سلم|رضي الله عن(ه|ها|هما|هم)|عليه السلام"), " ").split(" ").filter { it.isNotEmpty() }
+
+    /** How many words of [ours] are found in [theirs], in order: a longest common subsequence, never fewer than the importer's matching blocks. */
+    private fun sharedWords(ours: List<String>, theirs: List<String>): Int {
+        val table = Array(ours.size + 1) { IntArray(theirs.size + 1) }
+        for (i in ours.indices) for (j in theirs.indices) {
+            table[i + 1][j + 1] = if (ours[i] == theirs[j]) table[i][j] + 1 else maxOf(table[i][j + 1], table[i + 1][j])
+        }
+        return table[ours.size][theirs.size]
+    }
+
+    private fun namesCollector(folder: String, takhrij: String): Boolean =
+        if (takhrij == "متفق عليه") folder == "Bukhari" || folder == "Muslim"
+        else comparable(collectorOf.getValue(bookOf.getValue(folder))) in comparable(takhrij)
 
     @Test
     fun theNarratorsAreOnlyThoseOfTheChainsAndEachIsNamed() {
@@ -132,8 +213,16 @@ class SeedDataIntegrityTest {
     }
 
     @Test
-    fun everyNarratorIsACompanionBecauseEveryChainIsTheCompanionAlone() {
-        seed.narrators.forEach { assertEquals("narrator ${it.id} ${it.primaryName}", "صحابي", it.tier) }
+    fun aNarratorsTierIsStructural() {
+        // A Companion ends some chain; a collector's teacher only ever opens one; everyone else is in between.
+        val chains = seed.hadiths.map { edgesByHadith.getValue(it.id).map { link -> link.narratorId } }
+        seed.narrators.forEach { narrator ->
+            val ends = chains.any { it.last() == narrator.id }
+            val onlyOpens = chains.all { narrator.id !in it || (it.first() == narrator.id) } && chains.none { narrator.id in it.drop(1) }
+            val expected = if (ends) "صحابي" else if (onlyOpens) "شيخ المصنف" else "راوٍ"
+            assertEquals("narrator ${narrator.id} ${narrator.primaryName}", expected, narrator.tier)
+            assertTrue("narrator ${narrator.id} is no pivot: no dataset says so", !narrator.isPivot)
+        }
     }
 
     @Test
@@ -165,7 +254,9 @@ class SeedDataIntegrityTest {
 
         val narratorIds = selection.getJSONObject("narratorKeepIds")
         narratorIds.keys().forEach { name -> assertEquals(name, narratorIds.getLong(name), seed.narrators.single { it.primaryName == name }.id) }
-        assertEquals(narratorIds.length(), seed.narrators.size)
+        // A narrator the chains added is numbered after the last one a catalog kept.
+        val added = seed.narrators.filter { it.primaryName !in narratorIds.keys().asSequence().toSet() }
+        assertTrue("a narrator is added after the kept ones", added.all { it.id > (narratorIds.keys().asSequence().maxOf { name -> narratorIds.getLong(name) }) })
     }
 
     // -- Groups ------------------------------------------------------------------------------

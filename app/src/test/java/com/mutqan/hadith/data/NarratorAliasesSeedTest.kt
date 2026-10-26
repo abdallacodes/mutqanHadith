@@ -52,7 +52,7 @@ class NarratorAliasesSeedTest {
     // -- The table against the catalog ------------------------------------------------------
 
     @Test
-    fun theGroupsTheCatalogTouchesAreTheFifteenOfTheFortyHadithAndTheRestAreInert() {
+    fun theGroupsTheCatalogTouchesAreTheTwentyOfTheFortyHadithAndTheRestAreInert() {
         // The table also holds the groups of the books retired in catalog 4; they name no row today and change nothing.
         val live = directory.narrators.map { it.name }.toSet().intersect(NarratorAliases.groups.map { it.name }.toSet())
         assertEquals(
@@ -60,6 +60,8 @@ class NarratorAliasesSeedTest {
                 "أبو هريرة", "عبد الله بن عمر", "عمر بن الخطاب", "عبد الله بن عباس", "أنس بن مالك", "عائشة", "جابر بن عبد الله",
                 "أبو سعيد الخدري", "عبد الله بن مسعود", "النعمان بن بشير", "عبد الله بن عمرو بن العاص", "أبو مسعود الأنصاري",
                 "أبو ذر الغفاري", "سهل بن سعد الساعدي", "أبو ثعلبة الخشني",
+                // The links of the chains that two narrations name in two ways, or that the table names in full.
+                "يحيى بن سعيد الأنصاري", "محمد بن إبراهيم التيمي", "علقمة بن وقاص الليثي", "الزهري", "سليمان الأعمش",
             ),
             live,
         )
@@ -72,12 +74,12 @@ class NarratorAliasesSeedTest {
     }
 
     @Test
-    fun theCatalogHoldsTwentyThreePeopleInThirtyTwoRows() {
-        assertEquals(32, rows.size)
-        assertEquals(23, directory.narrators.size)
+    fun theCatalogHoldsOneHundredAndTwelvePeopleInOneHundredAndTwentyThreeRows() {
+        assertEquals(123, rows.size)
+        assertEquals(112, directory.narrators.size)
         assertEquals(rows.mapTo(mutableSetOf()) { it.id }, directory.narrators.flatMap { it.memberIds }.toSet())
-        assertEquals(32, directory.narrators.sumOf { it.memberIds.size })
-        assertEquals(8, directory.narrators.count { it.memberIds.size > 1 })
+        assertEquals(123, directory.narrators.sumOf { it.memberIds.size })
+        assertEquals(10, directory.narrators.count { it.memberIds.size > 1 })
     }
 
     @Test
@@ -94,6 +96,9 @@ class NarratorAliasesSeedTest {
                 "أبو سعيد الخدري" to setOf(29L, 70L),
                 "عبد الله بن مسعود" to setOf(49L, 55L),
                 "أبو ذر الغفاري" to setOf(57L, 63L, 64L),
+                // Two links the chains name in two ways: «الزهري» and «ابن شهاب», «الأعمش» and «سليمان الأعمش».
+                "الزهري" to setOf(row("الزهري").id, row("ابن شهاب").id),
+                "سليمان الأعمش" to setOf(row("الأعمش").id, row("سليمان الأعمش").id),
             ),
             merged,
         )
@@ -192,7 +197,7 @@ class NarratorAliasesSeedTest {
     fun theNetworkOfTheCatalogHasOneNodePerMan() = runTest {
         val graph = GetNarratorGraphUseCase(FakeHadithRepository(library), FakeReviewRepository())()
 
-        assertEquals(23, graph.nodes.size)
+        assertEquals(112, graph.nodes.size)
         assertEquals(graph.nodes.map { it.id }.toSet(), directory.narrators.map { it.id }.toSet())
         assertTrue(graph.edges.all { graph.node(it.fromNarratorId) != null && graph.node(it.toNarratorId) != null })
         // Abu Hurayra is narrated under two spellings and is one node holding the hadiths of both.

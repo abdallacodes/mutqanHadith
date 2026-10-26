@@ -246,7 +246,8 @@
     <string name="study_sanad_title">سلسلة الإسناد</string>
     <string name="study_sanad_hint">من المصنّف إلى الصحابي، والمدار مُبرَز</string>
     <string name="study_sanad_compiler">المصنّف</string>
-    <string name="study_sanad_short_note">يُذكر الحديث هنا دون سلسلته الطويلة، فالحلقة الوحيدة هي الصحابي راوي الحديث.</string>
+    <string name="study_sanad_source">السند من: %1$s</string>
+    <string name="study_sanad_short_note">يُعرض هذا الحديث بالصحابي وحده، إذ لم نجد في مصدر الأسانيد روايةً يمكن تتبّع سندها كاملًا إلى الصحابي.</string>
     <string name="study_takhrij">التخريج: %1$s</string>
     <string name="study_grade">الدرجة: %1$s</string>
     <string name="study_chapter">الباب: %1$s</string>
@@ -326,6 +327,10 @@
     <string name="about_method_decay">• تكرار متباعد بمنحنيين: يُحسب نسيان المتن والسند كلٌّ على حدة، والسند أسرع تفلّتًا، وخطأ في راوٍ واحد يُضعف السند كله.</string>
     <string name="about_method_pivots">• المدارات والرواة: شبكة الأسانيد وقائمة أكثر الرواة تفلّتًا توجّه مراجعتك إلى مواضع الضعف.</string>
     <string name="about_method_privacy">• بياناتك لك: كل شيء يعمل دون إنترنت، ونسخك الاحتياطية ملف JSON بيدك.</string>
+    <string name="about_sources_title">المصادر</string>
+    <string name="about_sources_lk">• أسانيد الأحاديث: مدوّنة LK للحديث. منها تُقرأ سلسلة الرواة لكل حديث وُجدت روايته في كتب الحديث الستة، ويُذكر مع السند الكتاب الذي أُخذت منه.</string>
+    <string name="about_sources_text">• نصوص الأربعين النووية وتخريجها: مجموعة بيانات مفتوحة بلا قيد من الترخيص.</string>
+    <string name="about_sources_credits" translatable="false">LK Hadith Corpus: Altammami, Atwell &amp; Alsalka, “The Arabic-English Parallel Corpus of Authentic Hadith”, IJASAT, 2019.\nfawazahmed0/hadith-api (ara-nawawi), Unlicense.</string>
     <string name="about_ok">حسنًا</string>
 
     <!-- Layers: the staged memorization of a hadith (core, Sanad tree, transmission terms) -->

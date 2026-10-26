@@ -13,11 +13,12 @@ data class AliasGroup(val name: String, val spellings: List<String>, val isCompa
 }
 
 /**
- * The curated table of who is who across the Arba'in, 'Umdat al-Ahkam and Sahih al-Bukhari. The catalog is the Arba'in
- * alone since catalog 4, so the groups of the other two books name no row today; they stay, inert, for when those
- * books return. The catalog writes the same Companion as «ابن عمر», «عبد الله بن عمر» and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» depending on the book;
- * without this table each spelling is a separate narrator, with its own node in the network, its own tally of misses
- * and its own turn as a distractor.
+ * The curated table of who is who across the Forty Hadith, whose chains (from catalog 6) are read from the collectors'
+ * own books, and the 'Umdat al-Ahkam and Sahih al-Bukhari names the table was first made for. The catalog is the Forty
+ * Hadith alone since catalog 4, so the groups that name no row today stay, inert, for when those books return. The
+ * catalog writes the same Companion as «ابن عمر», «عبد الله بن عمر» and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» depending
+ * on the narration; without this table each spelling is a separate narrator, with its own node in the network, its own
+ * tally of misses and its own turn as a distractor.
  *
  * Every merge here rests on one of two grounds, and a name that rests on neither is left alone:
  * - the same kunya, ism or lineage in a longer or shorter form («أنس» / «أنس بن مالك» / «أبو حمزة أنس بن مالك»), or a
@@ -29,7 +30,7 @@ data class AliasGroup(val name: String, val spellings: List<String>, val isCompa
  * Deliberately **not** merged, though they look alike: «عبد الله بن عمر» and «عبد الله بن عمرو» (two Companions);
  * «سفيان» of a Bukhari chain and the Companion «أبو عمرو سفيان بن عبد الله»; the bare «يحيى» and «عبد الله» of the
  * Bukhari chains, which name no one without their book's context; «همام بن منبه» and «همام بن الحارث»; «عقبة بن
- * عامر» and «عقبة بن الحارث».
+ * عامر» and «عقبة بن الحارث»; the bare «سفيان» and «سفيان الثوري».
  */
 object NarratorAliases {
 
@@ -69,8 +70,9 @@ object NarratorAliases {
         AliasGroup("حذيفة بن اليمان", listOf("حذيفة بن اليمان", "حذيفة")),
         AliasGroup("سلمة بن الأكوع", listOf("سلمة بن الأكوع", "سلمة ابن الأكوع")),
 
-        // The links of the Bukhari chains that two of its hadiths share.
+        // The links that chains of different hadith (or of parallel narrations of one) name in two ways.
         AliasGroup("الزهري", listOf("الزهري", "ابن شهاب"), isCompanion = false),
+        AliasGroup("سليمان الأعمش", listOf("سليمان الأعمش", "الأعمش"), isCompanion = false),
         AliasGroup("يحيى بن سعيد الأنصاري", listOf("يحيى بن سعيد الأنصاري", "يحيى بن سعيد"), isCompanion = false),
         AliasGroup("محمد بن إبراهيم التيمي", listOf("محمد بن إبراهيم التيمي", "محمد بن إبراهيم"), isCompanion = false),
         AliasGroup("علقمة بن وقاص الليثي", listOf("علقمة بن وقاص الليثي", "علقمة بن وقاص"), isCompanion = false),

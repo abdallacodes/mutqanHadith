@@ -71,7 +71,7 @@ class LibraryScreensTest {
         hadith(1, listOf(companion), position = 1, groupId = 1).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"),
         hadith(2, listOf(companion), position = 2, groupId = 1).withMatn("الدِّينُ النَّصِيحَةُ"),
         hadith(11, listOf(teacher, companion), position = 4, groupId = 2).withMatn("بُنِيَ الْإِسْلَامُ عَلَى خَمْسٍ"),
-        hadith(10, listOf(teacher, middle, companion), position = 3, groupId = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ"),
+        hadith(10, listOf(teacher, middle, companion), position = 3, groupId = 3).withMatn("إِنَّمَا الْأَعْمَالُ بِالنِّيَّةِ").let { it.copy(hadith = it.hadith.copy(sanadSource = "صحيح البخاري")) },
     )
     private val hadiths = FakeHadithRepository(library, groups)
     private val reviews = LiveReviewRepository().also { r -> hadiths.seenIds = { r.mastery.keys } }
@@ -298,7 +298,9 @@ class LibraryScreensTest {
         compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ").assertExists()
         compose.onNodeWithText("عمر بن الخطاب").assertExists()
         compose.onNodeWithText("صحابي").assertExists()
-        compose.onNodeWithText("يُذكر الحديث هنا دون سلسلته الطويلة، فالحلقة الوحيدة هي الصحابي راوي الحديث.").assertExists()
+        compose.onNodeWithText("يُعرض هذا الحديث بالصحابي وحده، إذ لم نجد في مصدر الأسانيد روايةً يمكن تتبّع سندها كاملًا إلى الصحابي.").assertExists()
+        // No narration was found for it, so no book is named for its chain.
+        compose.onNodeWithText("السند من: صحيح البخاري").assertDoesNotExist()
     }
 
     @Test
@@ -306,9 +308,10 @@ class LibraryScreensTest {
         studyRoute(10)
 
         listOf("جامع", "الحميدي", "مالك", "عمر بن الخطاب").forEach { compose.onNodeWithText(it).assertExists() }
-        // An unclassified narrator is named plainly, and the long-chain note is not shown.
+        // An unclassified narrator is named plainly, the book the chain is read from is named, and the short-chain note is not shown.
         compose.onNodeWithText("راوٍ").assertExists()
-        compose.onNodeWithText("يُذكر الحديث هنا دون سلسلته الطويلة، فالحلقة الوحيدة هي الصحابي راوي الحديث.").assertDoesNotExist()
+        compose.onNodeWithText("السند من: صحيح البخاري").assertExists()
+        compose.onNodeWithText("يُعرض هذا الحديث بالصحابي وحده، إذ لم نجد في مصدر الأسانيد روايةً يمكن تتبّع سندها كاملًا إلى الصحابي.").assertDoesNotExist()
     }
 
     @Test

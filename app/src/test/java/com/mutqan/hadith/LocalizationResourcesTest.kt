@@ -137,7 +137,7 @@ class LocalizationResourcesTest {
     @Test
     fun arabicTextCarriesNoEnglishExceptJsonAndTheBilingualLanguageRow() {
         arabic.translatable().filterKeys { it != "settings_language" }.forEach { (name, entry) ->
-            val text = withoutPlaceholders(entry.value).replace("JSON", "")
+            val text = withoutPlaceholders(entry.value).replace("JSON", "").replace("LK", "")
             assertTrue("$name is not Arabic: ${entry.value}", !latinLetters.containsMatchIn(text))
         }
         val row = arabic.getValue("settings_language").value

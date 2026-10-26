@@ -374,6 +374,13 @@ private fun SanadCard(study: HadithStudy) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             SanadTimeline(collector = hadith.hadith.collector, links = hadith.sanad)
+            if (hadith.hadith.sanadSource.isNotBlank()) {
+                Text(
+                    stringResource(R.string.study_sanad_source, hadith.hadith.sanadSource),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (hadith.sanad.size == 1) {
                 Text(
                     stringResource(R.string.study_sanad_short_note),

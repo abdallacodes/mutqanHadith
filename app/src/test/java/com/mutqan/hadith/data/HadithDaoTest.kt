@@ -51,9 +51,11 @@ class HadithDaoTest {
     fun seed_loadsEveryHadithWithItsSanad() = runBlocking {
         val all = hadithDao.getAllWithSanad()
         assertEquals(42, all.size)
-        // The Forty Hadith are anchored to their Companion alone.
         assertTrue(all.all { it.hadith.level == 1 })
-        assertTrue(all.all { it.sanad.size == 1 })
+        // Nineteen of the Forty Hadith carry the full chain of a narration in the six books; the rest are the Companion alone.
+        assertEquals(19, all.count { it.sanad.size > 1 })
+        assertTrue(all.filter { it.sanad.size == 1 }.all { it.hadith.sanadSource.isEmpty() && it.hadith.collector == "النووي" })
+        assertTrue(all.filter { it.sanad.size > 1 }.all { it.hadith.sanadSource.isNotEmpty() })
     }
 
     @Test
@@ -67,12 +69,28 @@ class HadithDaoTest {
     }
 
     @Test
-    fun sanad_isTheCompanionAlone() = runBlocking {
-        val chain = hadithDao.search("إنما الأعمال بالنيات").single().sanad
-        assertEquals(listOf("أمير المؤمنين أبي حفص عمر بن الخطاب"), chain.map { it.narrator.primaryName })
-        assertEquals(listOf(0), chain.map { it.orderIndex })
-        assertEquals(listOf("عن"), chain.map { it.transmissionTerm })
+    fun sanad_isTheIsnadOfTheNarrationInTheBookItNames() = runBlocking {
+        val found = hadithDao.search("إنما الأعمال بالنيات").single()
+        val chain = found.sanad
+        assertEquals(
+            listOf("قتيبة بن سعيد", "عبد الوهاب", "يحيى بن سعيد", "محمد بن إبراهيم", "علقمة بن وقاص الليثي", "أمير المؤمنين أبي حفص عمر بن الخطاب"),
+            chain.map { it.narrator.primaryName },
+        )
+        assertEquals((0..5).toList(), chain.map { it.orderIndex })
+        assertEquals(listOf("حدثنا", "حدثنا", "سمعت", "أخبرني", "سمع", "سمعت"), chain.map { it.transmissionTerm })
+        assertEquals("شيخ المصنف", chain.first().narrator.tier)
         assertEquals("صحابي", chain.last().narrator.tier)
+        assertEquals("صحيح البخاري", found.hadith.sanadSource)
+        assertEquals("البخاري", found.hadith.collector)
+    }
+
+    @Test
+    fun sanad_ofAHadithWithNoNarrationInTheSixBooksIsTheCompanionAlone() = runBlocking {
+        val alone = hadithDao.getAllWithSanad().first { it.sanad.size == 1 }
+        assertEquals(listOf(0), alone.sanad.map { it.orderIndex })
+        assertEquals(listOf(alone.hadith.sahabi), alone.sanad.map { it.narrator.primaryName })
+        assertEquals("صحابي", alone.sanad.single().narrator.tier)
+        assertEquals("", alone.hadith.sanadSource)
     }
 
     @Test

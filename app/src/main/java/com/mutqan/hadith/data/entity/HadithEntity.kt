@@ -29,4 +29,9 @@ data class HadithEntity(
     val groupId: Long? = null,
     /** Where the hadith stands in the whole catalog, ascending: the order it is taught in. See `CurriculumOrder`. */
     @ColumnInfo(defaultValue = "0") val position: Int = 0,
+    /**
+     * The book whose narration the chain is read from («صحيح مسلم», «سنن الترمذي»), shown with the chain; blank when the
+     * chain is the Companion alone because no narration of the hadith could be followed to him.
+     */
+    @ColumnInfo(defaultValue = "''") val sanadSource: String = "",
 )

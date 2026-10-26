@@ -38,6 +38,7 @@
     "أبو محمد عبد الله بن عمرو بن العاص": 71,
     "أنس بن مالك": 72
   },
+  "separateRows": [],
   "groups": [
     {
       "id": 1,
@@ -49,5 +50,83 @@
   ],
   "bookGroups": {
     "الأربعون النووية": 1
+  },
+  "narrations": {
+    "1": {
+      "file": "Bukhari/Chapter83.csv",
+      "number": 6689
+    },
+    "10": {
+      "file": "Muslim/Chapter12.csv",
+      "number": 2287
+    },
+    "12": {
+      "file": "Tirmizi/Chapter36.csv",
+      "number": 2402
+    },
+    "13": {
+      "file": "Bukhari/Chapter2.csv",
+      "number": 13
+    },
+    "14": {
+      "file": "Tirmizi/Chapter16.csv",
+      "number": 1416
+    },
+    "15": {
+      "file": "Muslim/Chapter1.csv",
+      "number": 172
+    },
+    "16": {
+      "file": "Bukhari/Chapter78.csv",
+      "number": 6112
+    },
+    "17": {
+      "file": "Nesai/Chapter43.csv",
+      "number": 4410
+    },
+    "18": {
+      "file": "Tirmizi/Chapter27.csv",
+      "number": 2054
+    },
+    "19": {
+      "file": "Tirmizi/Chapter37.csv",
+      "number": 2608
+    },
+    "22": {
+      "file": "Muslim/Chapter1.csv",
+      "number": 110
+    },
+    "24": {
+      "file": "Muslim/Chapter45.csv",
+      "number": 6442
+    },
+    "25": {
+      "file": "Muslim/Chapter12.csv",
+      "number": 2270
+    },
+    "29": {
+      "file": "Tirmizi/Chapter40.csv",
+      "number": 2723
+    },
+    "35": {
+      "file": "Muslim/Chapter45.csv",
+      "number": 6412
+    },
+    "37": {
+      "file": "Muslim/Chapter1.csv",
+      "number": 337
+    },
+    "38": {
+      "file": "Bukhari/Chapter81.csv",
+      "number": 6502
+    },
+    "40": {
+      "file": "Bukhari/Chapter81.csv",
+      "number": 6416
+    },
+    "42": {
+      "file": "Tirmizi/Chapter48.csv",
+      "number": 3754
+    }
   }
 }

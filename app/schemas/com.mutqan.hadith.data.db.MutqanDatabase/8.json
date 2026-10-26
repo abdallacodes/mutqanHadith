@@ -1,0 +1,604 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 8,
+    "identityHash": "788bdb9e429a2da4fd472790fe7c3e14",
+    "entities": [
+      {
+        "tableName": "narrator",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `primaryName` TEXT NOT NULL, `fullName` TEXT NOT NULL, `tier` TEXT NOT NULL, `isPivot` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "primaryName",
+            "columnName": "primaryName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "fullName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tier",
+            "columnName": "tier",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPivot",
+            "columnName": "isPivot",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "hadith",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `matnWithTashkeel` TEXT NOT NULL, `matnClean` TEXT NOT NULL, `sourceBook` TEXT NOT NULL, `hadithNumber` INTEGER NOT NULL, `chapter` TEXT NOT NULL, `grade` TEXT NOT NULL, `collector` TEXT NOT NULL, `takhrij` TEXT NOT NULL DEFAULT '', `sahabi` TEXT NOT NULL DEFAULT '', `level` INTEGER NOT NULL DEFAULT 3, `groupId` INTEGER, `position` INTEGER NOT NULL DEFAULT 0, `sanadSource` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matnWithTashkeel",
+            "columnName": "matnWithTashkeel",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matnClean",
+            "columnName": "matnClean",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceBook",
+            "columnName": "sourceBook",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hadithNumber",
+            "columnName": "hadithNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "chapter",
+            "columnName": "chapter",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grade",
+            "columnName": "grade",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "collector",
+            "columnName": "collector",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "takhrij",
+            "columnName": "takhrij",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "sahabi",
+            "columnName": "sahabi",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "level",
+            "columnName": "level",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "3"
+          },
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "sanadSource",
+            "columnName": "sanadSource",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_hadith_level",
+            "unique": false,
+            "columnNames": [
+              "level"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hadith_level` ON `${TABLE_NAME}` (`level`)"
+          },
+          {
+            "name": "index_hadith_groupId",
+            "unique": false,
+            "columnNames": [
+              "groupId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hadith_groupId` ON `${TABLE_NAME}` (`groupId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sanad_edge",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `hadithId` INTEGER NOT NULL, `narratorId` INTEGER NOT NULL, `orderIndex` INTEGER NOT NULL, `transmissionTerm` TEXT NOT NULL, FOREIGN KEY(`hadithId`) REFERENCES `hadith`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`narratorId`) REFERENCES `narrator`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hadithId",
+            "columnName": "hadithId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "narratorId",
+            "columnName": "narratorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderIndex",
+            "columnName": "orderIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "transmissionTerm",
+            "columnName": "transmissionTerm",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_sanad_edge_hadithId_orderIndex",
+            "unique": true,
+            "columnNames": [
+              "hadithId",
+              "orderIndex"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sanad_edge_hadithId_orderIndex` ON `${TABLE_NAME}` (`hadithId`, `orderIndex`)"
+          },
+          {
+            "name": "index_sanad_edge_narratorId",
+            "unique": false,
+            "columnNames": [
+              "narratorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sanad_edge_narratorId` ON `${TABLE_NAME}` (`narratorId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "hadith",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "hadithId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "narrator",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "narratorId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "narrator_review_event",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `hadithId` INTEGER NOT NULL, `narratorId` INTEGER NOT NULL, `reviewedAt` INTEGER NOT NULL, `succeeded` INTEGER NOT NULL, FOREIGN KEY(`hadithId`) REFERENCES `hadith`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`narratorId`) REFERENCES `narrator`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hadithId",
+            "columnName": "hadithId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "narratorId",
+            "columnName": "narratorId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewedAt",
+            "columnName": "reviewedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "succeeded",
+            "columnName": "succeeded",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_narrator_review_event_hadithId_narratorId",
+            "unique": false,
+            "columnNames": [
+              "hadithId",
+              "narratorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_narrator_review_event_hadithId_narratorId` ON `${TABLE_NAME}` (`hadithId`, `narratorId`)"
+          },
+          {
+            "name": "index_narrator_review_event_narratorId",
+            "unique": false,
+            "columnNames": [
+              "narratorId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_narrator_review_event_narratorId` ON `${TABLE_NAME}` (`narratorId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "hadith",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "hadithId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "narrator",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "narratorId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "mastery_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`hadithId` INTEGER NOT NULL, `matnStability` REAL NOT NULL, `sanadStability` REAL NOT NULL, `matnLastReviewedAt` INTEGER, `sanadLastReviewedAt` INTEGER, `nextReviewDue` INTEGER NOT NULL, `repetitionCount` INTEGER NOT NULL, PRIMARY KEY(`hadithId`), FOREIGN KEY(`hadithId`) REFERENCES `hadith`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "hadithId",
+            "columnName": "hadithId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matnStability",
+            "columnName": "matnStability",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sanadStability",
+            "columnName": "sanadStability",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matnLastReviewedAt",
+            "columnName": "matnLastReviewedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sanadLastReviewedAt",
+            "columnName": "sanadLastReviewedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "nextReviewDue",
+            "columnName": "nextReviewDue",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repetitionCount",
+            "columnName": "repetitionCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "hadithId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_mastery_record_nextReviewDue",
+            "unique": false,
+            "columnNames": [
+              "nextReviewDue"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_mastery_record_nextReviewDue` ON `${TABLE_NAME}` (`nextReviewDue`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "hadith",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "hadithId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "catalog_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "collections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `accent` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accent",
+            "columnName": "accent",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "hadith_collection_cross_ref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`collectionId` INTEGER NOT NULL, `hadithId` INTEGER NOT NULL, `addedAt` INTEGER NOT NULL, PRIMARY KEY(`collectionId`, `hadithId`), FOREIGN KEY(`collectionId`) REFERENCES `collections`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`hadithId`) REFERENCES `hadith`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "collectionId",
+            "columnName": "collectionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hadithId",
+            "columnName": "hadithId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "addedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "collectionId",
+            "hadithId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_hadith_collection_cross_ref_hadithId",
+            "unique": false,
+            "columnNames": [
+              "hadithId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_hadith_collection_cross_ref_hadithId` ON `${TABLE_NAME}` (`hadithId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "collections",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "collectionId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "hadith",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "hadithId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "catalog_group",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `parentId` INTEGER, `title` TEXT NOT NULL, `titleEn` TEXT NOT NULL, `position` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentId",
+            "columnName": "parentId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "titleEn",
+            "columnName": "titleEn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_catalog_group_parentId",
+            "unique": false,
+            "columnNames": [
+              "parentId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_catalog_group_parentId` ON `${TABLE_NAME}` (`parentId`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '788bdb9e429a2da4fd472790fe7c3e14')"
+    ]
+  }
+}

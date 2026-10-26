@@ -62,5 +62,15 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7)
+    /**
+     * The book a hadith's chain is read from, one new column. The chains themselves arrive with catalog 6, which is synced
+     * on the next open; until then the column is blank and the chains are the Companion alone, as they were.
+     */
+    val V7_TO_V8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE hadith ADD COLUMN sanadSource TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8)
 }

@@ -224,10 +224,19 @@ class CatalogMigrationTest {
         val after = updated.openHelper.writableDatabase
 
         assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(after))
-        // The Forty Hadith, their chains and their narrators are exactly as they were; nothing was replaced or renumbered.
-        // The catalog has only now filed them under their book.
-        assertEquals(arbainBefore, updated.hadithDao().getAllWithSanad().unplaced())
-        assertTrue(updated.hadithDao().getAllWithSanad().all { it.hadith.groupId == 1L && it.hadith.position > 0 })
+        // The Forty Hadith keep their rows and ids; nothing was renumbered. The catalog has only now filed them under their
+        // book, and given those with a narration in the six books its full chain: the others are exactly as they were.
+        val withLongChain = seed.edges.groupBy { it.hadithId }.filterValues { it.size > 1 }.keys
+        val afterAll = updated.hadithDao().getAllWithSanad()
+        assertEquals(arbainBefore.filter { it.hadith.id !in withLongChain }, afterAll.filter { it.hadith.id !in withLongChain }.unplaced())
+        afterAll.filter { it.hadith.id in withLongChain }.forEach { h ->
+            assertEquals(
+                "hadith ${h.hadith.id}",
+                seed.edges.filter { it.hadithId == h.hadith.id }.sortedBy { it.orderIndex }.map { it.narratorId },
+                h.sanad.map { it.narrator.id },
+            )
+        }
+        assertTrue(afterAll.all { it.hadith.groupId == 1L && it.hadith.position > 0 })
         assertEquals(seed.groups, updated.hadithDao().observeGroups().first())
         assertEquals(seed.hadiths.map { it.id }.sorted(), updated.hadithDao().getAllIds().sorted())
         assertEquals(seed.narrators.map { it.id }.toSet(), updated.narratorDao().getAll().map { it.id }.toSet())

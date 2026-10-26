@@ -32,7 +32,7 @@ class DatabaseSeedingTest {
         val second = open("fresh.db")
         assertEquals(hadiths, second.hadithDao().count())
         assertEquals(narrators, second.narratorDao().getAll().size)
-        assertEquals(hadiths, second.hadithDao().getAllWithSanad().count { it.sanad.size == 1 })
+        assertEquals(seed.edges.groupBy { it.hadithId }.map { (id, edges) -> id to edges.size }.toMap(), second.hadithDao().getAllWithSanad().associate { it.hadith.id to it.sanad.size })
         second.close()
     }
 

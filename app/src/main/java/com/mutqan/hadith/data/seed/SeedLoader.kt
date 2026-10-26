@@ -36,9 +36,10 @@ object SeedLoader {
      * (`tools/import_hadiths.py`), replacing the hand-written one. 3: Level 2, the hadiths of 'Umdat al-Ahkam
      * that were found in Sahih al-Bukhari or Sahih Muslim, added as new rows. 4: the Forty Hadith alone; the
      * Bukhari selection and 'Umdat al-Ahkam were retired (see [RETIRED_IN]). 5: the hadiths are filed in groups (books and
-     * their sections) and carry the position they are taught in.
+     * their sections) and carry the position they are taught in. 6: the hadiths that have a narration whose isnad can be
+     * followed to their Companion carry that full chain, and say which book it is read from.
      */
-    const val CATALOG_VERSION = 5
+    const val CATALOG_VERSION = 6
 
     /**
      * The catalog version that retired the hadiths of Sahih al-Bukhari and 'Umdat al-Ahkam. A database that
@@ -101,6 +102,7 @@ object SeedLoader {
                 level = h.getInt("level"),
                 groupId = getLongOrNull(h, "groupId"),
                 position = h.optInt("position", 0),
+                sanadSource = h.optString("sanadSource", ""),
             )
             val sanad = h.getJSONArray("sanad")
             for (j in 0 until sanad.length()) {
@@ -249,6 +251,7 @@ object SeedLoader {
         put("level", h.level)
         if (h.groupId != null) put("groupId", h.groupId) else putNull("groupId")
         put("position", h.position)
+        put("sanadSource", h.sanadSource)
     }
 
     private fun groupValues(g: CatalogGroupEntity) = ContentValues().apply {
