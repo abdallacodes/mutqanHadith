@@ -14,8 +14,8 @@ android {
         applicationId = "com.mutqan.hadith"
         minSdk = 30
         targetSdk = 37
-        versionCode = 10401
-        versionName = "1.4.1"
+        versionCode = 10500
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
