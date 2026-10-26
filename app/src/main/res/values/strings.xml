@@ -244,6 +244,8 @@
     <string name="study_title">قراءة الحديث</string>
     <string name="study_matn_title">المتن</string>
     <string name="study_sanad_title">سلسلة الإسناد</string>
+    <string name="study_sanad_show">إظهار السند</string>
+    <string name="study_sanad_hide">إخفاء السند</string>
     <string name="study_sanad_hint">من المصنّف إلى الصحابي، والمدار مُبرَز</string>
     <string name="study_sanad_compiler">المصنّف</string>
     <string name="study_sanad_source">السند من: %1$s</string>

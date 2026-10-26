@@ -290,6 +290,7 @@ class LibraryScreensTest {
     @Test
     fun study_showsTheHadithItsSourceAndItsShortChain() {
         studyRoute(1)
+        compose.onNodeWithText("إظهار السند").performClick()
 
         compose.onNodeWithText("كتاب").assertExists()
         compose.onNodeWithText("حديث رقم 1").assertExists()
@@ -307,7 +308,7 @@ class LibraryScreensTest {
     }
 
     @Test
-    fun study_theCompanionComesFirstAndTheMukhrijLastAsCardsOfTheirOwn() {
+    fun study_theCompanionComesFirstThenTheMatnTheMukhrijAndTheChainLastAsCardsOfTheirOwn() {
         studyRoute(1)
 
         fun top(text: String) = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
@@ -317,14 +318,32 @@ class LibraryScreensTest {
         val mukhrij = top("متفق عليه")
 
         assertTrue("the Companion is above the matn", companion < matn)
-        assertTrue("the takhrij is below the chain", chain < mukhrij)
+        assertTrue("the takhrij is below the matn", matn < mukhrij)
+        assertTrue("the chain is last, below the takhrij", mukhrij < chain)
         // The author's words alone, not a labelled chip: «رواه …» / «متفق عليه» is the whole card.
         compose.onAllNodesWithText("التخريج", substring = true).assertCountEquals(0)
     }
 
     @Test
+    fun study_theChainIsHiddenUntilAskedForAndCanBeHiddenAgain() {
+        studyRoute(10)
+
+        compose.onNodeWithText("سلسلة الإسناد").assertExists()
+        listOf("جامع", "الحميدي", "مالك").forEach { compose.onNodeWithText(it).assertDoesNotExist() }
+        compose.onNodeWithText("السند من: صحيح البخاري").assertDoesNotExist()
+
+        compose.onNodeWithText("إظهار السند").performClick()
+        compose.onNodeWithText("الحميدي").assertExists()
+
+        compose.onNodeWithText("إخفاء السند").performClick()
+        compose.onNodeWithText("الحميدي").assertDoesNotExist()
+    }
+
+    @Test
     fun study_aFullChainIsShownFromTheCompilerToTheCompanion() {
         studyRoute(10)
+        compose.onNodeWithText("جامع").assertDoesNotExist()
+        compose.onNodeWithText("إظهار السند").performClick()
 
         listOf("جامع", "الحميدي", "مالك").forEach { compose.onNodeWithText(it).assertExists() }
         compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(2)
@@ -427,7 +446,8 @@ class LibraryScreensTest {
 
         compose.onNodeWithText("حديث رقم 1").assertExists()
         compose.onNodeWithText("متفق عليه").assertExists()
-        compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(2)
+        // The chain stays hidden; only the Companion's card names him.
+        compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(1)
         compose.onNodeWithText("100٪").assertExists()
     }
 

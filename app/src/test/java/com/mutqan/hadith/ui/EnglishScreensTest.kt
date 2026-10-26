@@ -368,6 +368,9 @@ class EnglishScreensTest {
         compose.onNodeWithText("100%").assertExists()
         compose.onNodeWithText("Copy").assertExists()
         // The chain: the compiler, then each narrator with his tier worded in English and his name as the dataset gives it.
+        // The chain is hidden until asked for.
+        compose.onNodeWithText("Compiler").assertDoesNotExist()
+        compose.onNodeWithText("Show chain").performClick()
         compose.onNodeWithText("Compiler").assertExists()
         listOf("الحميدي", "سفيان", "الزهري").forEach { compose.onNodeWithText(it).assertExists() }
         // The Companion is named in his card at the top and as the last link of the chain.

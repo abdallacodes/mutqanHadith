@@ -217,8 +217,8 @@ private fun StudyContent(
         if (hadith.sahabi.isNotBlank()) SahabiCard(NarratorAliases.canonicalName(hadith.sahabi))
         ui.study.layer?.let { LayerCard(hadith.id, it, ui.study.hadith.sanad, onSanadBuilder, onMissingLink, onOrderChain) }
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
-        SanadCard(ui.study)
         if (hadith.takhrij.isNotBlank()) MukhrijCard(hadith.takhrij)
+        SanadCard(ui.study)
     }
 }
 
@@ -241,7 +241,7 @@ private fun SahabiCard(name: String) {
     }
 }
 
-/** The collectors who recorded the hadith, last on the page and in large type, worded as the author gives them («رواه مسلم»). */
+/** The collectors who recorded the hadith, after the matn and before the chain, in large type, worded as the author gives them («رواه مسلم»). */
 @Composable
 private fun MukhrijCard(takhrij: String) {
     Card(
@@ -394,6 +394,8 @@ private fun MatnCard(hadith: HadithEntity, scale: Float, showTashkeel: Boolean, 
 @Composable
 private fun SanadCard(study: HadithStudy) {
     val hadith = study.hadith
+    // Hidden until asked for: the chain is something to recall, not to read off the page.
+    var shown by rememberSaveable(hadith.hadith.id) { mutableStateOf(false) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -401,26 +403,33 @@ private fun SanadCard(study: HadithStudy) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.study_sanad_title), style = MaterialTheme.typography.titleLarge)
-            Text(
-                stringResource(R.string.study_sanad_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            SanadTimeline(collector = hadith.hadith.collector, links = hadith.sanad)
-            if (hadith.hadith.sanadSource.isNotBlank()) {
-                Text(
-                    stringResource(R.string.study_sanad_source, hadith.hadith.sanadSource),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.study_sanad_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                TextButton(onClick = { shown = !shown }) {
+                    Text(stringResource(if (shown) R.string.study_sanad_hide else R.string.study_sanad_show))
+                }
             }
-            if (hadith.sanad.size == 1) {
+            if (shown) {
                 Text(
-                    stringResource(R.string.study_sanad_short_note),
+                    stringResource(R.string.study_sanad_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                SanadTimeline(collector = hadith.hadith.collector, links = hadith.sanad)
+                if (hadith.hadith.sanadSource.isNotBlank()) {
+                    Text(
+                        stringResource(R.string.study_sanad_source, hadith.hadith.sanadSource),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (hadith.sanad.size == 1) {
+                    Text(
+                        stringResource(R.string.study_sanad_short_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

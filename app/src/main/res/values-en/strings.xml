@@ -236,6 +236,8 @@
     <string name="study_title">Hadith Reader</string>
     <string name="study_matn_title">Matn</string>
     <string name="study_sanad_title">Chain of Transmission</string>
+    <string name="study_sanad_show">Show chain</string>
+    <string name="study_sanad_hide">Hide chain</string>
     <string name="study_sanad_hint">From the compiler down to the Companion; pivot narrators are highlighted</string>
     <string name="study_sanad_compiler">Compiler</string>
     <string name="study_sanad_source">Chain from: %1$s</string>
