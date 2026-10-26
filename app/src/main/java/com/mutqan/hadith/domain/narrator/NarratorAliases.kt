@@ -13,8 +13,9 @@ data class AliasGroup(val name: String, val spellings: List<String>, val isCompa
 }
 
 /**
- * The curated table of who is who across the Arba'in, 'Umdat al-Ahkam and Sahih al-Bukhari. The catalog writes the
- * same Companion as «ابن عمر», «عبد الله بن عمر» and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» depending on the book;
+ * The curated table of who is who across the Arba'in, 'Umdat al-Ahkam and Sahih al-Bukhari. The catalog is the Arba'in
+ * alone since catalog 4, so the groups of the other two books name no row today; they stay, inert, for when those
+ * books return. The catalog writes the same Companion as «ابن عمر», «عبد الله بن عمر» and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» depending on the book;
  * without this table each spelling is a separate narrator, with its own node in the network, its own tally of misses
  * and its own turn as a distractor.
  *

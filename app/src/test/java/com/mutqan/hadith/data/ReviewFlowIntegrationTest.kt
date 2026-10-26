@@ -3,6 +3,8 @@ package com.mutqan.hadith.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.data.db.MutqanDatabase
+import com.mutqan.hadith.data.entity.HadithEntity
+import com.mutqan.hadith.data.entity.SanadEdgeEntity
 import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
 import com.mutqan.hadith.domain.model.ReviewRating.EASY
@@ -22,7 +24,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** The Phase 2 use cases wired to the real Room repositories and the seeded Bukhari data. */
+/** The Phase 2 use cases wired to the real Room repositories and the seeded Forty Hadith. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ReviewFlowIntegrationTest {
@@ -51,8 +53,17 @@ class ReviewFlowIntegrationTest {
 
     @Test
     fun reviewCycle_persistsSchedulesAndSurfacesTheWeakNarrator() = runBlocking {
-        val niyyah = db.hadithDao().getAllWithSanad().first { it.hadith.hadithNumber == 1 }
-        val yahya = niyyah.sanad.first { it.narrator.primaryName == "يحيى بن سعيد الأنصاري" }.narrator.id
+        // The Forty Hadith have the Companion alone for a chain, so this one is given a chain of three out of the seed's narrators.
+        val yahya = 16L
+        db.hadithDao().insertWithSanad(
+            HadithEntity(100, "نص", "نص", "كتاب", 100, "باب", "صحيح", "جامع", takhrij = "رواه مسلم", sahabi = "أبو سعيد الخدري", level = 2),
+            listOf(
+                SanadEdgeEntity(hadithId = 100, narratorId = 12, orderIndex = 0, transmissionTerm = "حدثنا"),
+                SanadEdgeEntity(hadithId = 100, narratorId = yahya, orderIndex = 1, transmissionTerm = "أخبرنا"),
+                SanadEdgeEntity(hadithId = 100, narratorId = 29, orderIndex = 2, transmissionTerm = "عن"),
+            ),
+        )
+        val niyyah = db.hadithDao().getHadithWithSanad(100)!!
 
         assertTrue(getDue().isEmpty())
 

@@ -33,9 +33,9 @@ class CollectionsMigrationTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val seed = SeedLoader.load(context)
 
-    /** Five hadiths of the three levels that the user has studied; ids of the catalog are not consecutive. */
-    private val studied = seed.hadiths.map { it.id }.sorted().let { listOf(it[0], it[6], it[59], it[199], it.last()) }
-    private val unstudied = seed.hadiths.map { it.id }.sorted()[300]
+    /** Five of the Forty Hadith that the user has studied; ids of the catalog are not consecutive. */
+    private val studied = seed.hadiths.map { it.id }.sorted().let { listOf(it[0], it[6], it[13], it[27], it.last()) }
+    private val unstudied = seed.hadiths.map { it.id }.sorted()[30]
 
     /** The tables of version 5, i.e. every one of the app's tables before collections. */
     private val versionFiveTables = listOf("narrator", "hadith", "sanad_edge", "narrator_review_event", "mastery_record", "catalog_state")
@@ -83,7 +83,7 @@ class CollectionsMigrationTest {
             }
             db.insert("catalog_state", null, ContentValues().apply { put("id", 1); put("version", SeedLoader.CATALOG_VERSION) })
 
-            // The user's study history: hadiths of all three levels in different states, and what was recalled of their chains.
+            // The user's study history: hadiths in different states, and what was recalled of their chains.
             val history = listOf(
                 Triple(studied[0], 12.5f to 3.25f, 4), Triple(studied[1], 40.0f to 9.5f, 9), Triple(studied[2], 0.5f to 0.25f, 1),
                 Triple(studied[3], 2.0f to 0.0f, 2), Triple(studied[4], 21.75f to 6.5f, 6),
@@ -123,7 +123,7 @@ class CollectionsMigrationTest {
 
         val before = rawDump("v5.db")
 
-        assertEquals(397, before.getValue("hadith").size)
+        assertEquals(seed.hadiths.size, before.getValue("hadith").size)
         assertEquals(5, before.getValue("mastery_record").size)
         assertTrue(before.getValue("narrator_review_event").isNotEmpty())
         assertEquals(seed.edges.size, before.getValue("sanad_edge").size)

@@ -32,7 +32,7 @@ class DatabaseSeedingTest {
         val second = open("fresh.db")
         assertEquals(hadiths, second.hadithDao().count())
         assertEquals(narrators, second.narratorDao().getAll().size)
-        assertEquals(10, second.hadithDao().getAllWithSanad().count { it.sanad.size >= 4 })
+        assertEquals(hadiths, second.hadithDao().getAllWithSanad().count { it.sanad.size == 1 })
         second.close()
     }
 
@@ -51,7 +51,7 @@ class DatabaseSeedingTest {
         assertEquals(hadiths, db.hadithDao().count())
         assertEquals(hadiths, db.hadithDao().getAllWithSanad().size)
         assertEquals(hadiths, db.hadithDao().getUnseenWithSanad().size)
-        assertEquals("صحيح البخاري", db.hadithDao().getHadithWithSanad(1)!!.hadith.sourceBook)
+        assertEquals("الأربعون النووية", db.hadithDao().getHadithWithSanad(11)!!.hadith.sourceBook)
         db.close()
     }
 

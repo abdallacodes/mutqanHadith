@@ -25,8 +25,8 @@ import org.robolectric.annotation.Config
 /**
  * The curated alias table held to the catalog it describes: every name in it is one the catalog really carries, nothing
  * is merged that should stay apart, no duplicate is left that the table could have caught, and the Companions the
- * Arba'in and 'Umdat al-Ahkam write differently are one man in the network. The table changes no row: the database,
- * the chains and the user's per-narrator history are exactly as they were.
+ * Forty Hadith write in two ways are one man in the network. The table changes no row: the database, the chains and
+ * the user's per-narrator history are exactly as they were.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -49,39 +49,35 @@ class NarratorAliasesSeedTest {
 
     private fun person(name: String) = directory.canonicalOf(row(name).id)!!
 
-    private val arbain = "الأربعون النووية"
-    private val umdat = "عمدة الأحكام"
-    private val bukhari = "صحيح البخاري"
-
     // -- The table against the catalog ------------------------------------------------------
 
     @Test
-    fun everyNameInTheTableIsOneTheCatalogCarries() {
-        val carried = rows.flatMap { listOf(NarratorNormalizer.key(it.primaryName), NarratorNormalizer.key(it.fullName)) }.toSet()
-        // The orthography of a canonical name may be settled («العاص»); every other spelling is the catalog's own.
-        val settled = setOf("عبد الله بن عمرو بن العاص")
-        NarratorAliases.groups.forEach { group ->
-            group.spellings.filter { it !in settled }.forEach {
-                assertTrue("«$it» of «${group.name}» is in no catalog row", NarratorNormalizer.key(it) in carried)
+    fun theGroupsTheCatalogTouchesAreTheFifteenOfTheFortyHadithAndTheRestAreInert() {
+        // The table also holds the groups of the books retired in catalog 4; they name no row today and change nothing.
+        val live = directory.narrators.map { it.name }.toSet().intersect(NarratorAliases.groups.map { it.name }.toSet())
+        assertEquals(
+            setOf(
+                "أبو هريرة", "عبد الله بن عمر", "عمر بن الخطاب", "عبد الله بن عباس", "أنس بن مالك", "عائشة", "جابر بن عبد الله",
+                "أبو سعيد الخدري", "عبد الله بن مسعود", "النعمان بن بشير", "عبد الله بن عمرو بن العاص", "أبو مسعود الأنصاري",
+                "أبو ذر الغفاري", "سهل بن سعد الساعدي", "أبو ثعلبة الخشني",
+            ),
+            live,
+        )
+        // Every row a live group names is filed under that group's name, so the app shows and hints from one clean name.
+        NarratorAliases.groups.filter { it.name in live }.forEach { group ->
+            rows.filter { NarratorAliases.groupOf(it.primaryName) === group }.forEach {
+                assertEquals(group.name, directory.canonicalOf(it.id)!!.name)
             }
         }
     }
 
     @Test
-    fun everyGroupMergesAtLeastTwoRowsOfTheCatalog() {
-        NarratorAliases.groups.forEach { group ->
-            val merged = directory.narrators.firstOrNull { it.name == group.name }
-            assertTrue("«${group.name}» merges nothing in this catalog", merged != null && merged.memberIds.size >= 2)
-        }
-    }
-
-    @Test
-    fun theCatalogHoldsOneHundredAndTenPeopleInOneHundredAndFortyEightRows() {
-        assertEquals(148, rows.size)
-        assertEquals(110, directory.narrators.size)
+    fun theCatalogHoldsTwentyThreePeopleInThirtyTwoRows() {
+        assertEquals(32, rows.size)
+        assertEquals(23, directory.narrators.size)
         assertEquals(rows.mapTo(mutableSetOf()) { it.id }, directory.narrators.flatMap { it.memberIds }.toSet())
-        assertEquals(148, directory.narrators.sumOf { it.memberIds.size })
-        assertEquals(27, directory.narrators.count { it.memberIds.size > 1 })
+        assertEquals(32, directory.narrators.sumOf { it.memberIds.size })
+        assertEquals(8, directory.narrators.count { it.memberIds.size > 1 })
     }
 
     @Test
@@ -91,32 +87,13 @@ class NarratorAliasesSeedTest {
         assertEquals(
             mapOf(
                 "أبو هريرة" to setOf(34L, 52L),
-                "عبد الله بن عمر" to setOf(16L, 36L, 47L, 108L),
-                "عمر بن الخطاب" to setOf(6L, 12L, 46L),
+                "عبد الله بن عمر" to setOf(16L, 47L),
+                "عمر بن الخطاب" to setOf(12L, 46L),
                 "عبد الله بن عباس" to setOf(42L, 58L),
-                "أنس بن مالك" to setOf(21L, 54L, 72L),
-                "عائشة" to setOf(50L, 74L),
-                "جابر بن عبد الله" to setOf(61L, 86L, 109L),
+                "أنس بن مالك" to setOf(54L, 72L),
                 "أبو سعيد الخدري" to setOf(29L, 70L),
-                "عبد الله بن مسعود" to setOf(49L, 55L, 101L),
-                "النعمان بن بشير" to setOf(25L, 51L),
-                "عبد الله بن عمرو بن العاص" to setOf(71L, 73L, 118L),
-                "أبو مسعود الأنصاري" to setOf(59L, 89L),
-                "أبو موسى الأشعري" to setOf(107L, 112L, 136L),
-                "أبو قتادة الأنصاري" to setOf(76L, 93L, 99L),
+                "عبد الله بن مسعود" to setOf(49L, 55L),
                 "أبو ذر الغفاري" to setOf(57L, 63L, 64L),
-                "عبد الله بن زيد بن عاصم" to setOf(80L, 113L),
-                "أم عطية الأنصارية" to setOf(106L, 110L, 130L),
-                "سهل بن سعد الساعدي" to setOf(69L, 103L),
-                "أبو ثعلبة الخشني" to setOf(68L, 142L),
-                "عبد الله بن مالك ابن بحينة" to setOf(92L, 97L),
-                "حذيفة بن اليمان" to setOf(77L, 146L),
-                "سلمة بن الأكوع" to setOf(104L, 148L),
-                "الزهري" to setOf(27L, 40L),
-                "يحيى بن سعيد الأنصاري" to setOf(3L, 9L),
-                "محمد بن إبراهيم التيمي" to setOf(4L, 10L),
-                "علقمة بن وقاص الليثي" to setOf(5L, 11L),
-                "عبيد الله بن عبد الله بن عتبة بن مسعود" to setOf(41L, 133L),
             ),
             merged,
         )
@@ -143,18 +120,13 @@ class NarratorAliasesSeedTest {
     @Test
     fun menWhoOnlyLookAlikeAreNotMerged() {
         val apart = listOf(
-            "عبد الله بن عمر" to "عبد الله بن عمرو بن العاصي",
-            "عبد الله بن عمر" to "عبد الله بن عمرو",
-            "سفيان" to "أبو عمرو سفيان بن عبد الله",
-            "يحيى" to "يحيى بن سعيد الأنصاري",
-            "عبد الله" to "عبد الله بن مسلمة",
-            "همام بن منبه" to "همام بن الحارث",
-            "عقبة بن عامر" to "عقبة بن الحارث",
-            "علي بن أبي طالب" to "أبو محمد الحسن بن علي بن أبي طالب",
-            "أبو بكر الصديق" to "أبو بكرة",
-            "جندب بن عبد الله البجلي" to "أبو ذر جندب بن جنادة",
-            "عبد الله بن عمرو" to "جابر بن عبد الله",
-            "ابن شهاب" to "سالم",
+            "ابن عمر" to "أبو محمد عبد الله بن عمرو بن العاص",
+            "ابن عباس" to "ابن مسعود",
+            "عمر" to "أبو عمرو سفيان بن عبد الله",
+            "أبو ذر" to "أبو ثعلبة الخشني جرثوم بن ناشر",
+            "أبو سعيد الخدري" to "أبو مسعود عقبة بن عمرو الأنصاري البدري",
+            "أبو محمد الحسن بن علي بن أبي طالب" to "عمر",
+            "أبو عبد الله جابر بن عبد الله الأنصاري" to "أبو عبد الله النعمان بن بشير",
         )
         apart.forEach { (a, b) ->
             assertNotEquals("«$a» and «$b»", directory.canonicalId(row(a).id), directory.canonicalId(row(b).id))
@@ -163,50 +135,23 @@ class NarratorAliasesSeedTest {
 
     @Test
     fun theTableChangesNoRowAndNoReference() {
-        assertEquals(3, SeedLoader.CATALOG_VERSION)
         // Every edge still points at the row it pointed at, and every canonical id is such a row.
         assertEquals(seed.edges.map { it.narratorId }.toSet(), library.flatMap { h -> h.edges.map { it.narrator.id } }.toSet())
         directory.narrators.forEach { assertTrue(it.id in narratorById && it.id in it.memberIds) }
     }
 
-    // -- One man across the books -----------------------------------------------------------
+    // -- One man under two spellings ----------------------------------------------------------
 
-    private fun booksOf(rowIds: Set<Long>) =
-        library.filter { h -> h.edges.any { it.narrator.id in rowIds } }.map { it.hadith.sourceBook }.toSet()
-
-    @Test
-    fun theCompanionsOfTheArbainAndOfUmdatAlAhkamAreTheSameMen() {
-        val inBoth = listOf(
-            "أبو هريرة", "عبد الله بن عمر", "عبد الله بن عباس", "أنس بن مالك", "عائشة", "جابر بن عبد الله", "أبو سعيد الخدري",
-            "عبد الله بن مسعود", "النعمان بن بشير", "عبد الله بن عمرو بن العاص", "أبو مسعود الأنصاري", "أبو ذر الغفاري",
-            "سهل بن سعد الساعدي", "أبو ثعلبة الخشني", "عمر بن الخطاب",
-        )
-        inBoth.forEach { name ->
-            val books = booksOf(directory.narrators.first { it.name == name }.memberIds)
-            assertTrue("«$name» is in $books", arbain in books && umdat in books)
-        }
-    }
+    private fun numbersOf(rowIds: Set<Long>) =
+        library.filter { h -> h.edges.any { it.narrator.id in rowIds } }.map { it.hadith.hadithNumber }.sorted()
 
     @Test
-    fun mergingTheSpellingsMakesTheSharedCompanionsVisible() {
-        fun sharing(groups: Collection<Set<Long>>) = groups.count { booksOf(it).containsAll(listOf(arbain, umdat)) }
-
-        val sharedRows = sharing(rows.map { setOf(it.id) })
-        val sharedPeople = sharing(directory.narrators.map { it.memberIds })
-
-        // Row by row only a few Companions are found in both books, because each book spells them its own way.
-        assertTrue("$sharedPeople people against $sharedRows rows", sharedPeople > 2 * sharedRows)
-        assertEquals(15, sharedPeople)
-    }
-
-    @Test
-    fun theParallelBukhariChainsOfTheIntentionHadithMeetAtEveryLink() {
-        val first = library.single { it.hadith.sourceBook == bukhari && it.hadith.hadithNumber == 1 }.sanad.map { directory.canonicalId(it.narrator.id) }
-        val second = library.single { it.hadith.sourceBook == bukhari && it.hadith.hadithNumber == 54 }.sanad.map { directory.canonicalId(it.narrator.id) }
-
-        // Both end «يحيى بن سعيد ← محمد بن إبراهيم ← علقمة بن وقاص ← عمر»: the last four links are the same four men.
-        assertEquals(first.takeLast(4), second.takeLast(4))
-        assertEquals(8, (first + second).toSet().size)
+    fun aCompanionWrittenInTwoWaysIsOneManHoldingTheHadithsOfBoth() {
+        // Abu Hurayra is «أبو هريرة» in eight hadiths and «أبو هريرة عبد الرحمن بن صخر» in hadith 9.
+        val abuHurayra = directory.narrators.first { it.name == "أبو هريرة" }.memberIds
+        assertEquals(listOf(9, 10, 12, 15, 16, 26, 35, 36, 38), numbersOf(abuHurayra))
+        // Ibn 'Umar is «ابن عمر» (8 and 40) and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» (3).
+        assertEquals(listOf(3, 8, 40), numbersOf(directory.narrators.first { it.name == "عبد الله بن عمر" }.memberIds))
     }
 
     // -- The hint ---------------------------------------------------------------------------
@@ -220,15 +165,16 @@ class NarratorAliasesSeedTest {
     }
 
     @Test
-    fun oneCompanionGivesOneHintWhicheverBookIsAsked() {
+    fun oneCompanionGivesOneHintWhicheverSpellingIsAsked() {
         val hintsByMan = library.groupBy { directory.canonicalId(it.sanad.last().narrator.id) }.mapValues { (_, hadiths) ->
             hadiths.map { companionHint(NarratorAliases.canonicalName(it.hadith.sahabi)) }.toSet()
         }
 
         hintsByMan.forEach { (id, hints) -> assertEquals("narrator $id: $hints", 1, hints.size) }
         assertTrue(hintsByMan.values.flatten().none { it.isEmpty() })
-        // «ابن عمر» (Arba'in) and «عبد الله بن عمر» ('Umdat) used to hint «ا…» and «ع…»: now both are «ع…».
+        // «ابن عمر» and «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» would hint «ا…» and «أ…»: both are «ع…».
         assertEquals(setOf("عـ…"), hintsByMan.getValue(directory.canonicalId(row("ابن عمر").id)))
+        assertEquals(setOf("عـ…"), hintsByMan.getValue(directory.canonicalId(row("أبو عبد الرحمن عبد الله بن عمر بن الخطاب").id)))
         assertEquals(setOf("أ…"), hintsByMan.getValue(directory.canonicalId(row("أبو هريرة").id)))
     }
 
@@ -246,7 +192,7 @@ class NarratorAliasesSeedTest {
     fun theNetworkOfTheCatalogHasOneNodePerMan() = runTest {
         val graph = GetNarratorGraphUseCase(FakeHadithRepository(library), FakeReviewRepository())()
 
-        assertEquals(110, graph.nodes.size)
+        assertEquals(23, graph.nodes.size)
         assertEquals(graph.nodes.map { it.id }.toSet(), directory.narrators.map { it.id }.toSet())
         assertTrue(graph.edges.all { graph.node(it.fromNarratorId) != null && graph.node(it.toNarratorId) != null })
         // Abu Hurayra is narrated under two spellings and is one node holding the hadiths of both.

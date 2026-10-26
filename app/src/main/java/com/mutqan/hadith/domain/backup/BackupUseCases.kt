@@ -34,8 +34,12 @@ class ExportUserDataUseCase(
     }
 }
 
-/** A backup that was read and checked and can be restored; nothing has been changed yet. */
-data class PreparedBackup(val exportedAt: Long, val data: UserData) {
+/**
+ * A backup that was read and checked and can be restored; nothing has been changed yet. [data] is what will be
+ * restored; [skippedHadiths] counts the hadiths of the file that were left out because the library no longer has
+ * them (see [RetiredHadiths]).
+ */
+data class PreparedBackup(val exportedAt: Long, val data: UserData, val skippedHadiths: Int = 0) {
     val masteryCount: Int get() = data.mastery.size
     val eventCount: Int get() = data.events.size
 }
@@ -51,8 +55,11 @@ class ImportUserDataUseCase(private val backup: BackupRepository) {
     /** @throws BackupException when the text is not a backup, is damaged, or refers to content this app lacks. */
     suspend fun prepare(json: String): PreparedBackup {
         val parsed = BackupCodec.decode(json)
-        requireKnownContent(parsed.data)
-        return PreparedBackup(parsed.exportedAt, parsed.data)
+        val library = backup.libraryIds()
+        val retired = parsed.data.hadithIds().filter { it !in library.hadithIds && RetiredHadiths.contains(it) }.toSet()
+        val data = if (retired.isEmpty()) parsed.data else parsed.data.without(retired)
+        requireKnownContent(data)
+        return PreparedBackup(parsed.exportedAt, data, retired.size)
     }
 
     /** Replaces the user's data with the backup's in a single transaction; on failure nothing changes. */
@@ -61,6 +68,13 @@ class ImportUserDataUseCase(private val backup: BackupRepository) {
         backup.replaceUserData(prepared.data)
         return ImportResult(prepared.masteryCount, prepared.eventCount)
     }
+
+    private fun UserData.hadithIds(): Set<Long> = (mastery.map { it.hadithId } + events.map { it.hadithId }).toSet()
+
+    private fun UserData.without(hadithIds: Set<Long>) = UserData(
+        mastery.filter { it.hadithId !in hadithIds },
+        events.filter { it.hadithId !in hadithIds },
+    )
 
     suspend operator fun invoke(json: String): ImportResult = apply(prepare(json))
 

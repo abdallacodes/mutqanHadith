@@ -284,6 +284,7 @@
     <string name="settings_reset_confirm">Reset</string>
     <string name="settings_import_title">Restore this backup?</string>
     <string name="settings_import_body">Backup contents:\n• Hadiths started: %1$d\n• Narrator records: %2$d\n• Backup date: %3$s\n\nThis will replace all of your current progress.</string>
+    <string name="settings_import_skipped">Your progress on %1$d hadiths will not be restored: they belong to books that are no longer in the app.</string>
     <string name="settings_import_confirm">Restore</string>
     <string name="settings_msg_exported">Backup saved</string>
     <string name="settings_msg_export_failed">Couldn\'t save the file, try another location</string>

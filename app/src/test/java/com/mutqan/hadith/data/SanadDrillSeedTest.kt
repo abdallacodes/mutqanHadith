@@ -24,8 +24,12 @@ import kotlin.random.Random
 
 /**
  * The drills held to the catalog they run on: on every hadith that can be drilled, a missing-narrator question has
- * four different people to choose from out of the 110 the catalog holds, none of them in the chain or a spelling of
+ * four different people to choose from out of the people the catalog holds, none of them in the chain or a spelling of
  * someone in it, and an order of the chain can be made and checked.
+ *
+ * The catalog is the Forty Hadith, whose chains are the Companion alone, so no hadith can be drilled today and the
+ * checks below have nothing to run on until a book with longer chains is added; [noHadithOfTheCatalogCanBeDrilledYet]
+ * says so, and fails when that changes, as the reminder to look at these checks again.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -48,12 +52,10 @@ class SanadDrillSeedTest {
     private val orderable = library.filter { SanadDrillPolicy.access(SanadDrill.ORDER_CHAIN, layer2, it.sanad).isOpen }
 
     @Test
-    fun theCatalogHasEighteenHadithsToAskAboutAndTenToOrder() {
-        assertEquals(18, askable.size)
-        assertEquals(10, orderable.size)
-        // Every one of the ten long chains is in Sahih al-Bukhari; the eight short ones are 'Umdat al-Ahkam's.
-        assertTrue(orderable.all { it.hadith.sourceBook == "صحيح البخاري" })
-        assertEquals(8, askable.count { it.sanad.size == 2 })
+    fun noHadithOfTheCatalogCanBeDrilledYet() {
+        assertTrue(library.all { it.sanad.size == 1 })
+        assertEquals(0, askable.size)
+        assertEquals(0, orderable.size)
     }
 
     @Test
@@ -67,7 +69,7 @@ class SanadDrillSeedTest {
 
     @Test
     fun everyQuestionHasFourDifferentPeopleOfTheCanonicalPoolAndNoOneFromTheChain() {
-        assertEquals(110, directory.narrators.size)
+        assertEquals(23, directory.narrators.size)
         val canonicalIds = directory.narrators.map { it.id }.toSet()
         var questions = 0
 
@@ -103,14 +105,13 @@ class SanadDrillSeedTest {
                 }
             }
         }
-        assertTrue("only $questions questions", questions > 400)
+        assertEquals("every place of every hadith was asked, 12 times", askable.sumOf { (it.sanad.size + 1) * 12 }, questions)
     }
 
     @Test
-    fun theBareNamesOfTheBukhariChainsAreNeverTheAnswerNorAnOption() {
+    fun theBareNamesOfAChainAreNeverTheAnswerNorAnOption() {
         val names = setOf("سفيان", "يحيى", "عبد الله").map(NarratorNormalizer::key)
         val bare = rows.filter { NarratorNormalizer.key(it.primaryName) in names }.map { it.id }.toSet()
-        assertEquals(setOf(2L, 18L, 38L), bare)
 
         askable.forEach { h ->
             repeat(30) { s ->
@@ -122,19 +123,9 @@ class SanadDrillSeedTest {
     }
 
     @Test
-    fun aQuestionOnTheIntentionHadithAsksAboutAManTheChainNames() {
-        val intention = library.first { it.hadith.sourceBook == "صحيح البخاري" && it.hadith.hadithNumber == 1 }
-
-        val asked = (0 until 60).map { MissingLinkRoundFactory.create(intention, rows, Random(it)).hiddenNarrator.primaryName }.toSet()
-
-        // The chain runs الحميدي ← سفيان ← يحيى بن سعيد ← محمد بن إبراهيم ← علقمة ← عمر: «سفيان» is never asked.
-        assertFalse("سفيان" in asked)
-        assertTrue("الحميدي عبد الله بن الزبير" in asked)
-    }
-
-    @Test
-    fun theSameCompanionIsNotADistractorToHimselfAcrossTheBooks() {
-        // 'Umdat al-Ahkam writes Ibn 'Umar as «عبد الله بن عمر», the Arba'in as «ابن عمر»: asked about either, never offered as the other.
+    fun theSameCompanionIsNotADistractorToHimselfUnderAnotherSpelling() {
+        // The Arba'in writes Ibn 'Umar as «ابن عمر» in two hadiths and as «أبو عبد الرحمن عبد الله بن عمر بن الخطاب» in one:
+        // asked about either, never offered as the other.
         val ibnUmar = rows.filter { directory.canonicalOf(it.id)!!.name == "عبد الله بن عمر" }
         assertTrue(ibnUmar.size >= 2)
 

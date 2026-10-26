@@ -31,9 +31,18 @@ object SeedLoader {
      *
      * 1: the first levelled catalog. 2: every text and chain re-sourced from audited datasets
      * (`tools/import_hadiths.py`), replacing the hand-written one. 3: Level 2, the hadiths of 'Umdat al-Ahkam
-     * that were found in Sahih al-Bukhari or Sahih Muslim, added as new rows.
+     * that were found in Sahih al-Bukhari or Sahih Muslim, added as new rows. 4: the Forty Hadith alone; the
+     * Bukhari selection and 'Umdat al-Ahkam were retired (see [RETIRED_IN]).
      */
-    const val CATALOG_VERSION = 3
+    const val CATALOG_VERSION = 4
+
+    /**
+     * The catalog version that retired the hadiths of Sahih al-Bukhari and 'Umdat al-Ahkam. A database that
+     * absorbed an older catalog loses every hadith the catalog no longer has, together with its progress, its
+     * narrator history and its place in the user's collections, once, when it is synced to this version or later.
+     * A later catalog that carries such hadiths again simply adds them, as any new hadith.
+     */
+    private const val RETIRED_IN = 4
 
     fun load(context: Context): SeedData =
         parse(context.assets.open(ASSET_NAME).bufferedReader(Charsets.UTF_8).use { it.readText() })
@@ -118,9 +127,11 @@ object SeedLoader {
      * The chain of a hadith that is already there is replaced when the catalog words it differently,
      * and so is the narrator-level history recorded against the old chain: it says how well the user
      * knew narrators the hadith no longer has, and narrator ids may now mean someone else. Narrators
-     * that nothing refers to any more are removed. Call inside a transaction.
+     * that nothing refers to any more are removed. A database whose [appliedVersion] predates [RETIRED_IN] first
+     * drops the hadiths the catalog no longer carries. Call inside a transaction.
      */
-    fun sync(db: SupportSQLiteDatabase, data: SeedData) {
+    fun sync(db: SupportSQLiteDatabase, data: SeedData, appliedVersion: Int) {
+        if (appliedVersion < RETIRED_IN) retireMissing(db, data)
         val knownHadiths = ids(db, "hadith")
         val storedChains = chains(db)
         val newChains = data.edges.groupBy { it.hadithId }.mapValues { (_, edges) ->
@@ -161,6 +172,18 @@ object SeedLoader {
                 "AND id NOT IN (SELECT narratorId FROM sanad_edge) " +
                 "AND id NOT IN (SELECT narratorId FROM narrator_review_event)"
         )
+    }
+
+    /**
+     * Deletes the hadiths [data] does not carry, children first and explicitly, so that it does not depend on the
+     * connection enforcing the cascades. Narrators that were only theirs are removed by [sync] afterwards.
+     */
+    private fun retireMissing(db: SupportSQLiteDatabase, data: SeedData) {
+        val kept = data.hadiths.joinToString(",") { it.id.toString() }
+        listOf("mastery_record", "narrator_review_event", "hadith_collection_cross_ref", "sanad_edge").forEach {
+            db.execSQL("DELETE FROM $it WHERE hadithId NOT IN ($kept)")
+        }
+        db.execSQL("DELETE FROM hadith WHERE id NOT IN ($kept)")
     }
 
     /** Each stored chain as (narrator, term) pairs in order, from the collector's side. */

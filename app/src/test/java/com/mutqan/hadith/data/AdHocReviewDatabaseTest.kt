@@ -73,19 +73,19 @@ class AdHocReviewDatabaseTest {
     )
 
     /**
-     * Hadith 1 is overdue and has every layer open, 2 is learning with its chain open and not due, 3 is overdue on layer 1, its chain not yet studied;
-     * 4, 5 and 6 were never started. The narrators of 1 have a history.
+     * Hadith 11 is overdue and has every layer open, 12 is learning with its chain open and not due, 13 is overdue on layer 1, its chain not yet studied;
+     * 14, 15 and 16 were never started. The narrator of 11 has a history.
      */
     private suspend fun studyHistory() {
         db.masteryDao().upsertAll(
             listOf(
-                record(1, matn = 60f, sanad = 60f, dueAt = now - 86_400_000L),
-                record(2, matn = 40f, sanad = 1f, dueAt = now + 3 * 86_400_000L),
-                record(3, matn = 2f, sanad = 0f, dueAt = now - 2 * 86_400_000L, sanadStudied = false),
+                record(11, matn = 60f, sanad = 60f, dueAt = now - 86_400_000L),
+                record(12, matn = 40f, sanad = 1f, dueAt = now + 3 * 86_400_000L),
+                record(13, matn = 2f, sanad = 0f, dueAt = now - 2 * 86_400_000L, sanadStudied = false),
             ),
         )
-        val chain = db.hadithDao().getHadithWithSanad(1)!!.sanad.map { it.narrator.id }
-        db.reviewHistoryDao().insertAll(chain.mapIndexed { i, id -> NarratorReviewEventEntity(hadithId = 1, narratorId = id, reviewedAt = now - 86_400_000L, succeeded = i % 2 == 0) })
+        val chain = db.hadithDao().getHadithWithSanad(11)!!.sanad.map { it.narrator.id }
+        db.reviewHistoryDao().insertAll(chain.mapIndexed { i, id -> NarratorReviewEventEntity(hadithId = 11, narratorId = id, reviewedAt = now - 86_400_000L, succeeded = i % 2 == 0) })
     }
 
     /** Every row of every table the app owns, so that nothing can change without this noticing. */
@@ -131,9 +131,9 @@ class AdHocReviewDatabaseTest {
     fun theDeckIsMadeOfTheCatalogsRealHadithsInTheOrderTheyWereAdded() = runBlocking {
         studyHistory()
 
-        val vm = practiceOf(3, 1, 5)
+        val vm = practiceOf(13, 11, 15)
 
-        assertEquals(listOf(3L, 1L, 5L), vm.session().deck.map { it.hadithId })
+        assertEquals(listOf(13L, 11L, 15L), vm.session().deck.map { it.hadithId })
         assertEquals("the layer is the one the user earned", listOf(1, 3, 1), vm.session().deck.map { it.activeLayer.number })
         assertTrue(vm.session().deck.all { it.matn.isNotBlank() })
     }
@@ -141,7 +141,7 @@ class AdHocReviewDatabaseTest {
     @Test
     fun aWholePracticeLeavesEveryRowOfEveryTableAsItWas() = runBlocking {
         studyHistory()
-        val vm = practiceOf(1, 2, 3, 4, 5, 6)
+        val vm = practiceOf(11, 12, 13, 14, 15, 16)
         val before = dumpEverything()
         val dueBefore = due()
         val dashboardBefore = dashboard()
@@ -155,20 +155,20 @@ class AdHocReviewDatabaseTest {
         assertEquals(before, dumpEverything())
         assertEquals(dueBefore, due())
         assertEquals(dashboardBefore, dashboard())
-        assertEquals(setOf(1L, 3L), due().map { it.hadith.hadith.id }.toSet())
+        assertEquals(setOf(11L, 13L), due().map { it.hadith.hadith.id }.toSet())
     }
 
     @Test
     fun practisingHadithsNeverStartedDoesNotCreateARecordForThem() = runBlocking {
         studyHistory()
-        val vm = practiceOf(4, 5, 6)
+        val vm = practiceOf(14, 15, 16)
         val before = dumpEverything()
 
         vm.playRound { true }
 
         assertEquals(before, dumpEverything())
-        assertEquals(listOf(1L, 2L, 3L), reviews.getAllMastery().map { it.hadithId }.sorted())
-        assertEquals("they are still new", 394, dashboard().newCount)
+        assertEquals(listOf(11L, 12L, 13L), reviews.getAllMastery().map { it.hadithId }.sorted())
+        assertEquals("they are still new", 39, dashboard().newCount)
     }
 
     @Test
@@ -188,7 +188,7 @@ class AdHocReviewDatabaseTest {
     @Test
     fun deletingTheCollectionAfterAPracticeChangesNoProgressEither() = runBlocking {
         studyHistory()
-        val vm = practiceOf(1, 2, 3)
+        val vm = practiceOf(11, 12, 13)
         vm.playRound { true }
         val progress = dumpEverything().filterKeys { it != "collections" && it != "hadith_collection_cross_ref" }
 
@@ -204,7 +204,7 @@ class AdHocReviewDatabaseTest {
         studyHistory()
         val before = dumpEverything()
 
-        SubmitReviewUseCase(hadiths, reviews, scheduler) { now }(1, ReviewRating.GOOD, ReviewRating.GOOD)
+        SubmitReviewUseCase(hadiths, reviews, scheduler) { now }(11, ReviewRating.GOOD, ReviewRating.GOOD)
 
         val after = dumpEverything()
         assertNotEquals(before.getValue("mastery_record"), after.getValue("mastery_record"))
@@ -214,11 +214,11 @@ class AdHocReviewDatabaseTest {
     @Test
     fun aRealReviewOfAHadithNeverStartedAddsARecordWhichAPracticeDoesNot() = runBlocking {
         studyHistory()
-        val vm = practiceOf(4)
+        val vm = practiceOf(14)
         vm.playRound { true }
         assertEquals(3, db.masteryDao().getAll().size)
 
-        SubmitReviewUseCase(hadiths, reviews, scheduler) { now }(4, ReviewRating.GOOD, null)
+        SubmitReviewUseCase(hadiths, reviews, scheduler) { now }(14, ReviewRating.GOOD, null)
 
         assertEquals(4, db.masteryDao().getAll().size)
     }

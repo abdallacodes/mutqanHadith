@@ -42,11 +42,11 @@ class CollectionsDatabaseTest {
         hadithId, matn, sanad, matnLastReviewedAt = 1_000L, sanadLastReviewedAt = 2_000L, nextReviewDue = 9_000L, repetitionCount = 3,
     )
 
-    /** A study history on hadiths 1 and 2: their mastery records and the narrator outcomes of 1. */
+    /** A study history on hadiths 11 and 12: their mastery records and the narrator outcome of 11. */
     private suspend fun studyHistory(): Pair<List<MasteryRecordEntity>, List<NarratorReviewEventEntity>> {
-        db.masteryDao().upsertAll(listOf(record(1, 12.5f, 3.25f), record(2)))
-        val chain = db.hadithDao().getHadithWithSanad(1)!!.sanad.map { it.narrator.id }
-        db.reviewHistoryDao().insertAll(chain.mapIndexed { i, id -> NarratorReviewEventEntity(hadithId = 1, narratorId = id, reviewedAt = 5_000L + i, succeeded = i != 1) })
+        db.masteryDao().upsertAll(listOf(record(11, 12.5f, 3.25f), record(12)))
+        val chain = db.hadithDao().getHadithWithSanad(11)!!.sanad.map { it.narrator.id }
+        db.reviewHistoryDao().insertAll(chain.mapIndexed { i, id -> NarratorReviewEventEntity(hadithId = 11, narratorId = id, reviewedAt = 5_000L + i, succeeded = i != 1) })
         return db.masteryDao().getAll() to db.reviewHistoryDao().getAll()
     }
 
@@ -55,19 +55,19 @@ class CollectionsDatabaseTest {
     @Test
     fun aFreshInstallStartsWithNoCollections() = runBlocking {
         assertTrue(collections.observeAll().first().isEmpty())
-        assertEquals(397, rowCount("hadith"))
+        assertEquals(42, rowCount("hadith"))
     }
 
     @Test
     fun aCollectionIsCreatedWithItsFirstHadithInOneStep() = runBlocking {
-        val id = collections.create("Friday sermon", accent = 2, createdAt = 100, firstHadithId = 1)
+        val id = collections.create("Friday sermon", accent = 2, createdAt = 100, firstHadithId = 11)
 
         val summary = collections.observeAll().first().single()
         assertEquals(id, summary.id)
         assertEquals("Friday sermon", summary.title)
         assertEquals(2, summary.accent)
         assertEquals(1, summary.hadithCount)
-        assertEquals(listOf(1L), collections.getHadithIds(id))
+        assertEquals(listOf(11L), collections.getHadithIds(id))
     }
 
     @Test
@@ -81,40 +81,40 @@ class CollectionsDatabaseTest {
     @Test
     fun theHadithsOfACollectionComeInTheOrderTheyWereAdded() = runBlocking {
         val id = collections.create("Order", 0, createdAt = 1)
-        collections.add(id, 3, addedAt = 30)
-        collections.add(id, 1, addedAt = 10)
-        collections.add(id, 2, addedAt = 20)
+        collections.add(id, 13, addedAt = 30)
+        collections.add(id, 11, addedAt = 10)
+        collections.add(id, 12, addedAt = 20)
 
-        assertEquals(listOf(1L, 2L, 3L), collections.getHadithIds(id))
-        assertEquals(listOf(1L, 2L, 3L), collections.observeHadiths(id).first().map { it.id })
+        assertEquals(listOf(11L, 12L, 13L), collections.getHadithIds(id))
+        assertEquals(listOf(11L, 12L, 13L), collections.observeHadiths(id).first().map { it.id })
     }
 
     @Test
     fun addingAHadithTwiceKeepsOneReferenceAndTheFirstDate() = runBlocking {
         val id = collections.create("Twice", 0, createdAt = 1)
-        collections.add(id, 5, addedAt = 10)
-        collections.add(id, 6, addedAt = 15)
-        collections.add(id, 5, addedAt = 99)
+        collections.add(id, 15, addedAt = 10)
+        collections.add(id, 16, addedAt = 15)
+        collections.add(id, 15, addedAt = 99)
 
-        assertEquals(listOf(5L, 6L), collections.getHadithIds(id))
+        assertEquals(listOf(15L, 16L), collections.getHadithIds(id))
         assertEquals(2, collections.observeAll().first().single().hadithCount)
     }
 
     @Test
     fun removingAHadithTakesItOutOfThatCollectionOnly() = runBlocking {
-        val a = collections.create("A", 0, createdAt = 1, firstHadithId = 1)
-        val b = collections.create("B", 0, createdAt = 2, firstHadithId = 1)
+        val a = collections.create("A", 0, createdAt = 1, firstHadithId = 11)
+        val b = collections.create("B", 0, createdAt = 2, firstHadithId = 11)
 
-        collections.remove(a, 1)
+        collections.remove(a, 11)
 
         assertTrue(collections.getHadithIds(a).isEmpty())
-        assertEquals(listOf(1L), collections.getHadithIds(b))
-        assertEquals(397, rowCount("hadith"))
+        assertEquals(listOf(11L), collections.getHadithIds(b))
+        assertEquals(42, rowCount("hadith"))
     }
 
     @Test
     fun summariesListTheNewestFirstAndCountAnEmptyCollectionAsZero() = runBlocking {
-        collections.create("Old", 0, createdAt = 10, firstHadithId = 1)
+        collections.create("Old", 0, createdAt = 10, firstHadithId = 11)
         collections.create("New", 0, createdAt = 20)
 
         assertEquals(listOf("New" to 0, "Old" to 1), collections.observeAll().first().map { it.title to it.hadithCount })
@@ -122,13 +122,13 @@ class CollectionsDatabaseTest {
 
     @Test
     fun aHadithKnowsWhichCollectionsItIsIn() = runBlocking {
-        val a = collections.create("A", 0, 1, firstHadithId = 4)
-        val b = collections.create("B", 0, 2, firstHadithId = 4)
-        collections.create("C", 0, 3, firstHadithId = 5)
+        val a = collections.create("A", 0, 1, firstHadithId = 14)
+        val b = collections.create("B", 0, 2, firstHadithId = 14)
+        collections.create("C", 0, 3, firstHadithId = 15)
 
-        assertEquals(setOf(a, b), collections.observeCollectionIdsOf(4).first())
-        assertEquals(setOf(4L, 5L), collections.observeCollectedHadithIds().first())
-        assertTrue(collections.observeCollectionIdsOf(6).first().isEmpty())
+        assertEquals(setOf(a, b), collections.observeCollectionIdsOf(14).first())
+        assertEquals(setOf(14L, 15L), collections.observeCollectedHadithIds().first())
+        assertTrue(collections.observeCollectionIdsOf(16).first().isEmpty())
     }
 
     @Test
@@ -143,13 +143,13 @@ class CollectionsDatabaseTest {
 
     @Test
     fun updatingACollectionChangesItsNameAndAccentOnly() = runBlocking {
-        val id = collections.create("Before", 0, createdAt = 7, firstHadithId = 2)
+        val id = collections.create("Before", 0, createdAt = 7, firstHadithId = 12)
 
         collections.update(id, "After", 4)
 
         val summary = collections.observeAll().first().single()
         assertEquals(Triple("After", 4, 7L), Triple(summary.title, summary.accent, summary.createdAt))
-        assertEquals(listOf(2L), collections.getHadithIds(id))
+        assertEquals(listOf(12L), collections.getHadithIds(id))
     }
 
     // -- Cascade isolation: deleting a collection never reaches the library or the study history ----------------------
@@ -157,7 +157,7 @@ class CollectionsDatabaseTest {
     @Test
     fun deletingACollectionRemovesItsReferencesAndNoHadith() = runBlocking {
         val doomed = collections.create("Doomed", 0, 1)
-        listOf(1L, 2L, 3L).forEachIndexed { i, id -> collections.add(doomed, id, addedAt = i.toLong()) }
+        listOf(11L, 12L, 13L).forEachIndexed { i, id -> collections.add(doomed, id, addedAt = i.toLong()) }
         val hadithsBefore = db.hadithDao().getAllWithSanad()
         assertEquals(3, rowCount("hadith_collection_cross_ref"))
 
@@ -166,14 +166,14 @@ class CollectionsDatabaseTest {
         assertEquals("its references are gone", 0, rowCount("hadith_collection_cross_ref"))
         assertEquals(0, rowCount("collections"))
         assertEquals("every hadith, with its chain, is as it was", hadithsBefore, db.hadithDao().getAllWithSanad())
-        assertEquals(397, rowCount("hadith"))
+        assertEquals(42, rowCount("hadith"))
     }
 
     @Test
     fun deletingACollectionLeavesTheStudyHistoryOfItsHadithsAsItWas() = runBlocking {
         val (masteryBefore, eventsBefore) = studyHistory()
-        val doomed = collections.create("Doomed", 0, 1, firstHadithId = 1)
-        collections.add(doomed, 2, addedAt = 2)
+        val doomed = collections.create("Doomed", 0, 1, firstHadithId = 11)
+        collections.add(doomed, 12, addedAt = 2)
 
         collections.delete(doomed)
 
@@ -186,11 +186,11 @@ class CollectionsDatabaseTest {
     fun deletingOneCollectionLeavesAnotherThatHoldsTheSameHadiths() = runBlocking {
         val kept = collections.create("Kept", 0, 1)
         val doomed = collections.create("Doomed", 0, 2)
-        listOf(1L, 2L).forEach { collections.add(kept, it, 10); collections.add(doomed, it, 10) }
+        listOf(11L, 12L).forEach { collections.add(kept, it, 10); collections.add(doomed, it, 10) }
 
         collections.delete(doomed)
 
-        assertEquals(listOf(1L, 2L), collections.getHadithIds(kept))
+        assertEquals(listOf(11L, 12L), collections.getHadithIds(kept))
         assertEquals(listOf("Kept" to 2), collections.observeAll().first().map { it.title to it.hadithCount })
     }
 
@@ -203,7 +203,7 @@ class CollectionsDatabaseTest {
         collections.delete(424_242)
 
         assertTrue(collections.observeAll().first().isEmpty())
-        assertEquals(397, rowCount("hadith"))
+        assertEquals(42, rowCount("hadith"))
     }
 
     // -- Collections are not progress: nothing that touches progress touches them -----------------------------------
@@ -211,36 +211,36 @@ class CollectionsDatabaseTest {
     @Test
     fun resettingProgressKeepsTheCollections() = runBlocking {
         studyHistory()
-        val id = collections.create("Mine", 0, 1, firstHadithId = 1)
+        val id = collections.create("Mine", 0, 1, firstHadithId = 11)
 
         RoomBackupRepository(db).clearUserData()
 
         assertTrue(db.masteryDao().getAll().isEmpty())
-        assertEquals(listOf(1L), collections.getHadithIds(id))
+        assertEquals(listOf(11L), collections.getHadithIds(id))
     }
 
     @Test
     fun restoringABackupKeepsTheCollections() = runBlocking {
         val (mastery, events) = studyHistory()
         val id = collections.create("Mine", 0, 1)
-        collections.add(id, 1, 5)
-        collections.add(id, 9, 6)
+        collections.add(id, 11, 5)
+        collections.add(id, 19, 6)
 
         RoomBackupRepository(db).replaceUserData(UserData(mastery.take(1), events.take(1)))
 
         assertEquals(1, db.masteryDao().getAll().size)
-        assertEquals(listOf(1L, 9L), collections.getHadithIds(id))
+        assertEquals(listOf(11L, 19L), collections.getHadithIds(id))
     }
 
     @Test
     fun aHadithLeavingTheLibraryTakesItsReferencesWithItAndNothingElse() = runBlocking {
         val id = collections.create("Mine", 0, 1)
-        collections.add(id, 1, 5)
-        collections.add(id, 2, 6)
+        collections.add(id, 11, 5)
+        collections.add(id, 12, 6)
 
-        db.openHelper.writableDatabase.execSQL("DELETE FROM hadith WHERE id = 2")
+        db.openHelper.writableDatabase.execSQL("DELETE FROM hadith WHERE id = 12")
 
-        assertEquals(listOf(1L), collections.getHadithIds(id))
+        assertEquals(listOf(11L), collections.getHadithIds(id))
         assertEquals(1, collections.observeAll().first().single().hadithCount)
     }
 
@@ -248,8 +248,8 @@ class CollectionsDatabaseTest {
     fun aCatalogUpdateOnOpenKeepsTheCollections() = runBlocking {
         val name = "catalog-sync.db"
         val first = MutqanDatabase.builder(context, name).allowMainThreadQueries().build()
-        val id = RoomCollectionRepository(first).create("Mine", 3, 1, firstHadithId = 1)
-        RoomCollectionRepository(first).add(id, 2, 2)
+        val id = RoomCollectionRepository(first).create("Mine", 3, 1, firstHadithId = 11)
+        RoomCollectionRepository(first).add(id, 12, 2)
         first.openHelper.writableDatabase.execSQL("UPDATE catalog_state SET version = 1")
         first.close()
 
@@ -257,7 +257,7 @@ class CollectionsDatabaseTest {
         val reopened = MutqanDatabase.builder(context, name).allowMainThreadQueries().build()
         val repo = RoomCollectionRepository(reopened)
 
-        assertEquals(listOf(1L, 2L), repo.getHadithIds(id))
+        assertEquals(listOf(11L, 12L), repo.getHadithIds(id))
         assertEquals("Mine", repo.observeAll().first().single().title)
         reopened.close()
         context.deleteDatabase(name)

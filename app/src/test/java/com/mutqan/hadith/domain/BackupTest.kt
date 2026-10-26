@@ -35,7 +35,7 @@ import java.time.ZoneOffset
 
 /**
  * Backup, restore and reset, end to end against a real (in-memory) Room database seeded with the
- * Bukhari library. org.json needs the Android runtime, hence Robolectric.
+ * Forty Hadith. org.json needs the Android runtime, hence Robolectric.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -66,17 +66,17 @@ class BackupTest {
 
     /** Values chosen to expose rounding: floats that are not exact in decimal, longs past 2^53, nulls, extremes. */
     private val awkwardMastery = listOf(
-        MasteryRecordEntity(1, 0.1f, 365f, 1_700_000_000_123L, null, 1_700_086_400_000L, 7),
-        MasteryRecordEntity(2, 0f, 1.0E-4f, null, 1_700_000_000_000L, 0L, 0),
-        MasteryRecordEntity(3, 3.3333333f, 12.345679f, Long.MAX_VALUE - 1, 9_007_199_254_740_993L, Long.MAX_VALUE, Int.MAX_VALUE),
-        MasteryRecordEntity(10, 89.99999f, 0.20000002f, 1L, 2L, 3L, 1),
+        MasteryRecordEntity(11, 0.1f, 365f, 1_700_000_000_123L, null, 1_700_086_400_000L, 7),
+        MasteryRecordEntity(12, 0f, 1.0E-4f, null, 1_700_000_000_000L, 0L, 0),
+        MasteryRecordEntity(13, 3.3333333f, 12.345679f, Long.MAX_VALUE - 1, 9_007_199_254_740_993L, Long.MAX_VALUE, Int.MAX_VALUE),
+        MasteryRecordEntity(20, 89.99999f, 0.20000002f, 1L, 2L, 3L, 1),
     )
 
     private fun events(narrators: List<Long>) = listOf(
-        NarratorReviewEventEntity(id = 7, hadithId = 1, narratorId = narrators[0], reviewedAt = 1_700_000_000_123L, succeeded = true),
-        NarratorReviewEventEntity(id = 8, hadithId = 1, narratorId = narrators[1], reviewedAt = 1_700_000_000_123L, succeeded = false),
-        NarratorReviewEventEntity(id = 1_000, hadithId = 3, narratorId = narrators[2], reviewedAt = 9_007_199_254_740_993L, succeeded = false),
-        NarratorReviewEventEntity(id = 4_000_000_000L, hadithId = 10, narratorId = narrators[0], reviewedAt = Long.MAX_VALUE, succeeded = true),
+        NarratorReviewEventEntity(id = 7, hadithId = 11, narratorId = narrators[0], reviewedAt = 1_700_000_000_123L, succeeded = true),
+        NarratorReviewEventEntity(id = 8, hadithId = 11, narratorId = narrators[1], reviewedAt = 1_700_000_000_123L, succeeded = false),
+        NarratorReviewEventEntity(id = 1_000, hadithId = 13, narratorId = narrators[2], reviewedAt = 9_007_199_254_740_993L, succeeded = false),
+        NarratorReviewEventEntity(id = 4_000_000_000L, hadithId = 20, narratorId = narrators[0], reviewedAt = Long.MAX_VALUE, succeeded = true),
     )
 
     private fun narratorIds() = runBlocking { db.narratorDao().getAll().map { it.id } }
@@ -155,9 +155,9 @@ class BackupTest {
         val exported = export().json
 
         // Progress made after the backup was taken.
-        db.masteryDao().upsert(MasteryRecordEntity(5, 9f, 9f, 5L, 5L, 5L, 5))
+        db.masteryDao().upsert(MasteryRecordEntity(15, 9f, 9f, 5L, 5L, 5L, 5))
         db.masteryDao().upsert(awkwardMastery[0].copy(repetitionCount = 99))
-        db.reviewHistoryDao().insertAll(listOf(NarratorReviewEventEntity(hadithId = 5, narratorId = narratorIds()[0], reviewedAt = 5L, succeeded = false)))
+        db.reviewHistoryDao().insertAll(listOf(NarratorReviewEventEntity(hadithId = 15, narratorId = narratorIds()[0], reviewedAt = 5L, succeeded = false)))
 
         importer(exported)
 
@@ -219,7 +219,7 @@ class BackupTest {
     fun aBackupOfUnknownNarratorsIsRefusedAndNothingChanges() = runBlocking {
         val before = seedUserData()
         val foreign = BackupCodec.encode(
-            UserData(emptyList(), listOf(NarratorReviewEventEntity(id = 1, hadithId = 1, narratorId = 424_242, reviewedAt = 1L, succeeded = true))),
+            UserData(emptyList(), listOf(NarratorReviewEventEntity(id = 1, hadithId = 11, narratorId = 424_242, reviewedAt = 1L, succeeded = true))),
             clock,
         )
 
@@ -227,6 +227,42 @@ class BackupTest {
 
         assertEquals(0, error.missingHadiths)
         assertEquals(1, error.missingNarrators)
+        assertEquals(before, backup.readUserData())
+    }
+
+    @Test
+    fun aBackupWithProgressOnRetiredHadithsRestoresTheRestAndCountsWhatItSkipped() = runBlocking {
+        val kept = awkwardMastery[0]
+        val written = BackupCodec.encode(
+            UserData(
+                // Sahih al-Bukhari 1 and 'Umdat al-Ahkam 5 were in the catalog until it was cut down to the Forty Hadith.
+                listOf(kept, kept.copy(hadithId = 1), kept.copy(hadithId = 1005)),
+                listOf(
+                    NarratorReviewEventEntity(id = 1, hadithId = 1, narratorId = narratorIds()[0], reviewedAt = 1L, succeeded = true),
+                    NarratorReviewEventEntity(id = 2, hadithId = 11, narratorId = narratorIds()[0], reviewedAt = 2L, succeeded = true),
+                ),
+            ),
+            clock,
+        )
+
+        val prepared = importer.prepare(written)
+
+        assertEquals(2, prepared.skippedHadiths)
+        assertEquals(1, prepared.masteryCount)
+        assertEquals(1, prepared.eventCount)
+        importer.apply(prepared)
+        assertEquals(listOf(11L), backup.readUserData().mastery.map { it.hadithId })
+        assertEquals(listOf(2L), backup.readUserData().events.map { it.id })
+    }
+
+    @Test
+    fun aHadithTheCatalogNeverHadIsStillRefusedBesideRetiredOnes() = runBlocking {
+        val before = seedUserData()
+        val foreign = BackupCodec.encode(UserData(listOf(awkwardMastery[0].copy(hadithId = 1), awkwardMastery[1].copy(hadithId = 999)), emptyList()), clock)
+
+        val error = assertThrows(BackupException.UnknownContent::class.java) { runBlocking { importer(foreign) } }
+
+        assertEquals(1, error.missingHadiths)
         assertEquals(before, backup.readUserData())
     }
 
@@ -253,7 +289,7 @@ class BackupTest {
         // Bypasses the use case's checks on purpose: the second table's insert violates a foreign key
         // after the first table was already replaced, which only a transaction can undo.
         val broken = UserData(
-            mastery = listOf(MasteryRecordEntity(2, 5f, 5f, 5L, 5L, 5L, 5)),
+            mastery = listOf(MasteryRecordEntity(12, 5f, 5f, 5L, 5L, 5L, 5)),
             events = listOf(NarratorReviewEventEntity(id = 1, hadithId = 999, narratorId = narratorIds()[0], reviewedAt = 1L, succeeded = true)),
         )
 
@@ -355,8 +391,8 @@ class BackupTest {
     @Test
     fun aNullLastReviewIsKeptNull() {
         val decoded = BackupCodec.decode(sampleJson().toString())
-        assertNull(decoded.data.mastery.first { it.hadithId == 1L }.sanadLastReviewedAt)
-        assertNull(decoded.data.mastery.first { it.hadithId == 2L }.matnLastReviewedAt)
+        assertNull(decoded.data.mastery.first { it.hadithId == 11L }.sanadLastReviewedAt)
+        assertNull(decoded.data.mastery.first { it.hadithId == 12L }.matnLastReviewedAt)
     }
 
     // -- File names and files ---------------------------------------------------------------

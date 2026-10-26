@@ -78,11 +78,12 @@ abstract class MutqanDatabase : RoomDatabase() {
         override fun onOpen(db: SupportSQLiteDatabase) {
             if (db.isReadOnly) return
             val empty = SeedLoader.isEmpty(db)
-            if (!empty && SeedLoader.appliedVersion(db) >= SeedLoader.CATALOG_VERSION) return
+            val applied = SeedLoader.appliedVersion(db)
+            if (!empty && applied >= SeedLoader.CATALOG_VERSION) return
             db.beginTransaction()
             try {
                 val catalog = SeedLoader.load(context)
-                if (empty) SeedLoader.write(db, catalog) else SeedLoader.sync(db, catalog)
+                if (empty) SeedLoader.write(db, catalog) else SeedLoader.sync(db, catalog, applied)
                 SeedLoader.markApplied(db, SeedLoader.CATALOG_VERSION)
                 db.setTransactionSuccessful()
             } finally {

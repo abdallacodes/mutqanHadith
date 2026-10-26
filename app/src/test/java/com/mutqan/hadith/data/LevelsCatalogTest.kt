@@ -65,16 +65,11 @@ class LevelsCatalogTest {
     }
 
     @Test
-    fun theExistingBukhariHadithsAreLevelThree() = runBlocking {
-        val bukhari = dao.getAllWithSanad().map { it.hadith }.filter { it.sourceBook == "صحيح البخاري" }
+    fun theCatalogHoldsTheFoundationLevelAlone() = runBlocking {
+        val all = dao.getAllWithSanad().map { it.hadith }
 
-        assertEquals((1L..10L).toList(), bukhari.map { it.id })
-        assertTrue(bukhari.all { it.level == HadithLevel.MUSNAD.value })
-        // Agreed upon where an-Nawawi cites al-Bukhari and Muslim for the same hadith (Bukhari 1, 54, 8, 13, 52), Bukhari's alone otherwise.
-        assertEquals(
-            listOf("متفق عليه", "متفق عليه", "متفق عليه", "متفق عليه", "متفق عليه", "رواه البخاري", "رواه البخاري", "رواه البخاري", "رواه البخاري", "رواه البخاري"),
-            bukhari.map { it.takhrij },
-        )
+        assertEquals(42, all.size)
+        assertTrue(all.all { it.level == HadithLevel.FOUNDATION.value })
     }
 
     @Test
@@ -87,8 +82,6 @@ class LevelsCatalogTest {
         assertEquals("أبو عبد الرحمن عبد الله بن عمر بن الخطاب" to "متفق عليه", byNumber.getValue(3).let { it.sahabi to it.takhrij })
         assertEquals("أبو رقية تميم بن أوس الداري" to "رواه مسلم", byNumber.getValue(7).let { it.sahabi to it.takhrij })
         assertTrue(byNumber.values.all { it.sourceBook == "الأربعون النووية" })
-        // «بني الإسلام على خمس» is the same hadith as Bukhari no. 8: both are agreed upon.
-        assertEquals(dao.getHadithWithSanad(3)!!.hadith.takhrij, byNumber.getValue(3).takhrij)
     }
 
     // -- Queries ----------------------------------------------------------------------------
@@ -97,20 +90,17 @@ class LevelsCatalogTest {
     fun getHadithsByLevel_returnsTheLevelInCurriculumOrder() = runBlocking {
         val seeded = SeedLoader.load(context).hadiths
         assertEquals(seeded.filter { it.level == 1 }.sortedBy { it.hadithNumber }.map { it.id }, dao.getHadithsByLevel(1).first().map { it.id })
-        // Bukhari by the number of the hadith in the book: 1, 6, 8, 13, 50, 52, 54, 135, 611, 877.
-        assertEquals(listOf(1L, 9L, 3L, 4L, 10L, 5L, 2L, 7L, 6L, 8L), dao.getHadithsByLevel(3).first().map { it.id })
-        // Umdat al-Ahkam by the number of the hadith in the book (its ids are 1000 + that number).
-        assertEquals(seeded.filter { it.level == 2 }.sortedBy { it.hadithNumber }.map { it.id }, dao.getHadithsByLevel(2).first().map { it.id })
-        assertEquals(345, dao.getHadithsByLevel(2).first().size)
+        // The other levels hold nothing in this catalog.
+        assertTrue(dao.getHadithsByLevel(2).first().isEmpty())
+        assertTrue(dao.getHadithsByLevel(3).first().isEmpty())
         assertTrue(dao.getHadithsByLevel(99).first().isEmpty())
     }
 
     @Test
     fun newHadithsComeLevelByLevelThenByNumber() = runBlocking {
-        // The Forty Hadith first, by their numbers (their ids are not in that order), then Bukhari by its numbers (1, 6, 8, 13, 50, 52, 54, 135, 611, 877).
+        // The Forty Hadith by their numbers (their ids are not in that order).
         val curriculum = SeedLoader.load(context).hadiths.sortedWith(compareBy({ it.level }, { it.hadithNumber }, { it.id })).map { it.id }
-        assertEquals(listOf(1L, 9L, 3L, 4L, 10L, 5L, 2L, 7L, 6L, 8L), curriculum.takeLast(10))
-        assertEquals((1..42).map { n -> SeedLoader.load(context).hadiths.single { it.level == 1 && it.hadithNumber == n }.id }, curriculum.take(42))
+        assertEquals((1..42).map { n -> SeedLoader.load(context).hadiths.single { it.level == 1 && it.hadithNumber == n }.id }, curriculum)
         assertEquals(curriculum, dao.getUnseenWithSanad().map { it.hadith.id })
         // A hadith that was started drops out; nobody else moves.
         db.masteryDao().upsert(MasteryRecordEntity(11, 0f, 0f, null, null, 1_000, 0))
@@ -119,21 +109,21 @@ class LevelsCatalogTest {
 
     @Test
     fun theHadithsOfANarratorComeLevelByLevel() = runBlocking {
-        // «أبو هريرة» is the Companion of eight of the Forty Hadith, of fifty-three hadiths of Umdat al-Ahkam and of Bukhari nos. 50 and 135.
+        // «أبو هريرة» is the Companion of eight of the Forty Hadith.
         val seed = SeedLoader.load(context)
         val abuHurayra = seed.narrators.single { it.primaryName == "أبو هريرة" }.id
         val expected = seed.hadiths
             .filter { h -> seed.edges.any { it.hadithId == h.id && it.narratorId == abuHurayra } }
             .sortedWith(compareBy({ it.level }, { it.hadithNumber }, { it.id }))
 
-        assertEquals(63, expected.size)
-        assertEquals(List(8) { 1 } + List(53) { 2 } + List(2) { 3 }, expected.map { it.level })
+        assertEquals(8, expected.size)
+        assertEquals(List(8) { 1 }, expected.map { it.level })
         assertEquals(expected.map { it.id }, dao.getHadithsByNarrator(abuHurayra).map { it.hadith.id })
     }
 
     @Test
     fun countHadithsByLevel_countsEachLevel() = runBlocking {
-        assertEquals(listOf(42, 345, 10), (1..3).map { dao.countHadithsByLevel(it).first() })
+        assertEquals(listOf(42, 0, 0), (1..3).map { dao.countHadithsByLevel(it).first() })
     }
 
     @Test
@@ -144,7 +134,7 @@ class LevelsCatalogTest {
                 .onEach {
                     if (!added) {
                         added = true
-                        dao.insertWithSanad(ahkam(100), listOf(SanadEdgeEntity(hadithId = 100, narratorId = 1, orderIndex = 0, transmissionTerm = "عن")))
+                        dao.insertWithSanad(ahkam(100), listOf(SanadEdgeEntity(hadithId = 100, narratorId = 12, orderIndex = 0, transmissionTerm = "عن")))
                     }
                 }
                 .take(2)
@@ -152,8 +142,8 @@ class LevelsCatalogTest {
                 .map { it.size }
         }
 
-        assertEquals(listOf(345, 346), sizes)
-        assertEquals(346, dao.countHadithsByLevel(2).first())
+        assertEquals(listOf(0, 1), sizes)
+        assertEquals(1, dao.countHadithsByLevel(2).first())
     }
 
     private fun ahkam(id: Long) = HadithEntity(
@@ -163,17 +153,16 @@ class LevelsCatalogTest {
 
     @Test
     fun searchInLevel_staysInsideTheLevel() = runBlocking {
-        // «بني الإسلام على خمس» is told at level 1 (Forty Hadith no. 3) and at level 3 (Bukhari no. 8).
+        // «بني الإسلام على خمس» is Forty Hadith no. 3, at level 1; no other level has it.
         assertEquals(listOf(12L), dao.searchInLevel(1, "بني الاسلام على خمس").first().map { it.id })
-        assertEquals(listOf(3L), dao.searchInLevel(3, "بني الاسلام على خمس").first().map { it.id })
         assertTrue(dao.searchInLevel(2, "بني الاسلام على خمس").first().isEmpty())
+        assertTrue(dao.searchInLevel(3, "بني الاسلام على خمس").first().isEmpty())
     }
 
     @Test
     fun searchInLevel_ignoresTashkeelAndOrthographicVariants() = runBlocking {
         assertEquals(listOf(12L), dao.searchInLevel(1, "بُنِيَ الإِسْلاَمُ عَلَى خَمْسٍ").first().map { it.id })
         assertEquals(listOf(13L), dao.searchInLevel(1, "الدين النصيحة").first().map { it.id })
-        assertEquals(listOf(6L), dao.searchInLevel(3, "اذا سمعتم النداء").first().map { it.id })
     }
 
     @Test
@@ -189,7 +178,7 @@ class LevelsCatalogTest {
         val repository = RoomHadithRepository(db)
 
         assertEquals(SeedLoader.load(context).hadiths.filter { it.level == 1 }.sortedBy { it.hadithNumber }.map { it.id }, repository.getHadithsByLevel(1).first().map { it.id })
-        assertEquals(10, repository.countHadithsByLevel(3).first())
+        assertEquals(42, repository.countHadithsByLevel(1).first())
         assertEquals(listOf(13L), repository.searchInLevel(1, "النصيحة").first().map { it.id })
     }
 
@@ -199,8 +188,8 @@ class LevelsCatalogTest {
     fun theLibraryByLevel_listsTheSeededLevels() = runBlocking {
         val levels = GetLibraryByLevelUseCase(RoomHadithRepository(db), RoomReviewRepository(db), DualDecayScheduler()).invoke().first()
 
-        assertEquals(listOf(42, 345, 10), levels.map { it.hadiths.size })
-        assertEquals(listOf(42, 345, 10), levels.map { it.totalInLevel })
+        assertEquals(listOf(42, 0, 0), levels.map { it.hadiths.size })
+        assertEquals(listOf(42, 0, 0), levels.map { it.totalInLevel })
         assertTrue(levels.flatMap { it.hadiths }.all { it.progress == HadithProgress.NEW })
     }
 

@@ -302,6 +302,7 @@
 • تاريخ النسخة: %3$s
 
 سيحلّ هذا محلّ تقدمك الحالي كله.</string>
+    <string name="settings_import_skipped">لن يُستعاد تقدّمك في %1$d من الأحاديث، لأنها من كتب لم تعد في التطبيق.</string>
     <string name="settings_import_confirm">استعادة</string>
     <string name="settings_msg_exported">تم حفظ النسخة الاحتياطية</string>
     <string name="settings_msg_export_failed">تعذّر حفظ الملف، جرّب موقعًا آخر</string>

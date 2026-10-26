@@ -330,10 +330,19 @@ private fun ConfirmImportDialog(prepared: PreparedBackup, onConfirm: () -> Unit,
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_import_title)) },
         text = {
-            Text(
-                stringResource(R.string.settings_import_body, prepared.masteryCount, prepared.eventCount, formatDay(prepared.exportedAt)),
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    stringResource(R.string.settings_import_body, prepared.masteryCount, prepared.eventCount, formatDay(prepared.exportedAt)),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                if (prepared.skippedHadiths > 0) {
+                    Text(
+                        stringResource(R.string.settings_import_skipped, prepared.skippedHadiths),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {

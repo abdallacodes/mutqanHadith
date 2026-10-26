@@ -19,6 +19,17 @@ data class UserData(
 /** Ids of the library this install ships with, to check that a backup only refers to known content. */
 data class LibraryIds(val hadithIds: Set<Long>, val narratorIds: Set<Long>)
 
+/**
+ * The hadiths that shipped in catalogs 1 to 3 and were retired in catalog 4: Sahih al-Bukhari (ids 1-10) and
+ * 'Umdat al-Ahkam (ids 1001-1413). A backup taken before that holds progress on them; a restore leaves that progress
+ * out and carries on, where any other hadith the library lacks still means the backup is from a newer app.
+ */
+object RetiredHadiths {
+    private val ranges = listOf(1L..10L, 1001L..1413L)
+
+    fun contains(hadithId: Long): Boolean = ranges.any { hadithId in it }
+}
+
 /** Why a backup could not be read or restored. The messages are for logs; screens show their own text. */
 sealed class BackupException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     /** The file is empty, or JSON that is not one of our backups. */

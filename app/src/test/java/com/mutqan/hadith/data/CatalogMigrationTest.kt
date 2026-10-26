@@ -6,13 +6,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.data.repository.RoomCollectionRepository
 import com.mutqan.hadith.data.seed.SeedLoader
 import java.io.File
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,8 +20,9 @@ import org.robolectric.annotation.Config
 
 /**
  * A device that shipped v1.0.0 holds a version 4 database with the user's progress in it. Updating the app must
- * give it the levels and the audited catalog without losing that progress, so the old schema is rebuilt here from
- * the schema Room exported for it, filled with the catalog v1.0.0 shipped (a frozen fixture, since the bundled
+ * bring it to the current catalog: the audited Forty Hadith, with the Bukhari selection and 'Umdat al-Ahkam retired
+ * together with the progress on them, and the progress on the Forty Hadith untouched. The old schema is rebuilt here
+ * from the schema Room exported for it, filled with the catalog v1.0.0 shipped (a frozen fixture, since the bundled
  * seed has been replaced), and then opened with the production database.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -98,67 +98,43 @@ class CatalogMigrationTest {
 
     private fun SupportSQLiteDatabase.count(sql: String): Int = query(sql).use { it.moveToFirst(); it.getInt(0) }
 
-    @Test
-    fun updatingFromV4KeepsTheUsersProgress() = runBlocking {
-        createVersion4("shipped.db")
 
-        val db = open("shipped.db")
-
-        assertEquals(progress, db.masteryDao().getByHadithId(1))
-        assertEquals(1, db.openHelper.writableDatabase.count("SELECT COUNT(*) FROM mastery_record"))
-        db.close()
-    }
 
     @Test
-    fun updatingFromV4ReplacesTheChainsAndTheNarratorHistoryRecordedAgainstThem() = runBlocking {
+    fun updatingFromV4RetiresTheBukhariHadithsTogetherWithTheirProgress() = runBlocking {
         createVersion4("shipped.db")
-        val chainBefore = shipped.edges.filter { it.hadithId == 1L }.sortedBy { it.orderIndex }.map { it.narratorId }
 
         val db = open("shipped.db")
         val raw = db.openHelper.writableDatabase
 
-        val hadith = db.hadithDao().getHadithWithSanad(1)!!
-        val chain = seed.edges.filter { it.hadithId == 1L }.sortedBy { it.orderIndex }
-        assertEquals(chain.map { it.narratorId }, hadith.sanad.map { it.narrator.id })
-        assertEquals(chain.map { it.transmissionTerm }, hadith.sanad.map { it.transmissionTerm })
-        assertNotEquals(chainBefore, hadith.sanad.map { it.narrator.id })
-        // Three events had been recorded against narrators of the old chain; they describe nobody now.
+        // v1.0.0 held ten Bukhari hadiths and nothing else; the catalog is now the Forty Hadith alone.
+        assertEquals(seed.hadiths.map { it.id }.sorted(), db.hadithDao().getAllIds().sorted())
+        assertEquals(0, raw.count("SELECT COUNT(*) FROM hadith WHERE id <= 10"))
+        assertEquals(0, raw.count("SELECT COUNT(*) FROM mastery_record"))
         assertEquals(0, raw.count("SELECT COUNT(*) FROM narrator_review_event"))
-        // No narrator of the hand-written catalog survives unless the audited one has it too.
+        assertEquals(0, raw.count("SELECT COUNT(*) FROM sanad_edge WHERE hadithId <= 10"))
+        // No narrator of the old catalog survives unless the Forty Hadith has it too.
         assertEquals(seed.narrators.map { it.id }.toSet(), db.narratorDao().getAll().map { it.id }.toSet())
         assertEquals(seed.narrators.map { it.primaryName }.toSet(), db.narratorDao().getAll().map { it.primaryName }.toSet())
         db.close()
     }
 
     @Test
-    fun updatingFromV4MakesTheExistingHadithsLevelThreeWithTheirAuditedTextAndTakhrij() = runBlocking {
+    fun updatingFromV4GivesTheFortyHadithWithTheirAuditedTextTakhrijAndChainAsUnseen() = runBlocking {
         createVersion4("shipped.db")
 
         val db = open("shipped.db")
 
-        val old = db.hadithDao().getAllWithSanad().filter { it.hadith.id <= 10 }
-        assertEquals(10, old.size)
-        assertTrue(old.all { it.hadith.level == 3 })
-        assertEquals(seed.hadiths.filter { it.id <= 10 }, old.map { it.hadith })
-        assertTrue(old.all { it.hadith.takhrij.isNotBlank() })
-        assertTrue(old.all { it.hadith.sahabi == it.sanad.last().narrator.primaryName })
-        db.close()
-    }
-
-    @Test
-    fun updatingFromV4AddsTheRestOfTheCatalogAsUnseen() = runBlocking {
-        createVersion4("shipped.db")
-
-        val db = open("shipped.db")
-
-        assertEquals(seed.hadiths.size, db.hadithDao().count())
-        assertEquals(seed.hadiths.map { it.id }.sorted(), db.hadithDao().getAllIds().sorted())
+        val all = db.hadithDao().getAllWithSanad()
+        assertEquals(seed.hadiths, all.map { it.hadith }.sortedBy { it.id })
+        assertTrue(all.all { it.hadith.level == 1 && it.hadith.takhrij.isNotBlank() })
+        assertTrue(all.all { it.hadith.sahabi == it.sanad.last().narrator.primaryName })
+        assertEquals(seed.edges.size, all.sumOf { it.sanad.size })
         val arbain = db.hadithDao().getHadithWithSanad(13)!!
-        assertEquals(1, arbain.hadith.level)
         assertEquals(seed.hadiths.single { it.id == 13L }.sahabi, arbain.sanad.single().narrator.primaryName)
-        // Never reviewed, so they are waiting to be learned, level by level and by the number in the book; hadith 1 has progress.
+        // Never reviewed, so they are waiting to be learned by the number in the book.
         val curriculum = compareBy<com.mutqan.hadith.data.entity.HadithEntity>({ it.level }, { it.hadithNumber }, { it.id })
-        assertEquals(seed.hadiths.filter { it.id != 1L }.sortedWith(curriculum).map { it.id }, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
+        assertEquals(seed.hadiths.sortedWith(curriculum).map { it.id }, db.hadithDao().getUnseenWithSanad().map { it.hadith.id })
         db.close()
     }
 
@@ -167,106 +143,141 @@ class CatalogMigrationTest {
         createVersion4("shipped.db")
         val first = open("shipped.db")
         assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(first.openHelper.writableDatabase))
+        first.masteryDao().upsert(progress.copy(hadithId = 13))
         val before = first.hadithDao().getAllWithSanad()
         first.close()
 
         val second = open("shipped.db")
 
         assertEquals(before, second.hadithDao().getAllWithSanad())
-        assertEquals(progress, second.masteryDao().getByHadithId(1))
+        assertEquals(progress.copy(hadithId = 13), second.masteryDao().getByHadithId(13))
         second.close()
     }
 
     @Test
     fun aStaleCatalogIsBroughtUpToDateWithoutTouchingProgress() = runBlocking {
         val db = open("stale.db")
-        db.masteryDao().upsert(progress)
+        db.masteryDao().upsert(progress.copy(hadithId = 11))
         val raw = db.openHelper.writableDatabase
         // An older catalog: a hadith missing, another worded differently, and no record of having been synced.
         raw.execSQL("DELETE FROM hadith WHERE id = 13")
-        raw.execSQL("UPDATE hadith SET takhrij = 'قديم', level = 2 WHERE id = 1")
+        raw.execSQL("UPDATE hadith SET takhrij = 'قديم', level = 2 WHERE id = 11")
         raw.execSQL("DELETE FROM catalog_state")
         db.close()
 
         val reopened = open("stale.db")
 
         assertEquals(seed.hadiths.size, reopened.hadithDao().count())
-        val refreshed = reopened.hadithDao().getHadithWithSanad(1)!!
-        assertEquals(seed.hadiths.single { it.id == 1L }.takhrij, refreshed.hadith.takhrij)
-        assertEquals(3, refreshed.hadith.level)
-        assertEquals(seed.edges.count { it.hadithId == 1L }, refreshed.sanad.size)
+        val refreshed = reopened.hadithDao().getHadithWithSanad(11)!!
+        assertEquals(seed.hadiths.single { it.id == 11L }.takhrij, refreshed.hadith.takhrij)
+        assertEquals(1, refreshed.hadith.level)
+        assertEquals(seed.edges.count { it.hadithId == 11L }, refreshed.sanad.size)
         assertEquals(1, reopened.hadithDao().getHadithWithSanad(13)!!.sanad.size)
-        // Updating hadith 1 in place must not cascade into the progress that points at it.
-        assertEquals(progress, reopened.masteryDao().getByHadithId(1))
+        // Updating hadith 11 in place must not cascade into the progress that points at it.
+        assertEquals(progress.copy(hadithId = 11), reopened.masteryDao().getByHadithId(11))
         reopened.close()
     }
 
     @Test
-    fun updatingFromCatalogTwoAddsLevelTwoAndLeavesTheUsersProgressAlone() = runBlocking {
-        // A device on v1.1.0: the current schema holding exactly the 52 hadiths of catalog 2, with progress on top.
-        val device = open("v110.db")
+    fun updatingFromCatalogThreeRetiresBukhariAndUmdatAndKeepsEverythingOfTheFortyHadith() = runBlocking {
+        // A device on v1.4.x: the current schema holding the Forty Hadith, the Bukhari selection and a hadith of 'Umdat al-Ahkam
+        // (level 2, ids from 1000), each with progress, narrator history and a place in one of the user's collections.
+        val device = open("v14.db")
         val raw = device.openHelper.writableDatabase
         listOf("narrator_review_event", "mastery_record", "sanad_edge", "hadith", "narrator").forEach { raw.execSQL("DELETE FROM $it") }
         SeedLoader.write(raw, shippedV110)
-        SeedLoader.markApplied(raw, 2)
+        val umdat = com.mutqan.hadith.data.entity.HadithEntity(
+            1005, "الْبَيِّنَةُ عَلَى الْمُدَّعِي", "البينه على المدعي", "عمدة الأحكام", 5, "كتاب", "صحيح", "عبد الغني المقدسي",
+            takhrij = "رواه البخاري", sahabi = "أبو هريرة", level = 2,
+        )
+        val abuHurayra = shippedV110.narrators.first { it.primaryName == "أبو هريرة" }.id
+        device.hadithDao().insertWithSanad(
+            umdat,
+            listOf(com.mutqan.hadith.data.entity.SanadEdgeEntity(hadithId = 1005, narratorId = abuHurayra, orderIndex = 0, transmissionTerm = "عن")),
+        )
+        SeedLoader.markApplied(raw, 3)
+
         val progressOnAnArbain = progress.copy(hadithId = 13)
-        device.masteryDao().upsert(progress)
-        device.masteryDao().upsert(progressOnAnArbain)
-        val narrator = shippedV110.edges.first { it.hadithId == 1L }.narratorId
-        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (1, $narrator, 1700000000000, 1)")
-        assertEquals(52, device.hadithDao().count())
-        val earlier = device.hadithDao().getAllWithSanad()
+        listOf(progress, progressOnAnArbain, progress.copy(hadithId = 1005)).forEach { device.masteryDao().upsert(it) }
+        val bukhariNarrator = shippedV110.edges.first { it.hadithId == 1L }.narratorId
+        val arbainNarrator = shippedV110.edges.first { it.hadithId == 13L }.narratorId
+        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (1, $bukhariNarrator, 1700000000000, 1)")
+        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (13, $arbainNarrator, 1700000000000, 0)")
+        raw.execSQL("INSERT INTO collections (id, title, createdAt, accent) VALUES (1, 'Mine', 1, 0)")
+        listOf(1, 13, 1005).forEach { raw.execSQL("INSERT INTO hadith_collection_cross_ref (collectionId, hadithId, addedAt) VALUES (1, $it, ${it + 10})") }
+        assertEquals(shippedV110.hadiths.size + 1, device.hadithDao().count())
+        val arbainBefore = device.hadithDao().getAllWithSanad().filter { it.hadith.level == 1 }
         device.close()
 
-        val updated = open("v110.db")
+        val updated = open("v14.db")
+        val after = updated.openHelper.writableDatabase
 
-        assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(updated.openHelper.writableDatabase))
-        assertEquals(seed.hadiths.size, updated.hadithDao().count())
-        assertEquals(seed.narrators.size, updated.narratorDao().getAll().size)
-        // The 52 hadiths, their chains and their narrators are exactly as they were; nothing was replaced or renumbered.
-        assertEquals(earlier, updated.hadithDao().getAllWithSanad().filter { it.hadith.level != 2 })
-        // Level 2 arrives whole, each hadith with its chain, waiting to be learned.
-        val levelTwo = seed.hadiths.filter { it.level == 2 }
-        assertTrue(levelTwo.isNotEmpty())
-        assertEquals(levelTwo.map { it.id }.toSet(), updated.hadithDao().getHadithsByLevel(2).first().map { it.id }.toSet())
-        levelTwo.forEach { expected ->
-            val stored = updated.hadithDao().getHadithWithSanad(expected.id)!!
-            assertEquals(expected, stored.hadith)
-            assertEquals(seed.edges.filter { it.hadithId == expected.id }.sortedBy { it.orderIndex }.map { it.narratorId }, stored.sanad.map { it.narrator.id })
-        }
-        assertTrue(updated.hadithDao().getUnseenWithSanad().map { it.hadith.id }.containsAll(levelTwo.map { it.id }))
-        // And the user's progress is untouched.
-        assertEquals(progress, updated.masteryDao().getByHadithId(1))
-        assertEquals(progressOnAnArbain, updated.masteryDao().getByHadithId(13))
-        assertEquals(2, updated.openHelper.writableDatabase.count("SELECT COUNT(*) FROM mastery_record"))
-        assertEquals(1, updated.openHelper.writableDatabase.count("SELECT COUNT(*) FROM narrator_review_event WHERE hadithId = 1 AND narratorId = $narrator"))
+        assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(after))
+        // The Forty Hadith, their chains and their narrators are exactly as they were; nothing was replaced or renumbered.
+        assertEquals(arbainBefore, updated.hadithDao().getAllWithSanad())
+        assertEquals(seed.hadiths.map { it.id }.sorted(), updated.hadithDao().getAllIds().sorted())
+        assertEquals(seed.narrators.map { it.id }.toSet(), updated.narratorDao().getAll().map { it.id }.toSet())
+        // Progress, narrator history and collection entries on the retired hadiths went with them; the others are untouched.
+        assertEquals(listOf(progressOnAnArbain), updated.masteryDao().getAll())
+        assertEquals(1, after.count("SELECT COUNT(*) FROM narrator_review_event"))
+        assertEquals(1, after.count("SELECT COUNT(*) FROM narrator_review_event WHERE hadithId = 13 AND narratorId = $arbainNarrator"))
+        assertEquals(0, after.count("SELECT COUNT(*) FROM sanad_edge WHERE hadithId NOT IN (SELECT id FROM hadith)"))
+        // The collection itself stays, holding what is left of it.
+        assertEquals(1, after.count("SELECT COUNT(*) FROM collections"))
+        assertEquals(listOf(13L), RoomCollectionRepository(updated).getHadithIds(1))
         updated.close()
+    }
+
+    @Test
+    fun onceTheCatalogIsAtTheRetirementNothingIsRetiredAgain() = runBlocking {
+        // A later catalog may carry hadiths of any book; one that holds more or fewer than the database must not delete anything.
+        val db = open("later.db")
+        val raw = db.openHelper.writableDatabase
+        db.masteryDao().upsert(progress.copy(hadithId = 11))
+        val umdat = com.mutqan.hadith.data.entity.HadithEntity(
+            1005, "الْبَيِّنَةُ عَلَى الْمُدَّعِي", "البينه على المدعي", "عمدة الأحكام", 5, "كتاب", "صحيح", "عبد الغني المقدسي",
+            takhrij = "رواه البخاري", sahabi = "أبو هريرة", level = 2,
+        )
+        db.hadithDao().insertHadith(umdat)
+        db.masteryDao().upsert(progress.copy(hadithId = 1005))
+
+        raw.beginTransaction()
+        try {
+            SeedLoader.sync(raw, seed, appliedVersion = SeedLoader.CATALOG_VERSION)
+            raw.setTransactionSuccessful()
+        } finally {
+            raw.endTransaction()
+        }
+
+        assertEquals(1, raw.count("SELECT COUNT(*) FROM hadith WHERE id = 1005"))
+        assertEquals(2, raw.count("SELECT COUNT(*) FROM mastery_record"))
+        db.close()
     }
 
     @Test
     fun narratorHistoryOnAChainTheCatalogDidNotChangeIsKept() = runBlocking {
         val db = open("stale.db")
         val raw = db.openHelper.writableDatabase
-        val narrator = seed.edges.first { it.hadithId == 1L }.narratorId
-        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (1, $narrator, 1700000000000, 1)")
+        val narrator = seed.edges.first { it.hadithId == 11L }.narratorId
+        raw.execSQL("INSERT INTO narrator_review_event (hadithId, narratorId, reviewedAt, succeeded) VALUES (11, $narrator, 1700000000000, 1)")
         raw.execSQL("DELETE FROM catalog_state")
         db.close()
 
         val reopened = open("stale.db")
 
-        assertEquals(1, reopened.openHelper.writableDatabase.count("SELECT COUNT(*) FROM narrator_review_event WHERE hadithId = 1 AND narratorId = $narrator"))
+        assertEquals(1, reopened.openHelper.writableDatabase.count("SELECT COUNT(*) FROM narrator_review_event WHERE hadithId = 11 AND narratorId = $narrator"))
         reopened.close()
     }
 
     @Test
     fun aCurrentCatalogIsNotSyncedAgain() = runBlocking {
         val db = open("current.db")
-        db.openHelper.writableDatabase.execSQL("UPDATE hadith SET takhrij = 'edited' WHERE id = 1")
+        db.openHelper.writableDatabase.execSQL("UPDATE hadith SET takhrij = 'edited' WHERE id = 11")
         db.close()
 
         val reopened = open("current.db")
 
-        assertEquals("edited", reopened.hadithDao().getHadithWithSanad(1)!!.hadith.takhrij)
+        assertEquals("edited", reopened.hadithDao().getHadithWithSanad(11)!!.hadith.takhrij)
         reopened.close()
     }
 
