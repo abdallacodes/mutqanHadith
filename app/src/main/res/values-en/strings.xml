@@ -99,6 +99,7 @@
     <string name="review_done_body">Reviews completed: %1$d</string>
     <string name="review_empty_due">No hadiths are due for review right now. Come back later, God willing.</string>
     <string name="review_empty_new">There are no new hadiths to memorize.</string>
+    <string name="review_not_started">This hadith is not in your memorization yet. Start it from its page first so it counts toward today\'s new hadiths.</string>
     <string name="review_empty_narrator">No hadiths pass through this narrator.</string>
     <string name="review_submit_error">Couldn\'t save the rating, please try again</string>
 
@@ -180,6 +181,7 @@
     <!-- Hadith details -->
     <string name="details_title">Hadith Details</string>
     <string name="details_close">Close</string>
+    <string name="details_start">Start Memorizing</string>
     <!-- Analytics -->
     <string name="analytics_title">Mastery Statistics</string>
     <string name="analytics_empty_banner">Complete your first review and your statistics will appear here</string>

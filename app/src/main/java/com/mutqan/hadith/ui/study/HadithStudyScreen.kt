@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -67,6 +66,7 @@ import com.mutqan.hadith.ui.common.LayerBadge
 import com.mutqan.hadith.ui.common.LayerLockSheet
 import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.PacingDialog
 import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
@@ -270,18 +270,6 @@ private fun LayerCard(
             }
         }
     }
-}
-
-/** Asked before a third new hadith in a day is taken up: calm, and the user's word is final. */
-@Composable
-private fun PacingDialog(onProceed: () -> Unit, onDefer: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDefer,
-        title = { Text(stringResource(R.string.pacing_title)) },
-        text = { Text(stringResource(R.string.pacing_body), style = MaterialTheme.typography.bodyLarge) },
-        confirmButton = { TextButton(onClick = onProceed) { Text(stringResource(R.string.pacing_proceed)) } },
-        dismissButton = { Button(onClick = onDefer) { Text(stringResource(R.string.pacing_defer)) } },
-    )
 }
 
 @Composable

@@ -8,9 +8,11 @@ import com.mutqan.hadith.domain.FakeReviewRepository
 import com.mutqan.hadith.domain.hadith
 import com.mutqan.hadith.domain.model.ReviewRating.GOOD
 import com.mutqan.hadith.domain.narrator
+import com.mutqan.hadith.domain.pacing.DailyPacing
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
+import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.usecase.ChainHealth
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
@@ -18,6 +20,7 @@ import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
 import com.mutqan.hadith.domain.usecase.GetUnseenHadithsUseCase
+import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.details.HadithDetailsUi
@@ -252,8 +255,13 @@ class DiagnosticsViewModelsTest {
 
     // -- Hadith details --------------------------------------------------------------------
 
-    private fun detailsVm(id: Long, hadithRepo: HadithRepository = hadiths) =
-        HadithDetailsViewModel(id, hadithRepo, GetNarratorChainHeatmapUseCase(hadithRepo, reviews))
+    private fun detailsVm(id: Long, hadithRepo: HadithRepository = hadiths): HadithDetailsViewModel {
+        val pacing = DailyPacing(InMemoryStudyPreferences())
+        return HadithDetailsViewModel(
+            id, hadithRepo, GetNarratorChainHeatmapUseCase(hadithRepo, reviews), GetLayerStatusesUseCase(reviews, scheduler),
+            StartMemorizingUseCase(hadithRepo, reviews, pacing), pacing,
+        )
+    }
 
     private fun HadithDetailsViewModel.ui(): HadithDetailsUi = (state.value as UiState.Success).data
 

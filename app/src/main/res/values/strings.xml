@@ -107,6 +107,7 @@
     <string name="review_done_body">أنهيت %1$d من المراجعات</string>
     <string name="review_empty_due">لا توجد أحاديث مستحقة للمراجعة الآن. عُد لاحقًا بإذن الله.</string>
     <string name="review_empty_new">لا توجد أحاديث جديدة للحفظ.</string>
+    <string name="review_not_started">لم يدخل هذا الحديث وِرد حفظك بعد. ابدأ حفظه من صفحته أولًا ليُحتسب ضمن أحاديث اليوم الجديدة.</string>
     <string name="review_empty_narrator">لا توجد أحاديث تمر بهذا الراوي.</string>
     <string name="review_submit_error">تعذّر حفظ التقييم، حاول مرة أخرى</string>
 
@@ -188,6 +189,7 @@
     <!-- Hadith details -->
     <string name="details_title">تفاصيل الحديث</string>
     <string name="details_close">إغلاق</string>
+    <string name="details_start">بدء الحفظ</string>
     <!-- Analytics -->
     <string name="analytics_title">إحصائيات الإتقان</string>
     <string name="analytics_empty_banner">ابدأ أول مراجعة لتظهر هنا إحصائياتك</string>

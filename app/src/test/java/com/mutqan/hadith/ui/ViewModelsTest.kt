@@ -210,6 +210,7 @@ class ViewModelsTest {
 
     @Test
     fun review_singleSessionLoadsThatHadith_andAnUnknownOneIsAnError() = runTest {
+        due(4)
         val single = reviewVm(ReviewMode.SINGLE, hadithId = 4)
         assertEquals(listOf(4L), single.session().queue.map { it.hadithId })
         assertEquals(4, single.session().current!!.links.size)
@@ -217,6 +218,29 @@ class ViewModelsTest {
 
         val missing = reviewVm(ReviewMode.SINGLE, hadithId = 99)
         assertTrue(missing.state.value is UiState.Error)
+    }
+
+    @Test
+    fun review_singleOnAHadithNeverStartedReviewsNothingAndCreatesNoRecord() = runTest {
+        val vm = reviewVm(ReviewMode.SINGLE, hadithId = 4)
+
+        val s = vm.session()
+        assertTrue(s.notStarted)
+        assertTrue(s.queue.isEmpty() && s.isFinished)
+        assertNull("nothing is taken into study behind the daily limit", reviews.mastery[4L])
+        assertEquals(false, vm.session().canSubmit)
+
+        // Rating what is not on screen changes nothing either.
+        vm.onEvent(ReviewEvent.RateMatn(GOOD))
+        vm.onEvent(ReviewEvent.Submit)
+        assertTrue(reviews.mastery.isEmpty())
+    }
+
+    @Test
+    fun review_singleOnAHadithAlreadyInStudyIsNotMarkedNotStarted() = runTest {
+        due(4)
+
+        assertEquals(false, reviewVm(ReviewMode.SINGLE, hadithId = 4).session().notStarted)
     }
 
     @Test

@@ -309,6 +309,12 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
                         popUpTo(Routes.HADITH_DETAILS) { inclusive = true }
                     }
                 },
+                // A hadith not in study is started here, behind the daily limit, and then learned like any new one.
+                onStartLearning = { id ->
+                    navController.navigate(Routes.review(ReviewMode.NEW, id)) {
+                        popUpTo(Routes.HADITH_DETAILS) { inclusive = true }
+                    }
+                },
             )
         }
     }

@@ -45,7 +45,7 @@ fun AppContainer.narratorGraphViewModelFactory(): ViewModelProvider.Factory = vi
 }
 
 fun AppContainer.hadithDetailsViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {
-    initializer { HadithDetailsViewModel(hadithId, hadithRepository, getNarratorChainHeatmap) }
+    initializer { HadithDetailsViewModel(hadithId, hadithRepository, getNarratorChainHeatmap, getLayerStatuses, startMemorizing, dailyPacing) }
 }
 
 fun AppContainer.libraryViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {

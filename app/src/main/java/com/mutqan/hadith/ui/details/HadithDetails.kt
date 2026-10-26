@@ -28,17 +28,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.mutqan.hadith.R
+import com.mutqan.hadith.domain.pacing.DailyPacing
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
+import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
+import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.ui.common.InfoChip
+import com.mutqan.hadith.ui.common.PacingDialog
 import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
+import com.mutqan.hadith.ui.study.PacedStart
 import com.mutqan.hadith.ui.theme.MatnCompactTextStyle
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class HadithDetailsUi(
@@ -49,25 +56,58 @@ data class HadithDetailsUi(
     val grade: String,
     val matn: String,
     val heatmap: ChainHeatmap,
+    /**
+     * Whether the hadith is already in the user's memorization. One that is not is started, not reviewed: a review
+     * would take it into study behind the daily limit's back. [isStarting], [startFailed] and [pacingPrompt] describe
+     * that start, as on the hadith's own page.
+     */
+    val isInStudy: Boolean = true,
+    val isStarting: Boolean = false,
+    val startFailed: Boolean = false,
+    val pacingPrompt: Boolean = false,
 )
 
 class HadithDetailsViewModel(
     private val hadithId: Long,
     private val hadiths: HadithRepository,
     private val getHeatmap: GetNarratorChainHeatmapUseCase,
+    private val getLayers: GetLayerStatusesUseCase,
+    startMemorizing: StartMemorizingUseCase,
+    pacing: DailyPacing,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<UiState<HadithDetailsUi>>(UiState.Loading)
-    val state: StateFlow<UiState<HadithDetailsUi>> = _state.asStateFlow()
+    private val start = PacedStart(hadithId, startMemorizing, pacing, viewModelScope)
+    private val loaded = MutableStateFlow<UiState<HadithDetailsUi>>(UiState.Loading)
+
+    val state: StateFlow<UiState<HadithDetailsUi>> = combine(loaded, start.status, start.asking) { loaded, status, asking ->
+        (loaded as? UiState.Success)?.let { ready ->
+            UiState.Success(
+                ready.data.copy(
+                    isStarting = status == PacedStart.Status.STARTING,
+                    startFailed = status == PacedStart.Status.FAILED,
+                    pacingPrompt = asking,
+                ),
+            )
+        } ?: loaded
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading)
 
     init {
         load()
     }
 
+    /** Asks to start the hadith: after the user's word when the day's new hadiths are enough, see [PacedStart]. */
+    fun startMemorizing(onStarted: (Long) -> Unit) = start.request(onStarted)
+
+    /** The user chose to go on in spite of the day's limit. */
+    fun confirmPacing(onStarted: (Long) -> Unit) = start.confirm(onStarted)
+
+    /** The user left the hadith for another day. */
+    fun dismissPacing() = start.dismiss()
+
     fun load() {
-        _state.value = UiState.Loading
+        loaded.value = UiState.Loading
         viewModelScope.launch {
-            _state.value = try {
+            loaded.value = try {
                 val hadith = hadiths.getWithSanad(hadithId)
                 if (hadith == null) {
                     UiState.Error("Hadith $hadithId not found")
@@ -81,6 +121,7 @@ class HadithDetailsViewModel(
                             grade = hadith.hadith.grade,
                             matn = hadith.hadith.matnWithTashkeel,
                             heatmap = getHeatmap(hadithId),
+                            isInStudy = getLayers.isInStudy(hadithId),
                         ),
                     )
                 }
@@ -92,9 +133,20 @@ class HadithDetailsViewModel(
 }
 
 @Composable
-fun HadithDetailsRoute(viewModel: HadithDetailsViewModel, onClose: () -> Unit, onReview: (Long) -> Unit) {
+fun HadithDetailsRoute(
+    viewModel: HadithDetailsViewModel,
+    onClose: () -> Unit,
+    onReview: (Long) -> Unit,
+    /** Opens the learning flow of a hadith that was just started. */
+    onStartLearning: (Long) -> Unit,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HadithDetailsContent(state, viewModel::load, onClose, onReview)
+    HadithDetailsContent(
+        state, viewModel::load, onClose, onReview,
+        onStart = { viewModel.startMemorizing(onStartLearning) },
+        onConfirmPacing = { viewModel.confirmPacing(onStartLearning) },
+        onDismissPacing = viewModel::dismissPacing,
+    )
 }
 
 /** The body of the details dialog: the Hadith, its Matn and the heatmap of its chain. */
@@ -104,8 +156,13 @@ fun HadithDetailsContent(
     onRetry: () -> Unit,
     onClose: () -> Unit,
     onReview: (Long) -> Unit,
+    onStart: (Long) -> Unit = {},
+    onConfirmPacing: () -> Unit = {},
+    onDismissPacing: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
+    val loaded = (state as? UiState.Success)?.data
+    if (loaded?.pacingPrompt == true) PacingDialog(onConfirmPacing, onDismissPacing)
     Surface(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 24.dp),
         shape = RoundedCornerShape(28.dp),
@@ -153,13 +210,26 @@ fun HadithDetailsContent(
                     }
                 }
             }
+            if (loaded?.startFailed == true) {
+                Text(
+                    stringResource(R.string.study_start_error),
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                val loaded = (state as? UiState.Success)?.data
-                Button(onClick = { loaded?.let { onReview(it.hadithId) } }, enabled = loaded != null, modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.sheet_review_this))
+                if (loaded != null && !loaded.isInStudy) {
+                    Button(onClick = { onStart(loaded.hadithId) }, enabled = !loaded.isStarting, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(if (loaded.isStarting) R.string.study_starting else R.string.details_start))
+                    }
+                } else {
+                    Button(onClick = { loaded?.let { onReview(it.hadithId) } }, enabled = loaded != null, modifier = Modifier.weight(1f)) {
+                        Text(stringResource(R.string.sheet_review_this))
+                    }
                 }
                 OutlinedButton(onClick = onClose, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.details_close))

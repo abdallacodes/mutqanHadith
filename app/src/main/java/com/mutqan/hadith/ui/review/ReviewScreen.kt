@@ -629,9 +629,10 @@ private fun FinishedPanel(session: ReviewSession, onClose: () -> Unit, modifier:
         if (session.queue.isEmpty()) {
             Text(
                 stringResource(
-                    when (session.mode) {
-                        ReviewMode.NEW -> R.string.review_empty_new
-                        ReviewMode.NARRATOR ->
+                    when {
+                        session.notStarted -> R.string.review_not_started
+                        session.mode == ReviewMode.NEW -> R.string.review_empty_new
+                        session.mode == ReviewMode.NARRATOR ->
                             if (session.lockedSkipped > 0) R.string.review_empty_narrator_locked else R.string.review_empty_narrator
                         else -> R.string.review_empty_due
                     },

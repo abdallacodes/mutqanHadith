@@ -119,6 +119,11 @@ data class ReviewSession(
     val batchCount: Int = 1,
     /** Hadiths reviewed in the batches before the current one. */
     val reviewedInEarlierBatches: Int = 0,
+    /**
+     * A single review was asked for a hadith that is not in the user's memorization. Nothing is reviewed: rating it
+     * would take it into study without the daily limit being asked about, so it is started from its own page.
+     */
+    val notStarted: Boolean = false,
 ) {
     val current: ReviewCard? get() = queue.getOrNull(index)
     val isFinished: Boolean get() = index >= queue.size
@@ -209,15 +214,17 @@ class ReviewViewModel(
                     ReviewMode.SINGLE -> listOfNotNull(targetId?.let { hadiths.getWithSanad(it) })
                     ReviewMode.NARRATOR -> targetId?.let { hadiths.getThroughPerson(it) }.orEmpty()
                 }
+                // Reviewing a hadith that was never started would take it into study behind the daily limit's back.
+                val notStarted = mode == ReviewMode.SINGLE && found.any { !getLayers.isInStudy(it.hadith.id) }
                 val layers = getLayers(found.map { it.hadith.id })
-                var cards = found.map { it.toReviewCard(layers[it.hadith.id] ?: LayerStatus.Fresh) }
+                var cards = if (notStarted) emptyList() else found.map { it.toReviewCard(layers[it.hadith.id] ?: LayerStatus.Fresh) }
                 // A narrator's hadiths are reviewed through their chains, which only the hadiths with an open Sanad tree have.
                 val lockedSkipped = if (mode == ReviewMode.NARRATOR) cards.count { !it.activeLayer.opensSanad } else 0
                 if (mode == ReviewMode.NARRATOR) cards = cards.filter { it.activeLayer.opensSanad }
-                if (cards.isEmpty() && (mode == ReviewMode.SINGLE || (mode == ReviewMode.NEW && targetId != null))) {
+                if (cards.isEmpty() && !notStarted && (mode == ReviewMode.SINGLE || (mode == ReviewMode.NEW && targetId != null))) {
                     UiState.Error("Hadith $targetId not found")
                 } else {
-                    UiState.Success(newSession(cards, lockedSkipped))
+                    UiState.Success(newSession(cards, lockedSkipped, notStarted))
                 }
             } catch (e: Exception) {
                 UiState.Error(e.message.orEmpty())
@@ -307,7 +314,7 @@ class ReviewViewModel(
     )
 
     /** A session over [cards]: the due reviews are cut into batches, every other mode is one. */
-    private fun newSession(cards: List<ReviewCard>, lockedSkipped: Int): ReviewSession {
+    private fun newSession(cards: List<ReviewCard>, lockedSkipped: Int, notStarted: Boolean = false): ReviewSession {
         val batches = if (mode == ReviewMode.DUE) ReviewBatching.batches(cards) else listOf(cards)
         return ReviewSession(
             mode = mode,
@@ -316,6 +323,7 @@ class ReviewViewModel(
             lockedSkipped = lockedSkipped,
             laterBatches = batches.drop(1),
             batchCount = batches.size.coerceAtLeast(1),
+            notStarted = notStarted,
         )
     }
 

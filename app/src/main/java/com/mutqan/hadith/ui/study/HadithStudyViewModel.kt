@@ -8,7 +8,6 @@ import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.ui.common.UiState
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +17,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 /**
  * [textScale] sizes the matn and [showTashkeel] says whether it is shown with its tashkeel (it is, by default);
@@ -42,24 +40,23 @@ class HadithStudyViewModel(
     private val pacing: DailyPacing = DailyPacing(InMemoryStudyPreferences()),
 ) : ViewModel() {
 
-    private enum class Start { IDLE, STARTING, FAILED }
-
     private val textScale = MutableStateFlow(settings.matnScale)
 
     // Not a stored preference: every visit opens on the full text, and the toggle is for a quick look without it.
     private val showTashkeel = MutableStateFlow(true)
-    private val start = MutableStateFlow(Start.IDLE)
-    private val pacingPrompt = MutableStateFlow(false)
+    private val start = PacedStart(hadithId, startMemorizingUseCase, pacing, viewModelScope)
     private val retryTick = MutableStateFlow(0)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val state: StateFlow<UiState<HadithStudyUi>> = retryTick
         .flatMapLatest {
-            combine(getStudy(hadithId), textScale, start, showTashkeel, pacingPrompt) { study, scale, start, tashkeel, prompt ->
+            combine(getStudy(hadithId), textScale, start.status, showTashkeel, start.asking) { study, scale, status, tashkeel, prompt ->
                 if (study == null) {
                     UiState.Error("Hadith $hadithId not found")
                 } else {
-                    UiState.Success(HadithStudyUi(study, scale, start == Start.STARTING, start == Start.FAILED, tashkeel, prompt))
+                    UiState.Success(
+                        HadithStudyUi(study, scale, status == PacedStart.Status.STARTING, status == PacedStart.Status.FAILED, tashkeel, prompt),
+                    )
                 }
             }.catch { emit(UiState.Error(it.message.orEmpty())) }
         }
@@ -80,46 +77,13 @@ class HadithStudyViewModel(
 
     /**
      * Asks to take the hadith into the user's memorization. When enough new hadiths were started today the user is
-     * asked first ([HadithStudyUi.pacingPrompt]); otherwise it is started right away, see [begin].
+     * asked first ([HadithStudyUi.pacingPrompt]); otherwise it is started right away, see [PacedStart].
      */
-    fun startMemorizing(onStarted: (Long) -> Unit) {
-        if (start.value == Start.STARTING) return
-        if (pacing.isOverLimit()) {
-            pacingPrompt.value = true
-            return
-        }
-        begin(onStarted)
-    }
+    fun startMemorizing(onStarted: (Long) -> Unit) = start.request(onStarted)
 
     /** The user chose to go on in spite of the day's limit. */
-    fun confirmPacing(onStarted: (Long) -> Unit) {
-        pacingPrompt.value = false
-        begin(onStarted)
-    }
+    fun confirmPacing(onStarted: (Long) -> Unit) = start.confirm(onStarted)
 
     /** The user left the hadith for another day. */
-    fun dismissPacing() {
-        pacingPrompt.value = false
-    }
-
-    /**
-     * Takes the hadith into the user's memorization, then calls [onStarted] so the screen can open the
-     * learning flow. A request already under way is not repeated; a failure is shown and can be retried.
-     */
-    private fun begin(onStarted: (Long) -> Unit) {
-        if (start.value == Start.STARTING) return
-        start.value = Start.STARTING
-        viewModelScope.launch {
-            try {
-                startMemorizingUseCase(hadithId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                start.value = Start.FAILED
-                return@launch
-            }
-            start.value = Start.IDLE
-            onStarted(hadithId)
-        }
-    }
+    fun dismissPacing() = start.dismiss()
 }
