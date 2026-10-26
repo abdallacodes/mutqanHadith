@@ -361,14 +361,17 @@ class EnglishScreensTest {
         compose.onNodeWithText("Matn").assertExists()
         compose.onNodeWithText("Chain of Transmission").assertExists()
         compose.onNodeWithText("Hadith no. 1").assertExists()
-        compose.onNodeWithText("Takhrij: متفق عليه").assertExists()
+        compose.onNodeWithText("Narrating Companion").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
         compose.onNodeWithContentDescription("Smaller text").assertExists()
         compose.onNodeWithContentDescription("Hide tashkeel from the matn").assertExists()
         compose.onNodeWithText("100%").assertExists()
         compose.onNodeWithText("Copy").assertExists()
         // The chain: the compiler, then each narrator with his tier worded in English and his name as the dataset gives it.
         compose.onNodeWithText("Compiler").assertExists()
-        listOf("الحميدي", "سفيان", "الزهري", "أبو هريرة").forEach { compose.onNodeWithText(it).assertExists() }
+        listOf("الحميدي", "سفيان", "الزهري").forEach { compose.onNodeWithText(it).assertExists() }
+        // The Companion is named in his card at the top and as the last link of the chain.
+        compose.onAllNodesWithText("أبو هريرة").assertCountEquals(2)
         compose.onNodeWithText("Collector\'s teacher").assertExists()
         compose.onNodeWithText("Start Memorizing").assertExists()
         compose.onNodeWithText("You will learn its matn, then its sanad, and it joins your review schedule.").assertExists()

@@ -1,6 +1,7 @@
 package com.mutqan.hadith.ui
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
@@ -292,11 +293,13 @@ class LibraryScreensTest {
 
         compose.onNodeWithText("كتاب").assertExists()
         compose.onNodeWithText("حديث رقم 1").assertExists()
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
         compose.onNodeWithText("الدرجة: صحيح").assertExists()
         compose.onNodeWithText("الباب: باب").assertExists()
         compose.onNodeWithText("إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ").assertExists()
-        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        // The Companion is named twice: in his card at the top of the page and as the one link of the chain.
+        compose.onNodeWithText("الصحابي الراوي").assertExists()
+        compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(2)
         compose.onNodeWithText("صحابي").assertExists()
         compose.onNodeWithText("يُعرض هذا الحديث بالصحابي وحده، إذ لم نجد في مصدر الأسانيد روايةً يمكن تتبّع سندها كاملًا إلى الصحابي.").assertExists()
         // No narration was found for it, so no book is named for its chain.
@@ -304,10 +307,27 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun study_theCompanionComesFirstAndTheMukhrijLastAsCardsOfTheirOwn() {
+        studyRoute(1)
+
+        fun top(text: String) = compose.onNodeWithText(text).fetchSemanticsNode().positionInRoot.y
+        val companion = top("الصحابي الراوي")
+        val matn = top("المتن")
+        val chain = top("سلسلة الإسناد")
+        val mukhrij = top("متفق عليه")
+
+        assertTrue("the Companion is above the matn", companion < matn)
+        assertTrue("the takhrij is below the chain", chain < mukhrij)
+        // The author's words alone, not a labelled chip: «رواه …» / «متفق عليه» is the whole card.
+        compose.onAllNodesWithText("التخريج", substring = true).assertCountEquals(0)
+    }
+
+    @Test
     fun study_aFullChainIsShownFromTheCompilerToTheCompanion() {
         studyRoute(10)
 
-        listOf("جامع", "الحميدي", "مالك", "عمر بن الخطاب").forEach { compose.onNodeWithText(it).assertExists() }
+        listOf("جامع", "الحميدي", "مالك").forEach { compose.onNodeWithText(it).assertExists() }
+        compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(2)
         // An unclassified narrator is named plainly, the book the chain is read from is named, and the short-chain note is not shown.
         compose.onNodeWithText("راوٍ").assertExists()
         compose.onNodeWithText("السند من: صحيح البخاري").assertExists()
@@ -321,7 +341,7 @@ class LibraryScreensTest {
         val vm = HadithStudyViewModel(3, GetHadithStudyUseCase(repo, reviews, scheduler) { now }, StartMemorizingUseCase(repo, reviews) { now }, MemorySettings())
         compose.setContent { MutqanHadithTheme { HadithStudyRoute(vm, onClose = {}, onStartLearning = {}, onReview = {}) } }
 
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
         compose.onAllNodesWithText("الدرجة", substring = true).assertCountEquals(0)
     }
 
@@ -406,8 +426,8 @@ class LibraryScreensTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("حديث رقم 1").assertExists()
-        compose.onNodeWithText("التخريج: متفق عليه").assertExists()
-        compose.onNodeWithText("عمر بن الخطاب").assertExists()
+        compose.onNodeWithText("متفق عليه").assertExists()
+        compose.onAllNodesWithText("عمر بن الخطاب").assertCountEquals(2)
         compose.onNodeWithText("100٪").assertExists()
     }
 

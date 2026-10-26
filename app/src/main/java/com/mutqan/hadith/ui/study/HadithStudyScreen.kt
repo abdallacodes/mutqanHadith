@@ -214,9 +214,47 @@ private fun StudyContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         StudyHeader(hadith)
+        if (hadith.sahabi.isNotBlank()) SahabiCard(NarratorAliases.canonicalName(hadith.sahabi))
         ui.study.layer?.let { LayerCard(hadith.id, it, ui.study.hadith.sanad, onSanadBuilder, onMissingLink, onOrderChain) }
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
         SanadCard(ui.study)
+        if (hadith.takhrij.isNotBlank()) MukhrijCard(hadith.takhrij)
+    }
+}
+
+/** The Companion who narrates the hadith, first on the page and in large type: it is what the learner is asked for first. */
+@Composable
+private fun SahabiCard(name: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.study_sahabi_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+            Text(name, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+        }
+    }
+}
+
+/** The collectors who recorded the hadith, last on the page and in large type, worded as the author gives them («رواه مسلم»). */
+@Composable
+private fun MukhrijCard(takhrij: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Text(
+            takhrij,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 18.dp),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+        )
     }
 }
 
@@ -231,7 +269,6 @@ private fun StudyHeader(hadith: HadithEntity) {
                 container = MaterialTheme.colorScheme.primaryContainer,
                 content = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            if (hadith.takhrij.isNotBlank()) InfoChip(stringResource(R.string.study_takhrij, hadith.takhrij))
             if (hadith.grade.isNotBlank()) {
                 InfoChip(
                     stringResource(R.string.study_grade, hadith.grade),
@@ -239,9 +276,6 @@ private fun StudyHeader(hadith: HadithEntity) {
                     content = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        }
-        if (hadith.sahabi.isNotBlank()) {
-            Text(stringResource(R.string.sahabi_label, NarratorAliases.canonicalName(hadith.sahabi)), style = MaterialTheme.typography.titleMedium)
         }
         if (hadith.chapter.isNotBlank()) {
             Text(
