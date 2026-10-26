@@ -3,6 +3,7 @@ package com.mutqan.hadith.domain.scheduler
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
+import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.StabilityMetrics
@@ -112,6 +113,22 @@ class DualDecayScheduler(
             repetitionCount = (prev?.repetitionCount ?: 0) + 1,
         )
         return ScheduleResult(record, matnInterval, sanadInterval)
+    }
+
+    override fun place(hadithId: Long, band: RecallBand, now: Long): MasteryRecordEntity {
+        val matnStability = clamp(band.placedStabilityDays.toDouble())
+        val layer = layerFor(matnStability, 0.0, null).layer
+        val matnDue = dueAt(now, intervalFor(matnStability, decay = 1.0), matnStability, now)
+        val sanadDue = if (layer.opensSanad) now + (config.sanadIntroDelayDays * DAY_MS).roundToLong() else Long.MAX_VALUE
+        return MasteryRecordEntity(
+            hadithId = hadithId,
+            matnStability = matnStability.toFloat(),
+            sanadStability = 0f,
+            matnLastReviewedAt = now,
+            sanadLastReviewedAt = null,
+            nextReviewDue = minOf(matnDue, sanadDue),
+            repetitionCount = 1,
+        )
     }
 
     override fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability =

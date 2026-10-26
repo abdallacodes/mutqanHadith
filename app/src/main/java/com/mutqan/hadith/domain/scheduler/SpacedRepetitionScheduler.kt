@@ -2,6 +2,7 @@ package com.mutqan.hadith.domain.scheduler
 
 import com.mutqan.hadith.data.entity.MasteryRecordEntity
 import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.domain.model.ReviewTarget
@@ -47,6 +48,12 @@ data class ScheduleResult(
 
 interface SpacedRepetitionScheduler {
     fun schedule(request: ScheduleRequest): ScheduleResult
+
+    /**
+     * The record of a hadith the learner says they already hold at [band], as if its Matn had been reviewed at
+     * [now] and come out with the band's stability. The Sanad is left unlearned, so it opens by the usual rules.
+     */
+    fun place(hadithId: Long, band: RecallBand, now: Long): MasteryRecordEntity
 
     /** Recall probability of each component at [now], from the stored state. */
     fun retrievability(record: MasteryRecordEntity, now: Long): Retrievability

@@ -38,6 +38,7 @@ import com.mutqan.hadith.domain.usecase.ObserveCollectionDetailUseCase
 import com.mutqan.hadith.domain.usecase.ObserveStudyDashboardUseCase
 import com.mutqan.hadith.domain.usecase.RenameCollectionUseCase
 import com.mutqan.hadith.domain.usecase.SetCollectionMembershipUseCase
+import com.mutqan.hadith.domain.usecase.PlacementUseCase
 import com.mutqan.hadith.domain.usecase.StartMemorizingUseCase
 import com.mutqan.hadith.domain.usecase.SubmitLinkDrillUseCase
 import com.mutqan.hadith.domain.usecase.SubmitReviewUseCase
@@ -71,6 +72,7 @@ class AppContainer(
     val getLibraryPage by lazy { GetLibraryPageUseCase(hadithRepository, reviewRepository, scheduler) }
     val getHadithStudy by lazy { GetHadithStudyUseCase(hadithRepository, reviewRepository, scheduler) }
     val startMemorizing by lazy { StartMemorizingUseCase(hadithRepository, reviewRepository, dailyPacing) }
+    val placement by lazy { PlacementUseCase(hadithRepository, reviewRepository, scheduler, studyPreferences) }
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }
     val submitLinkDrill by lazy { SubmitLinkDrillUseCase(hadithRepository, reviewRepository, scheduler) }
     val checkSanadDrillAccess by lazy { CheckSanadDrillAccessUseCase(reviewRepository, scheduler) }

@@ -3,11 +3,13 @@ package com.mutqan.hadith.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.mutqan.hadith.data.settings.SharedPreferencesStudyPreferences
+import com.mutqan.hadith.domain.model.StartingPoint
 import com.mutqan.hadith.domain.pacing.DailyPacing
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -51,6 +53,26 @@ class SharedPreferencesStudyPreferencesTest {
         stored().setUnlockAllLayers(false)
 
         assertFalse("and taking it back is remembered too", stored().unlockAllLayers.value)
+    }
+
+    @Test
+    fun startingPoint_isUnsetUntilAnsweredThenKeptAcrossInstances() {
+        assertNull(stored().startingPoint.value)
+
+        stored().setStartingPoint(StartingPoint.INTERMEDIATE)
+
+        assertEquals(StartingPoint.INTERMEDIATE, stored().startingPoint.value)
+
+        stored().setStartingPoint(StartingPoint.BEGINNER)
+
+        assertEquals("a beginner is an answer too, not the same as never asked", StartingPoint.BEGINNER, stored().startingPoint.value)
+    }
+
+    @Test
+    fun startingPoint_anUnknownStoredValueReadsAsNeverAsked() {
+        context.getSharedPreferences("mutqan_study", Context.MODE_PRIVATE).edit().putString("starting_point", "GRANDMASTER").commit()
+
+        assertNull(stored().startingPoint.value)
     }
 
     @Test
