@@ -512,4 +512,39 @@
     <string name="practice_back">العودة إلى المجموعة</string>
     <string name="practice_empty_title">لا أحاديث في هذه المجموعة بعد</string>
     <string name="practice_empty_body">أضف إليها أحاديث أولًا، ثم عُد إلى الورد.</string>
+
+    <!-- Starting point: where the learner is in the Forty Hadith -->
+    <string name="band_weak">ضعيف</string>
+    <string name="band_good">جيد</string>
+    <string name="band_very_good">جيد جدًّا</string>
+    <string name="band_excellent">ممتاز</string>
+    <string name="band_chip">الحفظ: %1$s</string>
+    <string name="placement_title">نقطة البداية</string>
+    <string name="placement_pick_title">كم تحفظ من الأربعين؟</string>
+    <string name="placement_pick_subtitle">أخبر التطبيق أين أنت، فيبدأ معك من حيث أنت. يمكنك تغيير ذلك في أي وقت من الإعدادات.</string>
+    <string name="placement_beginner">مبتدئ</string>
+    <string name="placement_beginner_desc">لم أحفظها بعد، أبدأ من الصفر. يبقى التطبيق كما هو.</string>
+    <string name="placement_intermediate">متوسط</string>
+    <string name="placement_intermediate_desc">حفظتها من قبل لكن حفظي ضعف. أريد أن أراجعها لتثبت من جديد.</string>
+    <string name="placement_expert">متقن</string>
+    <string name="placement_expert_desc">أحفظها جيدًا. أريد مراجعات متباعدة تُبقيها ثابتة.</string>
+    <string name="placement_offer_title">هل تقيّم كل حديث بنفسك؟</string>
+    <string name="placement_offer_body">يظهر لك مطلع كل حديث، فتتذكّره ثم تكشفه وتحكم على حفظك له، فيبدأ كل حديث بحسب حفظك الفعلي. أو تتخطى ذلك ويعدّ التطبيق الأحاديث كلها بدرجة واحدة، وتتعدّل مع المراجعة.</string>
+    <string name="placement_offer_check">قيّم أحاديثي</string>
+    <string name="placement_offer_skip">تخطَّ، واعتبرها كلها «%1$s»</string>
+    <string name="placement_check_title">تقييم الحفظ</string>
+    <string name="placement_check_progress">%1$d من %2$d</string>
+    <string name="placement_check_hint">تذكّر باقي الحديث من ذاكرتك، ثم اكشفه.</string>
+    <string name="placement_check_reveal">اكشف الحديث</string>
+    <string name="placement_check_ask">كيف كان حفظك له؟</string>
+    <string name="placement_check_none">لم أحفظه</string>
+    <string name="placement_check_finish">أنهِ التقييم، واعتبر الباقي «%1$s»</string>
+    <string name="placement_done_title">تم</string>
+    <string name="placement_done_body">عدد الأحاديث المقيَّمة: %1$d</string>
+    <string name="placement_done_band">%1$s: %2$d</string>
+    <string name="placement_done_none">لم يُقيَّم أي حديث. يبدأ التطبيق معك من الصفر، وتبقى كل الأحاديث جديدة.</string>
+    <string name="placement_done_button">ابدأ</string>
+    <string name="settings_starting_point">نقطة البداية</string>
+    <string name="settings_starting_point_hint">حالتك في حفظ الأربعين: %1$s. اضغط للتغيير أو لتقييم أحاديثك.</string>
+    <string name="settings_starting_point_unset">لم تحدّد نقطة بدايتك بعد. اضغط لتحديدها.</string>
 </resources>

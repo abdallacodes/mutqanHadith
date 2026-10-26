@@ -2,6 +2,7 @@ package com.mutqan.hadith.domain.usecase
 
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
@@ -27,6 +28,9 @@ data class HadithStudy(
     val isInStudy: Boolean get() = metrics != null
 
     val progress: HadithProgress get() = hadithProgress(metrics)
+
+    /** How well the Matn is held, in words; null for a hadith whose Matn was never learned. */
+    val band: RecallBand? get() = metrics?.let { RecallBand.of(it.matnStability) }
 }
 
 /**

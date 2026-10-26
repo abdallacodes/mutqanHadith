@@ -21,10 +21,12 @@ class MainActivity : AppCompatActivity() {
         AppLanguageController(this).applyDefaultOnFirstRun()
         enableEdgeToEdge()
         val container = (application as MutqanApplication).container
+        // Asked once, before anything else; a launch that comes after the answer goes straight to Home.
+        val askStartingPoint = container.studyPreferences.startingPoint.value == null
         setContent {
             MutqanHadithTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MutqanNavHost(container)
+                    MutqanNavHost(container, askStartingPoint = askStartingPoint)
                 }
             }
         }

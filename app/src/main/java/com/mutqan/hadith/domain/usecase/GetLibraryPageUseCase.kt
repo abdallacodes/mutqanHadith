@@ -2,6 +2,7 @@ package com.mutqan.hadith.domain.usecase
 
 import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.data.entity.HadithEntity
+import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.ReviewRepository
@@ -29,6 +30,9 @@ data class LibraryHadith(
     val isDue: Boolean,
 ) {
     val progress: HadithProgress get() = hadithProgress(metrics)
+
+    /** How well the Matn is held, in words; null for a hadith whose Matn was never learned. */
+    val band: RecallBand? get() = metrics?.let { RecallBand.of(it.matnStability) }
 }
 
 /**

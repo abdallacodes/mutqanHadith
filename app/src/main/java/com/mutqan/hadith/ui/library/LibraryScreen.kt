@@ -63,6 +63,7 @@ import com.mutqan.hadith.domain.usecase.LibraryGroup
 import com.mutqan.hadith.domain.usecase.LibraryHadith
 import com.mutqan.hadith.domain.usecase.LibraryPage
 import com.mutqan.hadith.domain.usecase.LibraryStatus
+import com.mutqan.hadith.ui.common.labelRes
 import com.mutqan.hadith.ui.collections.AddToCollectionHost
 import com.mutqan.hadith.ui.collections.CollectButton
 import com.mutqan.hadith.ui.collections.CollectionEditorSheet
@@ -475,6 +476,7 @@ fun LibraryHadithCard(
                         content = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
+                item.band?.let { InfoChip(stringResource(R.string.band_chip, stringResource(it.labelRes))) }
                 Box(Modifier.weight(1f))
                 ProgressBadge(item.progress, item.metrics?.overallMastery)
             }

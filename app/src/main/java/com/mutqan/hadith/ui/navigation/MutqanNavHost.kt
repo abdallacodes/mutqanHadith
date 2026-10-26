@@ -63,6 +63,9 @@ import com.mutqan.hadith.ui.missingLinkViewModelFactory
 import com.mutqan.hadith.ui.orderChainViewModelFactory
 import com.mutqan.hadith.ui.orderchain.OrderChainRoute
 import com.mutqan.hadith.ui.orderchain.OrderChainViewModel
+import com.mutqan.hadith.ui.placement.PlacementRoute
+import com.mutqan.hadith.ui.placement.PlacementViewModel
+import com.mutqan.hadith.ui.placementViewModelFactory
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewRoute
 import com.mutqan.hadith.ui.review.ReviewViewModel
@@ -83,6 +86,7 @@ object Routes {
     const val ARG_ID = "id"
     const val ARG_HADITH_ID = "hadithId"
     const val ARG_COLLECTION_ID = "collectionId"
+    const val ARG_FIRST_RUN = "firstRun"
     const val NO_ID = -1L
 
     /** [ARG_ID] is the Hadith for a single review and the narrator for a narrator review. */
@@ -95,10 +99,15 @@ object Routes {
     const val LIBRARY = "library"
     const val INSIGHTS = "insights"
     const val SETTINGS = "settings"
+
+    /** Where the learner tells the app their starting point; [ARG_FIRST_RUN] is true when it is the first thing shown. */
+    const val PLACEMENT = "placement?$ARG_FIRST_RUN={$ARG_FIRST_RUN}"
     const val HADITH_DETAILS = "hadith_details/{$ARG_HADITH_ID}"
     const val HADITH_STUDY = "hadith_study/{$ARG_HADITH_ID}"
     const val COLLECTION = "collection/{$ARG_COLLECTION_ID}"
     const val COLLECTION_PRACTICE = "collection_practice/{$ARG_COLLECTION_ID}"
+
+    fun placement(firstRun: Boolean = false): String = "placement?$ARG_FIRST_RUN=$firstRun"
 
     fun review(mode: ReviewMode, id: Long? = null): String =
         "review/${mode.route}" + if (id != null) "?$ARG_ID=$id" else ""
@@ -152,6 +161,8 @@ fun MutqanNavHost(
     container: AppContainer,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
+    /** The learner has not said where they start yet: that is asked before anything else, once. */
+    askStartingPoint: Boolean = false,
 ) {
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     Scaffold(
@@ -169,15 +180,15 @@ fun MutqanNavHost(
             }
         },
     ) { padding ->
-        MutqanDestinations(container, navController, Modifier.padding(padding).consumeWindowInsets(padding))
+        MutqanDestinations(container, navController, askStartingPoint, Modifier.padding(padding).consumeWindowInsets(padding))
     }
 }
 
 @Composable
-private fun MutqanDestinations(container: AppContainer, navController: NavHostController, modifier: Modifier) {
+private fun MutqanDestinations(container: AppContainer, navController: NavHostController, askStartingPoint: Boolean, modifier: Modifier) {
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME,
+        startDestination = if (askStartingPoint) Routes.placement(firstRun = true) else Routes.HOME,
         modifier = modifier,
         enterTransition = { if (isTabSwitch()) fadeIn(tween(TRANSITION_MS)) else forwardIn(this) },
         exitTransition = { if (isTabSwitch()) fadeOut(tween(TRANSITION_MS)) else forwardOut(this) },
@@ -346,7 +357,31 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
 
         composable(Routes.SETTINGS) {
             val viewModel: SettingsViewModel = viewModel(factory = container.settingsViewModelFactory())
-            SettingsRoute(viewModel, onClose = { navController.popBackStack() })
+            SettingsRoute(
+                viewModel,
+                onClose = { navController.popBackStack() },
+                onOpenPlacement = { navController.navigate(Routes.placement()) },
+            )
+        }
+
+        composable(
+            route = Routes.PLACEMENT,
+            arguments = listOf(navArgument(Routes.ARG_FIRST_RUN) { type = NavType.BoolType; defaultValue = false }),
+        ) { entry ->
+            val firstRun = entry.arguments?.getBoolean(Routes.ARG_FIRST_RUN) ?: false
+            val viewModel: PlacementViewModel = viewModel(factory = container.placementViewModelFactory())
+            PlacementRoute(
+                viewModel = viewModel,
+                firstRun = firstRun,
+                onClose = {
+                    if (firstRun) {
+                        // The first screen gives way to Home; there is nothing behind it to go back to.
+                        navController.navigate(Routes.HOME) { popUpTo(Routes.PLACEMENT) { inclusive = true } }
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
+            )
         }
 
         dialog(

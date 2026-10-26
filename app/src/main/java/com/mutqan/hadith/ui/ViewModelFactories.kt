@@ -15,6 +15,7 @@ import com.mutqan.hadith.ui.insights.InsightsViewModel
 import com.mutqan.hadith.ui.library.LibraryViewModel
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.orderchain.OrderChainViewModel
+import com.mutqan.hadith.ui.placement.PlacementViewModel
 import com.mutqan.hadith.ui.review.ReviewMode
 import com.mutqan.hadith.ui.review.ReviewViewModel
 import com.mutqan.hadith.ui.sanadbuilder.SanadBuilderViewModel
@@ -81,4 +82,8 @@ fun AppContainer.insightsViewModelFactory(): ViewModelProvider.Factory = viewMod
 
 fun AppContainer.settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
     initializer { SettingsViewModel(exportUserData, importUserData, resetProgress, backupFiles, studyPreferences) }
+}
+
+fun AppContainer.placementViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+    initializer { PlacementViewModel(placement, hadithRepository, studyPreferences.startingPoint.value) }
 }

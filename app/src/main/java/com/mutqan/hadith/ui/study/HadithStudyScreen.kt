@@ -59,6 +59,7 @@ import com.mutqan.hadith.data.text.ArabicNormalizer
 import com.mutqan.hadith.domain.drill.SanadDrillPolicy
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.model.MemorizationLayer
+import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.usecase.HadithStudy
 import com.mutqan.hadith.ui.collections.AddToCollectionHost
@@ -75,6 +76,7 @@ import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.descriptionRes
+import com.mutqan.hadith.ui.common.labelRes
 import com.mutqan.hadith.ui.common.masteryColor
 import com.mutqan.hadith.ui.theme.MatnTextStyle
 import kotlinx.coroutines.delay
@@ -213,7 +215,7 @@ private fun StudyContent(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        StudyHeader(hadith)
+        StudyHeader(hadith, ui.study.band)
         if (hadith.sahabi.isNotBlank()) SahabiCard(NarratorAliases.canonicalName(hadith.sahabi))
         ui.study.layer?.let { LayerCard(hadith.id, it, ui.study.hadith.sanad, onSanadBuilder, onMissingLink, onOrderChain) }
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
@@ -260,7 +262,7 @@ private fun MukhrijCard(takhrij: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StudyHeader(hadith: HadithEntity) {
+private fun StudyHeader(hadith: HadithEntity, band: RecallBand?) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text(hadith.sourceBook, style = MaterialTheme.typography.headlineSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -276,6 +278,7 @@ private fun StudyHeader(hadith: HadithEntity) {
                     content = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            band?.let { InfoChip(stringResource(R.string.band_chip, stringResource(it.labelRes))) }
         }
         if (hadith.chapter.isNotBlank()) {
             Text(

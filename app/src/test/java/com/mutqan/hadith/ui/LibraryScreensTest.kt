@@ -396,6 +396,32 @@ class LibraryScreensTest {
     }
 
     @Test
+    fun study_aHadithShowsHowWellItsMatnIsHeldInWords() {
+        reviews.mastery[1] = MasteryRecordEntity(1, 12f, 0f, matnLastReviewedAt = now - 1_000, sanadLastReviewedAt = null, nextReviewDue = now + 10_000, repetitionCount = 1)
+        studyRoute(1)
+
+        compose.onNodeWithText("الحفظ: جيد جدًّا").assertExists()
+    }
+
+    @Test
+    fun study_aHadithNeverLearnedShowsNoWordForItsMemory() {
+        studyRoute(2)
+
+        compose.onAllNodesWithText("الحفظ:", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun library_aHadithWithAMatnThatIsHeldCarriesTheWordForIt() {
+        reviews.mastery[1] = MasteryRecordEntity(1, 45f, 0f, matnLastReviewedAt = now - 1_000, sanadLastReviewedAt = null, nextReviewDue = now + 10_000, repetitionCount = 1)
+        libraryRoute()
+
+        openFirstBook()
+
+        compose.onAllNodesWithText("الحفظ: ممتاز").assertCountEquals(1)
+        compose.onNodeWithText("الحفظ: جيد").assertDoesNotExist()
+    }
+
+    @Test
     fun study_theTextSizeStepsWithinItsLimitsAndIsRemembered() {
         val settings = MemorySettings()
         studyRoute(1, settings)

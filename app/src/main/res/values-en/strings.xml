@@ -477,4 +477,39 @@
     <string name="practice_back">Back to the collection</string>
     <string name="practice_empty_title">No hadiths in this collection yet</string>
     <string name="practice_empty_body">Add some hadiths first, then come back to practice.</string>
+
+    <!-- Starting point: where the learner is in the Forty Hadith -->
+    <string name="band_weak">Weak</string>
+    <string name="band_good">Good</string>
+    <string name="band_very_good">Very good</string>
+    <string name="band_excellent">Excellent</string>
+    <string name="band_chip">Memory: %1$s</string>
+    <string name="placement_title">Your starting point</string>
+    <string name="placement_pick_title">How much of the Forty do you know?</string>
+    <string name="placement_pick_subtitle">Tell the app where you stand and it starts with you from there. You can change this at any time in Settings.</string>
+    <string name="placement_beginner">Beginner</string>
+    <string name="placement_beginner_desc">I have not memorized them yet and start from zero. The app works as it does for anyone new.</string>
+    <string name="placement_intermediate">Intermediate</string>
+    <string name="placement_intermediate_desc">I memorized them once but my memory has faded. I want to review them until they settle again.</string>
+    <string name="placement_expert">Expert</string>
+    <string name="placement_expert_desc">I know them well. I want spaced reviews that keep them firm.</string>
+    <string name="placement_offer_title">Grade each hadith yourself?</string>
+    <string name="placement_offer_body">You see the opening of each hadith, recall the rest, reveal it and judge how well you knew it, so every hadith starts where your memory really is. Or skip this and the app marks them all the same; reviews correct them as you go.</string>
+    <string name="placement_offer_check">Grade my hadiths</string>
+    <string name="placement_offer_skip">Skip, and mark them all \"%1$s\"</string>
+    <string name="placement_check_title">Grade your memory</string>
+    <string name="placement_check_progress">%1$d of %2$d</string>
+    <string name="placement_check_hint">Recall the rest of the hadith from memory, then reveal it.</string>
+    <string name="placement_check_reveal">Reveal the hadith</string>
+    <string name="placement_check_ask">How well did you know it?</string>
+    <string name="placement_check_none">Not memorized</string>
+    <string name="placement_check_finish">Finish grading, and mark the rest \"%1$s\"</string>
+    <string name="placement_done_title">All set</string>
+    <string name="placement_done_body">Hadiths marked: %1$d</string>
+    <string name="placement_done_band">%1$s: %2$d</string>
+    <string name="placement_done_none">No hadith was marked. The app starts with you from zero and every hadith stays new.</string>
+    <string name="placement_done_button">Start</string>
+    <string name="settings_starting_point">Your starting point</string>
+    <string name="settings_starting_point_hint">Your standing in the Forty: %1$s. Tap to change it or to grade your hadiths.</string>
+    <string name="settings_starting_point_unset">You have not set your starting point yet. Tap to set it.</string>
 </resources>

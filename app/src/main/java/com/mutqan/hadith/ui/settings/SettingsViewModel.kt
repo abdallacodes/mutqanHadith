@@ -8,12 +8,15 @@ import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.PreparedBackup
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
+import com.mutqan.hadith.domain.model.StartingPoint
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.settings.StudyPreferences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -47,6 +50,8 @@ data class SettingsUi(
     val pendingImport: PreparedBackup? = null,
     /** The "advanced student" choice: every layer open on every hadith. */
     val unlockAllLayers: Boolean = false,
+    /** What the learner said about where they start in the Forty Hadith; null until they have been asked. */
+    val startingPoint: StartingPoint? = null,
 )
 
 class SettingsViewModel(
@@ -57,8 +62,15 @@ class SettingsViewModel(
     private val studyPreferences: StudyPreferences = InMemoryStudyPreferences(),
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(SettingsUi(unlockAllLayers = studyPreferences.unlockAllLayers.value))
+    private val _state = MutableStateFlow(
+        SettingsUi(unlockAllLayers = studyPreferences.unlockAllLayers.value, startingPoint = studyPreferences.startingPoint.value),
+    )
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
+
+    init {
+        // The starting point is changed on a screen of its own, above this one; coming back shows the new answer.
+        studyPreferences.startingPoint.onEach { point -> _state.update { it.copy(startingPoint = point) } }.launchIn(viewModelScope)
+    }
 
     /** The name the file picker offers for a new backup. */
     fun suggestedBackupName(): String = exportUserData.suggestedFileName()

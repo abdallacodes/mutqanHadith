@@ -56,6 +56,7 @@ import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.backup.PreparedBackup
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.contentWidth
+import com.mutqan.hadith.ui.common.labelRes
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -65,7 +66,7 @@ import java.util.Locale
 private val BACKUP_MIME_TYPES = arrayOf("application/json", "text/*", "application/octet-stream")
 
 @Composable
-fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit) {
+fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlacement: () -> Unit = {}) {
     val ui by viewModel.state.collectAsStateWithLifecycle()
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let { viewModel.exportTo(it.toString()) }
@@ -90,6 +91,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit) {
             // The activity is recreated by the change, which re-reads every string and the layout direction.
             onLanguageSelected = languages::select,
             onUnlockAllLayersChanged = viewModel::setUnlockAllLayers,
+            onOpenPlacement = onOpenPlacement,
         ),
     )
 }
@@ -105,6 +107,7 @@ data class SettingsActions(
     val onMessageShown: () -> Unit,
     val onLanguageSelected: (AppLanguage) -> Unit = {},
     val onUnlockAllLayersChanged: (Boolean) -> Unit = {},
+    val onOpenPlacement: () -> Unit = {},
 )
 
 @Composable
@@ -144,6 +147,13 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                     )
                 }
                 SettingsGroup(stringResource(R.string.settings_section_study)) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_starting_point),
+                        supporting = ui.startingPoint?.let { stringResource(R.string.settings_starting_point_hint, stringResource(it.labelRes)) }
+                            ?: stringResource(R.string.settings_starting_point_unset),
+                        onClick = actions.onOpenPlacement,
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     SettingsSwitchRow(
                         title = stringResource(R.string.settings_unlock_all),
                         supporting = stringResource(R.string.settings_unlock_all_hint),
