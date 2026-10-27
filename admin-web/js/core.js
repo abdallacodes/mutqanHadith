@@ -193,6 +193,45 @@ export function validateGroup(g, groups) {
   return errors;
 }
 
+/** The grades the page offers; the only descriptive field with a closed set of values. */
+export const GRADES = Object.freeze(['صحيح', 'صحيح لغيره', 'حسن', 'حسن لغيره', 'ضعيف']);
+
+/** The distinct non-empty values a field holds in the live hadiths, most used first, so a list can offer what is already there. */
+export function valuesOf(hadiths, key) {
+  const counts = new Map();
+  for (const h of hadiths) {
+    const v = (h[key] ?? '').trim();
+    if (!h.deleted && v !== '') counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ar')).map(([v]) => v);
+}
+
+/** The compiler most hadiths of [book] name, or '' when the book is new: the book and its compiler travel together. */
+export function compilerOf(hadiths, book) {
+  const counts = new Map();
+  for (const h of hadiths) {
+    if (!h.deleted && book !== '' && h.sanadSource === book && (h.collector ?? '') !== '') counts.set(h.collector, (counts.get(h.collector) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+}
+
+/** The Companions a hadith may name: live narrators of the tier صحابي. */
+export const companions = (narrators) => narrators.filter((n) => !n.deleted && n.tier === 'صحابي');
+
+/**
+ * The text of the الصحابي field. The Companion is, unless the author picked another, the last link of the chain. When
+ * that is the Companion the hadith already named, the text written before is kept as it was (it is how the book prints
+ * him); otherwise it is the narrator's full name. No Companion gives ''.
+ */
+export function sahabiText({ pickedId, sanad, base, narrators }) {
+  const lastOf = (chain) => (chain.length ? chain[chain.length - 1].narratorId : null);
+  const id = pickedId ?? lastOf(sanad);
+  if (id === null || id === undefined) return '';
+  if (id === lastOf(base.sanad ?? []) && (base.sahabi ?? '').trim() !== '') return base.sahabi.trim();
+  const n = narrators.find((x) => x.id === id);
+  return n ? (n.fullName || n.primaryName) : '';
+}
+
 /** The live hadiths whose chain holds this narrator. */
 export function hadithsUsing(hadiths, narratorId) {
   return hadiths.filter((h) => !h.deleted && h.sanad.some((l) => l.narratorId === narratorId));

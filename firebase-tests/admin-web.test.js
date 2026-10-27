@@ -219,6 +219,31 @@ test('what is written about a narrator is part of the narrator: too long is refu
   assert.equal(core.authored('catalog_narrator', narrator(1)).bio, '', 'a narrator without it has an empty one');
 });
 
+test('the lists offer what the catalog already uses, most used first, and the book brings its compiler', () => {
+  const hs = [
+    hadith(1, { collector: 'مسلم', sanadSource: 'صحيح مسلم' }), hadith(2, { collector: 'مسلم', sanadSource: 'صحيح مسلم' }),
+    hadith(3, { collector: 'النووي', sanadSource: '' }), hadith(4, { collector: 'البخاري', sanadSource: 'صحيح البخاري', deleted: true }),
+  ];
+  assert.deepEqual(core.valuesOf(hs, 'collector'), ['مسلم', 'النووي']);
+  assert.deepEqual(core.valuesOf(hs, 'sanadSource'), ['صحيح مسلم'], 'blank and deleted ones are not offered');
+  assert.equal(core.compilerOf(hs, 'صحيح مسلم'), 'مسلم');
+  assert.equal(core.compilerOf(hs, 'صحيح البخاري'), '', 'a book only a deleted hadith used');
+  assert.equal(core.compilerOf(hs, ''), '', 'no book, no compiler');
+  assert.ok(core.GRADES.includes('صحيح') && core.GRADES.includes('حسن') && core.GRADES.includes('ضعيف'));
+});
+
+test('the Companion written on a hadith follows the chain, keeps the printed form, and can be picked', () => {
+  const people = [narrator(1, { tier: 'شيخ المصنف' }), narrator(2, { tier: 'صحابي', fullName: 'أبو حفص عمر بن الخطاب' }), narrator(3, { tier: 'صحابي', fullName: 'أبو هريرة' })];
+  const chain = (...ids) => ids.map((narratorId) => ({ narratorId, transmissionTerm: '' }));
+  const base = { sanad: chain(1, 2), sahabi: 'أمير المؤمنين أبي حفص عمر بن الخطاب' };
+  assert.deepEqual(core.companions(people).map((n) => n.id), [2, 3]);
+  assert.equal(core.sahabiText({ pickedId: null, sanad: chain(1, 2), base, narrators: people }), base.sahabi, 'same Companion: as printed');
+  assert.equal(core.sahabiText({ pickedId: null, sanad: chain(1, 3), base, narrators: people }), 'أبو هريرة', 'the chain changed');
+  assert.equal(core.sahabiText({ pickedId: 3, sanad: chain(1, 2), base, narrators: people }), 'أبو هريرة', 'picked');
+  assert.equal(core.sahabiText({ pickedId: null, sanad: [], base: { sanad: [], sahabi: '' }, narrators: people }), '', 'no chain');
+  assert.equal(core.sahabiText({ pickedId: null, sanad: chain(3), base: { sanad: [], sahabi: '' }, narrators: people }), 'أبو هريرة', 'a new hadith');
+});
+
 test('someone who is not an admin cannot save, and nothing is written', async () => {
   const reader = storeAs('sara', {});
   await assert.rejects(reader.save('catalog_hadith', hadith(10000), { isNew: true }));

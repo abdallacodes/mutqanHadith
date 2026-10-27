@@ -18,6 +18,7 @@ signed-in Google account, which must carry the `admin` claim (`admin-tools/set-a
 - **Hadiths**: search the text, filter by group, open one to edit it. The chain is an ordered list from the
   collector's side to the Companion; pick narrators by name or number. A narrator that does not exist yet is made first
   under **Narrators** («راوٍ جديد»), then «تحديث قائمة الرواة» in the editor.
+- **Lists, not free text:** the book, the book the chain is from, the compiler (المصنِّف) and التخريج are picked from what the catalog already uses, with «قيمة جديدة…» for one that is not there yet; the grade comes from a fixed list (صحيح، صحيح لغيره، حسن، حسن لغيره، ضعيف). Choosing the chain's book fills in its compiler. The Companion is picked from the narrators of tier صحابي and is, by default, the last link of the chain; the text kept on the hadith stays as it was while that Companion is unchanged, otherwise it is the narrator's full name.
 - **Delete** only marks the document; **restore** brings it back. A deleted hadith leaves every phone on its next
   library check, together with that phone's progress on it (the account copy stays, so a restore brings it back).
 - **History** lists the latest changes; every editor shows its own document's changes. **تراجع** writes the older

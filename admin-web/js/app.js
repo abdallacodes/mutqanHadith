@@ -346,6 +346,38 @@ function chainEditor(initial) {
   };
 }
 
+/**
+ * A list of what is already used for a field, with «قيمة جديدة…» to write one that is not there yet. `value()` is what is
+ * chosen; `set(v)` picks one (adding it to the list if it is new); `onChange(fn)` is told when the choice changes.
+ */
+function choice(current, values, { blank = 'غير محدد' } = {}) {
+  const NEW = '\u0000new';
+  const select = h('select', {});
+  const typed = h('input', { type: 'text', placeholder: 'اكتب القيمة الجديدة', hidden: true, style: 'margin-top:6px' });
+  const listeners = [];
+  const fill = (selected) => {
+    const all = [...new Set([...values, ...(selected ? [selected] : [])])];
+    select.replaceChildren(
+      h('option', { value: '' }, blank),
+      ...all.map((v) => h('option', { value: v, selected: v === selected }, v)),
+      h('option', { value: NEW }, 'قيمة جديدة…'));
+    if (!selected) select.value = '';
+  };
+  fill(current.trim());
+  select.addEventListener('change', () => {
+    typed.hidden = select.value !== NEW;
+    if (select.value === NEW) typed.focus();
+    listeners.forEach((fn) => fn());
+  });
+  typed.addEventListener('input', () => listeners.forEach((fn) => fn()));
+  return {
+    el: h('div', {}, select, typed),
+    value: () => (select.value === NEW ? typed.value.trim() : select.value),
+    set: (v) => { typed.hidden = true; typed.value = ''; fill(v); },
+    onChange: (fn) => listeners.push(fn),
+  };
+}
+
 function groupSelect(selected, excluded = new Set()) {
   return h('select', {},
     h('option', { value: '' }, 'بلا مجموعة'),
@@ -365,27 +397,42 @@ function hadithEditor(arg) {
   const matn = h('textarea', { dir: 'rtl' }, base.matnWithTashkeel);
   const text = (key) => h('input', { type: 'text', value: base[key] });
   const number = (key) => h('input', { type: 'number', step: '1', value: String(base[key]) });
+  const live = catalog.hadiths.filter((x) => x.id !== base.id);
+  const pick = (key, values = core.valuesOf(live, key)) => choice(base[key] ?? '', values);
   const inputs = {
-    sourceBook: text('sourceBook'), hadithNumber: number('hadithNumber'), chapter: text('chapter'), grade: text('grade'),
-    collector: text('collector'), takhrij: text('takhrij'), sahabi: text('sahabi'), position: number('position'),
-    sanadSource: text('sanadSource'), groupId: groupSelect(base.groupId),
+    hadithNumber: number('hadithNumber'), chapter: text('chapter'), position: number('position'), groupId: groupSelect(base.groupId),
+    sourceBook: pick('sourceBook'), grade: pick('grade', core.GRADES), collector: pick('collector'),
+    takhrij: pick('takhrij'), sanadSource: pick('sanadSource'),
   };
+  // The book and its compiler travel together: choosing the book fills in the compiler it is known by.
+  inputs.sanadSource.onChange(() => {
+    const known = core.compilerOf(live, inputs.sanadSource.value());
+    if (known !== '') inputs.collector.set(known);
+  });
+  // The Companion is the last link of the chain unless another is picked.
+  const sahabiPick = h('select', {},
+    h('option', { value: '' }, 'آخر راوٍ في السند (تلقائي)'),
+    core.companions(catalog.narrators)
+      .sort((a, b) => a.primaryName.localeCompare(b.primaryName, 'ar') || a.id - b.id)
+      .map((n) => h('option', { value: String(n.id) }, core.narratorLabel(n))));
   const chain = chainEditor(base.sanad);
   const problems = h('div');
 
   const read = () => ({
     id: base.id,
     matnWithTashkeel: matn.value.trim(),
-    sourceBook: inputs.sourceBook.value.trim(),
+    sourceBook: inputs.sourceBook.value(),
     hadithNumber: toInt(inputs.hadithNumber.value),
     chapter: inputs.chapter.value.trim(),
-    grade: inputs.grade.value.trim(),
-    collector: inputs.collector.value.trim(),
-    takhrij: inputs.takhrij.value.trim(),
-    sahabi: inputs.sahabi.value.trim(),
+    grade: inputs.grade.value(),
+    collector: inputs.collector.value(),
+    takhrij: inputs.takhrij.value(),
+    sahabi: core.sahabiText({
+      pickedId: sahabiPick.value === '' ? null : Number(sahabiPick.value), sanad: chain.read(), base, narrators: catalog.narrators,
+    }),
     groupId: inputs.groupId.value === '' ? null : Number(inputs.groupId.value),
     position: toInt(inputs.position.value),
-    sanadSource: inputs.sanadSource.value.trim(),
+    sanadSource: inputs.sanadSource.value(),
     sanad: chain.read(),
     deleted: base.deleted === true,
   });
@@ -415,10 +462,12 @@ function hadithEditor(arg) {
     h('div', { class: 'card' },
       field(L.matnWithTashkeel, matn, 'يُلصق النص كما هو بتشكيله؛ لا تُعدَّل الأحرف تلقائياً.'),
       h('div', { class: 'grid' },
-        field(L.sourceBook, inputs.sourceBook), field(L.hadithNumber, inputs.hadithNumber), field(L.groupId, inputs.groupId),
-        field(L.position, inputs.position, 'ترتيب الحديث داخل مجموعته.'), field(L.collector, inputs.collector),
-        field(L.sanadSource, inputs.sanadSource, 'الكتاب الذي أُخذ منه السند.'), field(L.sahabi, inputs.sahabi),
-        field(L.takhrij, inputs.takhrij), field(L.chapter, inputs.chapter), field(L.grade, inputs.grade))),
+        field(L.sourceBook, inputs.sourceBook.el), field(L.hadithNumber, inputs.hadithNumber), field(L.groupId, inputs.groupId),
+        field(L.position, inputs.position, 'ترتيب الحديث داخل مجموعته.'),
+        field(L.sanadSource, inputs.sanadSource.el, 'الكتاب الذي أُخذ منه السند؛ باختياره يُختار مصنِّفه.'),
+        field(L.collector, inputs.collector.el, 'صاحب الكتاب الذي أُخذ منه السند (النووي إن لم يكن للسند كتاب).'),
+        field(L.sahabi, sahabiPick, base.sahabi ? `المكتوب الآن: ${base.sahabi}` : 'يُكتب اسمه كما في قائمة الرواة.'),
+        field(L.takhrij, inputs.takhrij.el), field(L.chapter, inputs.chapter), field(L.grade, inputs.grade.el))),
     h('div', { class: 'card' }, h('h3', { style: 'margin-top:0' }, 'السند'),
       h('p', { class: 'muted small' }, 'رتِّب الرواة من جهة المصنف إلى الصحابي. الراوي الجديد يُنشأ أولاً في تبويب الرواة.'),
       chain.el),
