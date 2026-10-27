@@ -2,6 +2,11 @@ package com.mutqan.hadith.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mutqan.hadith.domain.account.AccountUser
+import com.mutqan.hadith.domain.account.AuthRepository
+import com.mutqan.hadith.domain.account.NoGoogleAccount
+import com.mutqan.hadith.domain.account.SignInCancelled
+import com.mutqan.hadith.domain.account.SignedOutAuth
 import com.mutqan.hadith.domain.backup.BackupException
 import com.mutqan.hadith.domain.backup.BackupFileStore
 import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
@@ -41,6 +46,9 @@ sealed interface SettingsMessage {
     data class ImportRejected(val problem: ImportProblem) : SettingsMessage
     data object ProgressReset : SettingsMessage
     data object ResetFailed : SettingsMessage
+    data object SignInFailed : SettingsMessage
+    data object NoGoogleAccountOnDevice : SettingsMessage
+    data object SignedOut : SettingsMessage
 }
 
 data class SettingsUi(
@@ -52,6 +60,8 @@ data class SettingsUi(
     val unlockAllLayers: Boolean = false,
     /** What the learner said about where they start in the Forty Hadith; null until they have been asked. */
     val startingPoint: StartingPoint? = null,
+    /** The Google account signed in, or null: the app works the same without one. */
+    val account: AccountUser? = null,
 )
 
 class SettingsViewModel(
@@ -60,16 +70,22 @@ class SettingsViewModel(
     private val resetProgress: ResetProgressUseCase,
     private val files: BackupFileStore,
     private val studyPreferences: StudyPreferences = InMemoryStudyPreferences(),
+    private val auth: AuthRepository = SignedOutAuth(),
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        SettingsUi(unlockAllLayers = studyPreferences.unlockAllLayers.value, startingPoint = studyPreferences.startingPoint.value),
+        SettingsUi(
+            unlockAllLayers = studyPreferences.unlockAllLayers.value,
+            startingPoint = studyPreferences.startingPoint.value,
+            account = auth.user.value,
+        ),
     )
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
 
     init {
         // The starting point is changed on a screen of its own, above this one; coming back shows the new answer.
         studyPreferences.startingPoint.onEach { point -> _state.update { it.copy(startingPoint = point) } }.launchIn(viewModelScope)
+        auth.user.onEach { account -> _state.update { it.copy(account = account) } }.launchIn(viewModelScope)
     }
 
     /** The name the file picker offers for a new backup. */
@@ -144,6 +160,32 @@ class SettingsViewModel(
     fun setUnlockAllLayers(enabled: Boolean) {
         studyPreferences.setUnlockAllLayers(enabled)
         _state.update { it.copy(unlockAllLayers = enabled) }
+    }
+
+    /**
+     * Signs in with the Google account [chooseToken] gets from the person (it opens the system's account chooser).
+     * Leaving the chooser is not an error and says nothing.
+     */
+    fun signIn(chooseToken: suspend () -> String) = runExclusively {
+        val message = try {
+            auth.signInWithGoogle(chooseToken())
+            null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: SignInCancelled) {
+            null
+        } catch (e: NoGoogleAccount) {
+            SettingsMessage.NoGoogleAccountOnDevice
+        } catch (e: Exception) {
+            SettingsMessage.SignInFailed
+        }
+        if (message != null) _state.update { it.copy(message = message) }
+    }
+
+    /** Signs out; the progress on the phone stays where it is. */
+    fun signOut() {
+        auth.signOut()
+        _state.update { it.copy(message = SettingsMessage.SignedOut) }
     }
 
     fun messageShown() = _state.update { it.copy(message = null) }

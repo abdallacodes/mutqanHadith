@@ -40,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -53,10 +54,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.data.auth.GoogleSignInHelper
 import com.mutqan.hadith.domain.backup.PreparedBackup
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.labelRes
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -67,6 +70,7 @@ private val BACKUP_MIME_TYPES = arrayOf("application/json", "text/*", "applicati
 
 @Composable
 fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlacement: () -> Unit = {}) {
+    val scope = rememberCoroutineScope()
     val ui by viewModel.state.collectAsStateWithLifecycle()
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let { viewModel.exportTo(it.toString()) }
@@ -76,6 +80,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlace
     }
     val context = LocalContext.current
     val languages = remember(context) { AppLanguageController(context) }
+    val googleSignIn = remember(context) { GoogleSignInHelper(context.getString(R.string.default_web_client_id)) }
     SettingsScreen(
         ui = ui,
         appVersion = remember(context) { appVersionName(context) },
@@ -92,6 +97,11 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlace
             onLanguageSelected = languages::select,
             onUnlockAllLayersChanged = viewModel::setUnlockAllLayers,
             onOpenPlacement = onOpenPlacement,
+            onSignIn = { viewModel.signIn { googleSignIn.idToken(context) } },
+            onSignOut = {
+                viewModel.signOut()
+                scope.launch { googleSignIn.forget(context) }
+            },
         ),
     )
 }
@@ -108,6 +118,8 @@ data class SettingsActions(
     val onLanguageSelected: (AppLanguage) -> Unit = {},
     val onUnlockAllLayersChanged: (Boolean) -> Unit = {},
     val onOpenPlacement: () -> Unit = {},
+    val onSignIn: () -> Unit = {},
+    val onSignOut: () -> Unit = {},
 )
 
 @Composable
@@ -138,6 +150,24 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                 if (ui.isBusy) {
                     val busy = stringResource(R.string.settings_busy)
                     LinearProgressIndicator(Modifier.fillMaxWidth().semantics { contentDescription = busy })
+                }
+                SettingsGroup(stringResource(R.string.settings_section_account)) {
+                    val account = ui.account
+                    if (account == null) {
+                        SettingsRow(
+                            title = stringResource(R.string.settings_sign_in),
+                            supporting = stringResource(R.string.settings_sign_in_hint),
+                            enabled = !ui.isBusy,
+                            onClick = actions.onSignIn,
+                        )
+                    } else {
+                        SettingsRow(
+                            title = account.displayName.ifBlank { account.email },
+                            supporting = stringResource(R.string.settings_signed_in_hint, account.email),
+                            enabled = !ui.isBusy,
+                            onClick = actions.onSignOut,
+                        )
+                    }
                 }
                 SettingsGroup(stringResource(R.string.settings_section_general)) {
                     SettingsRow(
@@ -225,6 +255,9 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     SettingsMessage.Imported -> stringResource(R.string.settings_msg_imported)
     SettingsMessage.ProgressReset -> stringResource(R.string.settings_msg_reset)
     SettingsMessage.ResetFailed -> stringResource(R.string.settings_msg_reset_failed)
+    SettingsMessage.SignInFailed -> stringResource(R.string.settings_msg_sign_in_failed)
+    SettingsMessage.NoGoogleAccountOnDevice -> stringResource(R.string.settings_msg_no_google_account)
+    SettingsMessage.SignedOut -> stringResource(R.string.settings_msg_signed_out)
     is SettingsMessage.ImportRejected -> when (val problem = message.problem) {
         ImportProblem.NotABackup -> stringResource(R.string.settings_err_not_backup)
         ImportProblem.Corrupt -> stringResource(R.string.settings_err_corrupt)

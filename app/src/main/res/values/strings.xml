@@ -561,6 +561,13 @@
     <string name="booktest_result_of">قُيّم %1$d من %2$d حديثًا</string>
     <string name="booktest_result_note">تحدّثت حالة كل حديث قيّمته، وتتبعها مراجعاتك القادمة.</string>
     <string name="booktest_result_none">لم تُقيَّم أحاديث، فبقي كل شيء على حاله.</string>
+    <string name="settings_section_account">الحساب</string>
+    <string name="settings_sign_in">تسجيل الدخول بحساب Google</string>
+    <string name="settings_sign_in_hint">احفظ تقدّمك في حسابك. التطبيق يعمل كاملًا دون حساب.</string>
+    <string name="settings_signed_in_hint">مسجَّل بالحساب %1$s. اضغط لتسجيل الخروج.</string>
+    <string name="settings_msg_sign_in_failed">تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى.</string>
+    <string name="settings_msg_no_google_account">لا يوجد حساب Google على هذا الجهاز. أضف حسابًا من إعدادات الجهاز ثم حاول مرة أخرى.</string>
+    <string name="settings_msg_signed_out">تم تسجيل الخروج. تبقى بياناتك على هذا الجهاز.</string>
     <string name="settings_starting_point">نقطة البداية</string>
     <string name="settings_starting_point_hint">حالتك في حفظ الأربعين: %1$s. اضغط للتغيير أو لتقييم أحاديثك.</string>
     <string name="settings_starting_point_unset">لم تحدّد نقطة بدايتك بعد. اضغط لتحديدها.</string>

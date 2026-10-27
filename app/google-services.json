@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "121183904310-f72jppcq1dv98vo3idaar3pgt7h2e38b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mutqan.hadith",
+            "certificate_hash": "da739573cb1876e2530601c88bf50454d387f335"
+          }
+        },
+        {
+          "client_id": "121183904310-lb4migjft63le9gjqvm0ftfkmg40so2r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mutqan.hadith",
+            "certificate_hash": "8769c63f03b544bfaa1c5233054c9199a515ed25"
+          }
+        },
+        {
           "client_id": "121183904310-4fc2hpr587sk58evf38vlgen8juj3n1g.apps.googleusercontent.com",
           "client_type": 3
         }

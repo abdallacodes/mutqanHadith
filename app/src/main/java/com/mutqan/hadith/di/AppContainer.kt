@@ -1,6 +1,7 @@
 package com.mutqan.hadith.di
 
 import android.content.Context
+import com.mutqan.hadith.data.auth.FirebaseAuthRepository
 import com.mutqan.hadith.data.backup.ContentResolverBackupFileStore
 import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.data.repository.RoomBackupRepository
@@ -9,6 +10,7 @@ import com.mutqan.hadith.data.repository.RoomHadithRepository
 import com.mutqan.hadith.data.repository.RoomNarratorRepository
 import com.mutqan.hadith.data.repository.RoomReviewRepository
 import com.mutqan.hadith.data.settings.SharedPreferencesStudyPreferences
+import com.mutqan.hadith.domain.account.AuthRepository
 import com.mutqan.hadith.domain.backup.BackupFileStore
 import com.mutqan.hadith.domain.backup.BackupRepository
 import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
@@ -61,6 +63,7 @@ class AppContainer(
     val collectionRepository: CollectionRepository by lazy { RoomCollectionRepository(database) }
     val backupRepository: BackupRepository by lazy { RoomBackupRepository(database) }
     val backupFiles: BackupFileStore by lazy { ContentResolverBackupFileStore(appContext.contentResolver) }
+    val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
     val studyPreferences: StudyPreferences by lazy { SharedPreferencesStudyPreferences(appContext) }
     val dailyPacing: DailyPacing by lazy { DailyPacing(studyPreferences) }
     val scheduler: SpacedRepetitionScheduler by lazy { DualDecayScheduler(unlockAllLayers = studyPreferences.unlockAllLayers) }

@@ -208,7 +208,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **1002 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **1011 tests**: JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.

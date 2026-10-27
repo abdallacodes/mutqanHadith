@@ -526,6 +526,13 @@
     <string name="booktest_result_of">%1$d of %2$d hadiths graded</string>
     <string name="booktest_result_note">The status of every hadith you graded is updated, and your next reviews follow it.</string>
     <string name="booktest_result_none">No hadith was graded, so everything stays as it was.</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_sign_in">Sign in with Google</string>
+    <string name="settings_sign_in_hint">Keep your progress in your account. The app works fully without one.</string>
+    <string name="settings_signed_in_hint">Signed in as %1$s. Tap to sign out.</string>
+    <string name="settings_msg_sign_in_failed">Could not sign in. Check your connection and try again.</string>
+    <string name="settings_msg_no_google_account">There is no Google account on this device. Add one in the device settings and try again.</string>
+    <string name="settings_msg_signed_out">Signed out. Your data stays on this device.</string>
     <string name="settings_starting_point">Your starting point</string>
     <string name="settings_starting_point_hint">Your standing in the Forty: %1$s. Tap to change it or to grade your hadiths.</string>
     <string name="settings_starting_point_unset">You have not set your starting point yet. Tap to set it.</string>
