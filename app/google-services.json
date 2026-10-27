@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "121183904310",
+    "project_id": "mutqan-hadith",
+    "storage_bucket": "mutqan-hadith.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121183904310:android:70bf230d6518cfe032ae97",
+        "android_client_info": {
+          "package_name": "com.mutqan.hadith"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "121183904310-4fc2hpr587sk58evf38vlgen8juj3n1g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPw8f522qzAKJ8iyQ8VhzZjqwAVrDvnZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "121183904310-4fc2hpr587sk58evf38vlgen8juj3n1g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
