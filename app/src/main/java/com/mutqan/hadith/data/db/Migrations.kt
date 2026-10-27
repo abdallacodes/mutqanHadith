@@ -72,5 +72,18 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8)
+    /**
+     * The cloud catalog: one column on each table the catalog owns, saying when the cloud last wrote the row (0 = never,
+     * which is every row there is). Nothing the user owns is touched. Until the first pull the rows are the bundled
+     * catalog's, as they were.
+     */
+    val V8_TO_V9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            listOf("hadith", "narrator", "catalog_group").forEach {
+                db.execSQL("ALTER TABLE $it ADD COLUMN catalogUpdatedAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8, V8_TO_V9)
 }

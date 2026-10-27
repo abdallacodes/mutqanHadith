@@ -16,6 +16,8 @@ import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.LibraryIds
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
 import com.mutqan.hadith.domain.backup.UserData
+import com.mutqan.hadith.domain.catalog.CatalogStatus
+import com.mutqan.hadith.domain.catalog.LibraryUpdates
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.sync.AccountSync
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
@@ -107,8 +109,23 @@ class AccountSettingsTest {
         }
     }
 
+    private class FakeLibrary : LibraryUpdates {
+        val currentStatus = MutableStateFlow<CatalogStatus>(CatalogStatus.Idle)
+        val checked = MutableStateFlow<Long?>(null)
+        val updated = MutableStateFlow<Long?>(null)
+        override val status: StateFlow<CatalogStatus> = currentStatus
+        override val checkedAt: StateFlow<Long?> = checked
+        override val updatedAt: StateFlow<Long?> = updated
+        val refreshes = mutableListOf<Boolean>()
+
+        override fun refresh(force: Boolean) {
+            refreshes += force
+        }
+    }
+
     private val auth = FakeAuth()
     private val sync = FakeSync()
+    private val library = FakeLibrary()
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -120,7 +137,7 @@ class AccountSettingsTest {
         val backup = EmptyBackup()
         return SettingsViewModel(
             ExportUserDataUseCase(backup), ImportUserDataUseCase(backup), ResetProgressUseCase(backup), NoFiles(),
-            InMemoryStudyPreferences(), auth, sync,
+            InMemoryStudyPreferences(), auth, sync, library,
         )
     }
 
@@ -219,6 +236,7 @@ class AccountSettingsTest {
                         onSignOut = vm::signOut,
                         onSyncNow = vm::syncNow,
                         onChooseSync = vm::chooseSync,
+                        onCheckLibrary = vm::checkLibrary,
                     ),
                     language,
                 )
@@ -258,6 +276,43 @@ class AccountSettingsTest {
         vm.signIn { "token" }
         showSettings(vm = vm)
         return vm
+    }
+
+    @Test
+    fun theLibraryRowIsThereWithoutAnAccountAndChecksForANewerLibraryOnTap() {
+        showSettings()
+
+        compose.onNodeWithText("المكتبة").assertExists()
+        compose.onNodeWithText("لم يُبحث عن جديد الأحاديث بعد. اضغط للتحقق الآن.").assertExists()
+        compose.onNodeWithText("تحديث المكتبة").performClick()
+
+        assertEquals(listOf(true), library.refreshes)
+    }
+
+    @Test
+    fun theLibraryRowSaysWhenItWasCheckedAndWhenItLastChanged() {
+        showSettings()
+
+        library.checked.value = 1_700_000_000_000
+        compose.waitForIdle()
+        compose.onNodeWithText("المكتبة محدَّثة، وآخر فحص", substring = true).assertExists()
+
+        library.updated.value = 1_700_000_100_000
+        compose.waitForIdle()
+        compose.onNodeWithText("آخر تحديث للمكتبة", substring = true).assertExists()
+    }
+
+    @Test
+    fun theLibraryRowShowsWhileCheckingAndAfterAFailure() {
+        showSettings()
+
+        library.currentStatus.value = CatalogStatus.Checking
+        compose.waitForIdle()
+        compose.onNodeWithText("جارٍ البحث عن تحديث…").assertExists()
+
+        library.currentStatus.value = CatalogStatus.Failed
+        compose.waitForIdle()
+        compose.onNodeWithText("تعذّر الاتصال. سنعيد المحاولة لاحقًا، أو اضغط للمحاولة الآن.").assertExists()
     }
 
     @Test

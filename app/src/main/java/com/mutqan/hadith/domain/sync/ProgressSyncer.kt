@@ -99,6 +99,13 @@ class ProgressSyncer(
         scope.launch { run(uid, null) }
     }
 
+    /** [syncNow] for a caller that has to wait for the result, such as a background job. True unless the sync failed. */
+    suspend fun syncAndAwait(): Boolean {
+        val uid = auth.user.value?.uid ?: return true
+        run(uid, null)
+        return _status.value != SyncStatus.Failed
+    }
+
     override fun choose(choice: FirstSyncChoice) {
         val uid = auth.user.value?.uid ?: return
         scope.launch { run(uid, choice, force = true) }

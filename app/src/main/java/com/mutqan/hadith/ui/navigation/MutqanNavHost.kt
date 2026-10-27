@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.ViewModelProvider
@@ -201,8 +203,11 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
     ) {
         composable(Routes.HOME) {
             val viewModel: HomeViewModel = viewModel(factory = container.homeViewModelFactory())
+            val refreshing by container.syncCoordinator.refreshing.collectAsStateWithLifecycle()
             HomeRoute(
                 viewModel = viewModel,
+                refreshing = refreshing,
+                onRefresh = container.syncCoordinator::refreshNow,
                 actions = HomeActions(
                     onStartDueReview = { navController.navigate(Routes.review(ReviewMode.DUE)) },
                     onStartAheadReview = { navController.navigate(Routes.review(ReviewMode.AHEAD)) },

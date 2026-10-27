@@ -137,10 +137,18 @@ first launch, and the app is whole without a network or an account; there is no 
 `INTERNET`, used for the optional Google sign-in (Firebase Authentication through Credential Manager). Signed in, the
 learner's progress (mastery records, narrator review events, starting point) is kept in Cloud Firestore under
 `users/{uid}` and synced: on sign-in, on opening the app, shortly after a burst of reviews, and from *Sync now* in
-Settings. A hadith's record comes from whichever side reviewed it last, narrator events are added from both sides, and
+Settings. It also syncs when the app is left, on pulling down on Home, and about every twelve hours in the background
+(WorkManager, on a network). A hadith's record comes from whichever side reviewed it last, narrator events are added from both sides, and
 when a phone and an account both hold progress the first sync asks how to combine them. `firestore.rules` (tested
 against the emulator with `npm test` in `firebase-tests/`) lets each learner touch only their own data. Backups are
 still plain JSON files saved and restored through the Android document picker.
+
+The library itself can also be updated from the cloud without an app release: an admin account (the Firebase custom claim
+`admin`, set with `admin-tools/set-admin.js`) edits `catalog_hadith`, `catalog_narrator` and `catalog_group` in
+Firestore, and every app, signed in or not, reads them at start (one small read when nothing changed) and applies them to
+Room in one transaction. The bundled catalog stays as the offline start and is uploaded once with
+`admin-tools/upload-seed.js`; a row the cloud has written is never overwritten by a bundled catalog update, and an edit
+never touches a learner's progress.
 
 ### Non-destructive catalog migrations
 
@@ -213,7 +221,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **1046 tests** (plus 13 rules tests in `firebase-tests/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **1084 tests** (plus 22 rules tests in `firebase-tests/` and 8 upload tests in `admin-tools/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.

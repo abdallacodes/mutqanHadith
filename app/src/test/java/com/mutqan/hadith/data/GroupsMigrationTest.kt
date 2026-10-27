@@ -35,7 +35,8 @@ class GroupsMigrationTest {
 
     /** Every table version 6 had, with the columns it had: those of `hadith` are the ones before groupId and position. */
     private val versionSixTables = linkedMapOf(
-        "narrator" to "*",
+        // The cloud catalog later added a column to the narrator table; what was there in version 6 is what is compared.
+        "narrator" to "id, primaryName, fullName, tier, isPivot",
         "hadith" to "id, matnWithTashkeel, matnClean, sourceBook, hadithNumber, chapter, grade, collector, takhrij, sahabi, level",
         "sanad_edge" to "*",
         "narrator_review_event" to "*",
@@ -138,7 +139,7 @@ class GroupsMigrationTest {
         val db = open("v6.db")
         val after = dump { db.openHelper.writableDatabase.query(it) }
 
-        assertEquals(8, db.openHelper.writableDatabase.version)
+        assertEquals(9, db.openHelper.writableDatabase.version)
         versionSixTables.keys.forEach { table -> assertEquals("rows of $table", before.getValue(table), after.getValue(table)) }
         db.close()
     }

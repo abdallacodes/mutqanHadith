@@ -533,6 +533,13 @@
     <string name="settings_msg_sign_in_failed">Could not sign in. Check your connection and try again.</string>
     <string name="settings_msg_no_google_account">There is no Google account on this device. Add one in the device settings and try again.</string>
     <string name="settings_msg_signed_out">Signed out. Your data stays on this device.</string>
+    <string name="settings_section_library">Library</string>
+    <string name="settings_library_update">Update the library</string>
+    <string name="settings_library_never">Not checked for new hadiths yet. Tap to check now.</string>
+    <string name="settings_library_current">The library is up to date. Last checked: %1$s. Tap to check now.</string>
+    <string name="settings_library_updated">Library last updated: %1$s. Tap to check for more.</string>
+    <string name="settings_library_checking">Looking for an update…</string>
+    <string name="settings_library_failed">Could not connect. We will try again later, or tap to try now.</string>
     <string name="settings_sync">Sync now</string>
     <string name="settings_sync_never">Your progress is not saved in your account yet. Tap to sync.</string>
     <string name="settings_sync_last">Last synced: %1$s. Tap to sync now.</string>

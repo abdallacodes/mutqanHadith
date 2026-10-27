@@ -13,6 +13,9 @@ import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.PreparedBackup
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
+import com.mutqan.hadith.domain.catalog.CatalogStatus
+import com.mutqan.hadith.domain.catalog.LibraryUpdates
+import com.mutqan.hadith.domain.catalog.NoLibraryUpdates
 import com.mutqan.hadith.domain.model.StartingPoint
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.settings.StudyPreferences
@@ -70,6 +73,11 @@ data class SettingsUi(
     val syncStatus: SyncStatus = SyncStatus.Idle,
     /** When the progress last reached the account (epoch millis); null if it never has. */
     val lastSyncedAt: Long? = null,
+    /** Where the check for a newer library stands. */
+    val libraryStatus: CatalogStatus = CatalogStatus.Idle,
+    /** When the cloud was last asked for a newer library, and when the library last changed because of it. */
+    val libraryCheckedAt: Long? = null,
+    val libraryUpdatedAt: Long? = null,
 )
 
 class SettingsViewModel(
@@ -80,6 +88,7 @@ class SettingsViewModel(
     private val studyPreferences: StudyPreferences = InMemoryStudyPreferences(),
     private val auth: AuthRepository = SignedOutAuth(),
     private val accountSync: AccountSync = NoAccountSync(),
+    private val libraryUpdates: LibraryUpdates = NoLibraryUpdates(),
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -89,6 +98,9 @@ class SettingsViewModel(
             account = auth.user.value,
             syncStatus = accountSync.status.value,
             lastSyncedAt = accountSync.lastSyncedAt.value,
+            libraryStatus = libraryUpdates.status.value,
+            libraryCheckedAt = libraryUpdates.checkedAt.value,
+            libraryUpdatedAt = libraryUpdates.updatedAt.value,
         ),
     )
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
@@ -99,7 +111,13 @@ class SettingsViewModel(
         auth.user.onEach { account -> _state.update { it.copy(account = account) } }.launchIn(viewModelScope)
         accountSync.status.onEach { status -> _state.update { it.copy(syncStatus = status) } }.launchIn(viewModelScope)
         accountSync.lastSyncedAt.onEach { at -> _state.update { it.copy(lastSyncedAt = at) } }.launchIn(viewModelScope)
+        libraryUpdates.status.onEach { status -> _state.update { it.copy(libraryStatus = status) } }.launchIn(viewModelScope)
+        libraryUpdates.checkedAt.onEach { at -> _state.update { it.copy(libraryCheckedAt = at) } }.launchIn(viewModelScope)
+        libraryUpdates.updatedAt.onEach { at -> _state.update { it.copy(libraryUpdatedAt = at) } }.launchIn(viewModelScope)
     }
+
+    /** Looks for a newer library now, instead of waiting for the next time the app opens. */
+    fun checkLibrary() = libraryUpdates.refresh(force = true)
 
     /** Syncs the progress with the account now, instead of waiting for the next trigger. */
     fun syncNow() = accountSync.syncNow()

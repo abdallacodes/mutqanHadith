@@ -155,18 +155,25 @@ object SeedLoader {
      * that nothing refers to any more are removed. A database whose [appliedVersion] predates [RETIRED_IN] first
      * drops the hadiths the catalog no longer carries. The groups are rewritten as a whole: nothing the user owns refers
      * to one. Call inside a transaction.
+     *
+     * A row the cloud catalog has written (`catalogUpdatedAt` above 0) belongs to the cloud from then on: this leaves it,
+     * its chain and its place alone, so that an app update never undoes an admin's edit. Rows the cloud has not touched
+     * are refreshed as before.
      */
     fun sync(db: SupportSQLiteDatabase, data: SeedData, appliedVersion: Int) {
         if (appliedVersion < RETIRED_IN) retireMissing(db, data)
-        db.execSQL("DELETE FROM catalog_group")
-        data.groups.forEach { db.insert("catalog_group", CONFLICT_ABORT, groupValues(it)) }
+        db.execSQL("DELETE FROM catalog_group WHERE catalogUpdatedAt = 0")
+        val cloudGroups = ids(db, "catalog_group")
+        data.groups.filter { it.id !in cloudGroups }.forEach { db.insert("catalog_group", CONFLICT_ABORT, groupValues(it)) }
         val knownHadiths = ids(db, "hadith")
+        val cloudHadiths = cloudOwned(db, "hadith")
+        val cloudNarrators = cloudOwned(db, "narrator")
         val storedChains = chains(db)
         val newChains = data.edges.groupBy { it.hadithId }.mapValues { (_, edges) ->
             edges.sortedBy { it.orderIndex }.map { it.narratorId to it.transmissionTerm }
         }
         val replaced = data.hadiths.map { it.id }
-            .filter { it in knownHadiths && storedChains[it].orEmpty() != newChains[it].orEmpty() }
+            .filter { it in knownHadiths && it !in cloudHadiths && storedChains[it].orEmpty() != newChains[it].orEmpty() }
             .toSet()
         // The old chains go first, so that no narrator row is rewritten under an edge that still means someone else.
         replaced.forEach {
@@ -176,7 +183,9 @@ object SeedLoader {
 
         val knownNarrators = ids(db, "narrator")
         data.narrators.forEach {
-            if (it.id in knownNarrators) {
+            if (it.id in cloudNarrators) {
+                // The cloud owns this narrator.
+            } else if (it.id in knownNarrators) {
                 db.update("narrator", CONFLICT_NONE, narratorValues(it), "id = ?", arrayOf(it.id))
             } else {
                 db.insert("narrator", CONFLICT_ABORT, narratorValues(it))
@@ -184,19 +193,22 @@ object SeedLoader {
         }
 
         data.hadiths.forEach {
-            if (it.id in knownHadiths) {
+            if (it.id in cloudHadiths) {
+                // The cloud owns this hadith.
+            } else if (it.id in knownHadiths) {
                 db.update("hadith", CONFLICT_NONE, hadithValues(it), "id = ?", arrayOf(it.id))
             } else {
                 db.insert("hadith", CONFLICT_ABORT, hadithValues(it))
             }
         }
-        data.edges.filter { it.hadithId !in knownHadiths || it.hadithId in replaced }.forEach {
+        data.edges.filter { it.hadithId !in cloudHadiths && (it.hadithId !in knownHadiths || it.hadithId in replaced) }.forEach {
             db.insert("sanad_edge", CONFLICT_ABORT, edgeValues(it))
         }
 
         val wanted = data.narrators.joinToString(",") { it.id.toString() }
         db.execSQL(
             "DELETE FROM narrator WHERE id NOT IN ($wanted) " +
+                "AND catalogUpdatedAt = 0 " +
                 "AND id NOT IN (SELECT narratorId FROM sanad_edge) " +
                 "AND id NOT IN (SELECT narratorId FROM narrator_review_event)"
         )
@@ -222,6 +234,12 @@ object SeedLoader {
                 chains.getOrPut(cursor.getLong(0)) { mutableListOf() } += cursor.getLong(1) to cursor.getString(2)
             }
             chains
+        }
+
+    /** The ids of the rows of [table] the cloud catalog has written. */
+    private fun cloudOwned(db: SupportSQLiteDatabase, table: String): Set<Long> =
+        db.query("SELECT id FROM $table WHERE catalogUpdatedAt > 0").use { cursor ->
+            buildSet { while (cursor.moveToNext()) add(cursor.getLong(0)) }
         }
 
     private fun ids(db: SupportSQLiteDatabase, table: String): Set<Long> =

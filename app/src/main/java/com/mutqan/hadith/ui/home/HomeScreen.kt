@@ -26,7 +26,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -78,15 +80,29 @@ data class HomeActions(
 )
 
 @Composable
-fun HomeRoute(viewModel: HomeViewModel, actions: HomeActions) {
+fun HomeRoute(
+    viewModel: HomeViewModel,
+    actions: HomeActions,
+    /** True while the library or the progress is being synced; shows the pull-to-refresh indicator. */
+    refreshing: Boolean = false,
+    /** The learner pulled down: look for a newer library and sync the progress now. */
+    onRefresh: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Coming back from a review changes what is due; the data flow updates itself, due-ness needs a nudge.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
-    HomeScreen(state = state, actions = actions, onRetry = viewModel::refresh)
+    HomeScreen(state = state, actions = actions, onRetry = viewModel::refresh, refreshing = refreshing, onRefresh = onRefresh)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(state: UiState<StudyDashboard>, actions: HomeActions, onRetry: () -> Unit) {
+fun HomeScreen(
+    state: UiState<StudyDashboard>,
+    actions: HomeActions,
+    refreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
+    onRetry: () -> Unit,
+) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -102,7 +118,12 @@ fun HomeScreen(state: UiState<StudyDashboard>, actions: HomeActions, onRetry: ()
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.TopCenter,
+        ) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { dashboard ->
                 HomeContent(dashboard, actions, Modifier.contentWidth())
             }

@@ -9,7 +9,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.usecase.ComponentRetention
 import com.mutqan.hadith.domain.usecase.DualRetention
@@ -84,6 +87,34 @@ class DailyDashboardScreensTest {
 
     private fun showHome(dashboard: StudyDashboard) =
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard), actions) {} } }
+
+    @Test
+    fun home_pullingDownAsksForARefreshOfTheLibraryAndTheProgress() {
+        var refreshes = 0
+        compose.setContent {
+            MutqanHadithTheme {
+                HomeScreen(UiState.Success(dashboard(learning = 4, ahead = 4)), actions, refreshing = false, onRefresh = { refreshes++ }) {}
+            }
+        }
+
+        compose.onRoot().performTouchInput { swipeDown(startY = top + 200f, endY = top + 1_400f, durationMillis = 400) }
+        compose.waitForIdle()
+
+        assertEquals(1, refreshes)
+    }
+
+    @Test
+    fun home_withNothingToRefreshAndNoPullTheRefreshIsNotAsked() {
+        var refreshes = 0
+        compose.setContent {
+            MutqanHadithTheme {
+                HomeScreen(UiState.Success(dashboard(learning = 4, ahead = 4)), actions, refreshing = true, onRefresh = { refreshes++ }) {}
+            }
+        }
+        compose.waitForIdle()
+
+        assertEquals(0, refreshes)
+    }
 
     private fun streakOf(days: Int, studiedToday: Boolean = true) =
         StudyStreak(current = days, longest = days, studiedToday = studiedToday, studyDays = days, lastSevenDays = List(7) { true })

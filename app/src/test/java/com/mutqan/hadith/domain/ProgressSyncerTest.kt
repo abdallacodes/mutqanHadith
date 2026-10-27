@@ -177,6 +177,23 @@ class ProgressSyncerTest {
     }
 
     @Test
+    fun aCallerThatWaitsLearnsWhetherTheSyncGotThrough() = runTest {
+        phone.data = UserData(listOf(record(1, 100)), emptyList())
+        val syncer = syncer()
+        runCurrent()
+        assertEquals("nobody to sync", true, syncer.syncAndAwait())
+
+        auth.current.value = sara
+        runCurrent()
+        account.failing = true
+        assertEquals(false, syncer.syncAndAwait())
+
+        account.failing = false
+        assertEquals(true, syncer.syncAndAwait())
+        assertEquals(setOf(1L), account.mastery.keys)
+    }
+
+    @Test
     fun aResetWhileSignedOutLeavesTheAccountAlone() = runTest {
         account.mastery[1] = record(1, 100)
         val syncer = syncer()

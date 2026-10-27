@@ -568,6 +568,13 @@
     <string name="settings_msg_sign_in_failed">تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى.</string>
     <string name="settings_msg_no_google_account">لا يوجد حساب Google على هذا الجهاز. أضف حسابًا من إعدادات الجهاز ثم حاول مرة أخرى.</string>
     <string name="settings_msg_signed_out">تم تسجيل الخروج. تبقى بياناتك على هذا الجهاز.</string>
+    <string name="settings_section_library">المكتبة</string>
+    <string name="settings_library_update">تحديث المكتبة</string>
+    <string name="settings_library_never">لم يُبحث عن جديد الأحاديث بعد. اضغط للتحقق الآن.</string>
+    <string name="settings_library_current">المكتبة محدَّثة، وآخر فحص: %1$s. اضغط للتحقق الآن.</string>
+    <string name="settings_library_updated">آخر تحديث للمكتبة: %1$s. اضغط للتحقق من جديد.</string>
+    <string name="settings_library_checking">جارٍ البحث عن تحديث…</string>
+    <string name="settings_library_failed">تعذّر الاتصال. سنعيد المحاولة لاحقًا، أو اضغط للمحاولة الآن.</string>
     <string name="settings_sync">مزامنة الآن</string>
     <string name="settings_sync_never">لم يُحفظ تقدّمك في الحساب بعد. اضغط للمزامنة.</string>
     <string name="settings_sync_last">آخر مزامنة: %1$s. اضغط للمزامنة الآن.</string>

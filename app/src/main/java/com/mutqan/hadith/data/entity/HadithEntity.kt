@@ -34,4 +34,10 @@ data class HadithEntity(
      * chain is the Companion alone because no narration of the hadith could be followed to him.
      */
     @ColumnInfo(defaultValue = "''") val sanadSource: String = "",
+    /**
+     * When the cloud catalog last wrote this row (the document's `updatedAt`, epoch millis); 0 for a row that only the
+     * bundled catalog has written. From the first cloud write on the cloud owns the row and a bundled catalog never
+     * overwrites it (see `SeedLoader.sync`).
+     */
+    @ColumnInfo(defaultValue = "0") val catalogUpdatedAt: Long = 0,
 )

@@ -122,7 +122,13 @@ class CollectionsMigrationTest {
 
     private fun dump(query: (String) -> Cursor): Map<String, List<List<String?>>> =
         versionFiveTables.associateWith { table ->
-            query("SELECT ${if (table == "hadith") versionFiveHadithColumns else "*"} FROM $table ORDER BY rowid").rows()
+            val columns = when (table) {
+                "hadith" -> versionFiveHadithColumns
+                // The cloud catalog later added a column to the narrator table; what was there in version 5 is what is compared.
+                "narrator" -> "id, primaryName, fullName, tier, isPivot"
+                else -> "*"
+            }
+            query("SELECT $columns FROM $table ORDER BY rowid").rows()
         }
 
     private fun rawDump(name: String): Map<String, List<List<String?>>> =
@@ -148,7 +154,7 @@ class CollectionsMigrationTest {
         val db = open("v5.db")
         val after = dump { db.openHelper.writableDatabase.query(it) }
 
-        assertEquals("the migrated database is the current version", 8, db.openHelper.writableDatabase.version)
+        assertEquals("the migrated database is the current version", 9, db.openHelper.writableDatabase.version)
         assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(db.openHelper.writableDatabase))
         versionFiveTables.forEach { table -> assertEquals("rows of $table", before.getValue(table), after.getValue(table)) }
         db.close()

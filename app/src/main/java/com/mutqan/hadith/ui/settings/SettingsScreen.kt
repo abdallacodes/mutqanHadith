@@ -56,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.auth.GoogleSignInHelper
 import com.mutqan.hadith.domain.backup.PreparedBackup
+import com.mutqan.hadith.domain.catalog.CatalogStatus
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
 import com.mutqan.hadith.domain.sync.SyncStatus
 import com.mutqan.hadith.ui.common.MutqanTopBar
@@ -100,6 +101,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlace
             onUnlockAllLayersChanged = viewModel::setUnlockAllLayers,
             onOpenPlacement = onOpenPlacement,
             onSyncNow = viewModel::syncNow,
+            onCheckLibrary = viewModel::checkLibrary,
             onChooseSync = viewModel::chooseSync,
             onSignIn = { viewModel.signIn { googleSignIn.idToken(context) } },
             onSignOut = {
@@ -126,6 +128,7 @@ data class SettingsActions(
     val onSignOut: () -> Unit = {},
     val onSyncNow: () -> Unit = {},
     val onChooseSync: (FirstSyncChoice) -> Unit = {},
+    val onCheckLibrary: () -> Unit = {},
 )
 
 @Composable
@@ -190,6 +193,20 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                             onClick = if (syncChoice != null) ({ syncChoiceHidden = false }) else actions.onSyncNow,
                         )
                     }
+                }
+                SettingsGroup(stringResource(R.string.settings_section_library)) {
+                    SettingsRow(
+                        title = stringResource(R.string.settings_library_update),
+                        supporting = when {
+                            ui.libraryStatus == CatalogStatus.Checking -> stringResource(R.string.settings_library_checking)
+                            ui.libraryStatus == CatalogStatus.Failed -> stringResource(R.string.settings_library_failed)
+                            ui.libraryUpdatedAt != null -> stringResource(R.string.settings_library_updated, formatDayTime(ui.libraryUpdatedAt))
+                            ui.libraryCheckedAt != null -> stringResource(R.string.settings_library_current, formatDayTime(ui.libraryCheckedAt))
+                            else -> stringResource(R.string.settings_library_never)
+                        },
+                        enabled = ui.libraryStatus != CatalogStatus.Checking,
+                        onClick = actions.onCheckLibrary,
+                    )
                 }
                 SettingsGroup(stringResource(R.string.settings_section_general)) {
                     SettingsRow(
