@@ -85,6 +85,19 @@ test('a narrator needs a name and a tier; a group needs a title and may not sit 
   assert.equal(core.validateGroup(group(4, { title: '' }), groups).length, 1);
 });
 
+test('a narrator may be said to be the same person as one that stays, but never itself, a missing or deleted one, or one that is itself merged', () => {
+  const all = [narrator(1), narrator(2), narrator(3, { sameAs: 1 }), narrator(4, { deleted: true })];
+  assert.deepEqual(core.validateNarrator(narrator(2, { sameAs: 1 }), all), []);
+  assert.deepEqual(core.validateNarrator(narrator(2, { sameAs: null }), all), []);
+  assert.equal(core.validateNarrator(narrator(2, { sameAs: 2 }), all).length, 1, 'itself');
+  assert.equal(core.validateNarrator(narrator(2, { sameAs: 99 }), all).length, 1, 'missing');
+  assert.equal(core.validateNarrator(narrator(2, { sameAs: 4 }), all).length, 1, 'deleted');
+  assert.equal(core.validateNarrator(narrator(2, { sameAs: 3 }), all).length, 1, 'itself merged into another');
+  assert.equal(core.validateNarrator(narrator(1, { sameAs: 2 }), all).length, 1, 'others are merged into it');
+  assert.deepEqual(core.mergedInto(all, 1).map((n) => n.id), [3]);
+  assert.deepEqual(core.changedFields('catalog_narrator', narrator(2), narrator(2, { sameAs: 1 })), ['sameAs']);
+});
+
 test('new ids start at 10000 and continue after the highest', () => {
   assert.equal(core.nextId([{ id: 11 }, { id: 52 }]), 10000);
   assert.equal(core.nextId([{ id: 11 }, { id: 10004 }]), 10005);
@@ -205,4 +218,37 @@ test('someone who is not an admin cannot save, and nothing is written', async ()
   const rows = await admin().loadAll();
   assert.equal(rows.hadiths.length, 0);
   await assertFails(sdk.getDocs(sdk.collection(env.authenticatedContext('sara').firestore(), 'catalog_history')));
+});
+
+test('a narrator marked as the same person as another is saved under the rules, and the revert clears it', async () => {
+  const store = admin();
+  await store.save('catalog_narrator', narrator(10000), { isNew: true });
+  await store.save('catalog_narrator', narrator(10001, { sameAs: 10000 }), { isNew: true });
+
+  const stored = (await store.loadAll()).narrators.find((n) => n.id === 10001);
+  assert.equal(stored.sameAs, 10000);
+
+  await store.save('catalog_narrator', narrator(10001, { sameAs: 10000, primaryName: 'اسم آخر' }));
+  const [latest] = await store.historyOf('catalog_narrator', 10001);
+  assert.deepEqual(core.changedFields('catalog_narrator', latest.before, latest.after), ['primaryName']);
+
+  const creation = (await store.historyOf('catalog_narrator', 10001)).at(-1);
+  assert.equal(creation.before, null);
+  await store.save('catalog_narrator', narrator(10001, { sameAs: null, primaryName: 'اسم آخر' }));
+  assert.equal((await store.loadAll()).narrators.find((n) => n.id === 10001).sameAs, null);
+});
+
+test('a narrator document from the seed upload, which has no sameAs, can still be edited', async () => {
+  await env.withSecurityRulesDisabled(async (c) => {
+    await sdk.setDoc(sdk.doc(c.firestore(), 'catalog_narrator/73'), {
+      id: 73, primaryName: 'الحميدي', fullName: 'الحميدي', tier: 'شيخ المصنف', isPivot: false,
+      origin: 'import', updatedAt: new Date(), updatedBy: 'seed-upload', deleted: false,
+    });
+  });
+  const store = admin();
+
+  assert.equal(await store.save('catalog_narrator', { id: 73, primaryName: 'الحميدي', fullName: 'الحميدي', tier: 'شيخ المصنف', isPivot: false, deleted: false }), false,
+    'the same content is not rewritten');
+  assert.equal(await store.save('catalog_narrator', { id: 73, primaryName: 'الحميدي', fullName: 'الحميدي', tier: 'شيخ المصنف', isPivot: false, sameAs: 74, deleted: false }), true);
+  assert.equal((await store.loadAll()).narrators[0].sameAs, 74);
 });

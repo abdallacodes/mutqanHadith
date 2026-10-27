@@ -139,7 +139,7 @@ class GroupsMigrationTest {
         val db = open("v6.db")
         val after = dump { db.openHelper.writableDatabase.query(it) }
 
-        assertEquals(9, db.openHelper.writableDatabase.version)
+        assertEquals(10, db.openHelper.writableDatabase.version)
         versionSixTables.keys.forEach { table -> assertEquals("rows of $table", before.getValue(table), after.getValue(table)) }
         db.close()
     }

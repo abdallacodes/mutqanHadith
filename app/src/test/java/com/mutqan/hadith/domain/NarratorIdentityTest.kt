@@ -1,5 +1,6 @@
 package com.mutqan.hadith.domain
 
+import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.domain.narrator.NarratorAliases
 import com.mutqan.hadith.domain.narrator.NarratorDirectory
 import com.mutqan.hadith.domain.narrator.NarratorNormalizer
@@ -291,5 +292,71 @@ class NarratorIdentityTest {
         assertEquals(listOf(1L, 2L), repository.getThroughPerson(16).map { it.hadith.id }.sorted())
         assertEquals(listOf(3L), repository.getThroughPerson(6).map { it.hadith.id })
         assertEquals(emptyList<Long>(), repository.getThroughPerson(404).map { it.hadith.id })
+    }
+
+    // -- Rows an admin said are one person ----------------------------------------------------
+
+    private fun row(id: Long, name: String, tier: String = "راوٍ", sameAs: Long? = null) =
+        NarratorEntity(id, name, name, tier, sameAsId = sameAs)
+
+    @Test
+    fun rowsAnAdminSaidAreTheSamePersonAreOneNarratorUnderTheRowThatWasPointedAt() {
+        val directory = NarratorDirectory.of(listOf(row(7, "سفيان بن عيينة"), row(10_000, "ابن عيينة", sameAs = 7)))
+
+        assertEquals(1, directory.narrators.size)
+        assertEquals(7L, directory.canonicalId(10_000))
+        assertEquals(setOf(7L, 10_000L), directory.membersOf(10_000))
+        assertEquals("سفيان بن عيينة", directory.canonicalOf(10_000)!!.name)
+    }
+
+    @Test
+    fun theRowPointedAtStandsForThePersonEvenWhenItsIdIsTheHigherOne() {
+        val directory = NarratorDirectory.of(listOf(row(2, "ابن عيينة", sameAs = 5), row(5, "سفيان بن عيينة")))
+
+        assertEquals(5L, directory.canonicalId(2))
+        assertEquals("سفيان بن عيينة", directory.canonicalOf(2)!!.name)
+    }
+
+    @Test
+    fun aPointerToARowThatIsNotAmongTheOnesAskedAboutChangesNothing() {
+        val directory = NarratorDirectory.of(listOf(row(10_000, "ابن عيينة", sameAs = 7), row(8, "مالك")))
+
+        assertEquals(2, directory.narrators.size)
+        assertEquals(10_000L, directory.canonicalId(10_000))
+    }
+
+    @Test
+    fun aPointerToItselfOrAroundInACircleDoesNoHarm() {
+        val directory = NarratorDirectory.of(
+            listOf(row(1, "الأول", sameAs = 1), row(2, "الثاني", sameAs = 3), row(3, "الثالث", sameAs = 2), row(4, "الرابع")),
+        )
+
+        assertEquals(3, directory.narrators.size)
+        assertEquals(directory.canonicalId(2), directory.canonicalId(3))
+        assertEquals(1L, directory.canonicalId(1))
+        assertEquals(4L, directory.canonicalId(4))
+    }
+
+    @Test
+    fun anAdminsPointerJoinsAPersonTheNameTableAlreadyKnows() {
+        val directory = NarratorDirectory.of(
+            listOf(
+                row(1, "ابن عمر", tier = "صحابي"),
+                row(2, "عبد الله بن عمر", tier = "صحابي"),
+                row(10_000, "أبو عبد الرحمن", sameAs = 2),
+            ),
+        )
+
+        assertEquals(1, directory.narrators.size)
+        assertEquals(setOf(1L, 2L, 10_000L), directory.membersOf(10_000))
+    }
+
+    @Test
+    fun takingThePointerBackSeparatesThemAgain() {
+        val joined = NarratorDirectory.of(listOf(row(7, "سفيان بن عيينة"), row(10_000, "ابن عيينة", sameAs = 7)))
+        val apart = NarratorDirectory.of(listOf(row(7, "سفيان بن عيينة"), row(10_000, "ابن عيينة")))
+
+        assertEquals(1, joined.narrators.size)
+        assertEquals(2, apart.narrators.size)
     }
 }

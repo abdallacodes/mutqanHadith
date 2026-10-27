@@ -32,9 +32,11 @@ data class CanonicalNarrator(
 }
 
 /**
- * Who is who among a set of narrator rows: which rows are one person, and the identity they share. Nothing is stored or
- * changed in the database: the rows, the chains that point at them and the user's per-narrator history stay as they
- * are, and everything that wants "this narrator" rather than "this row" asks here.
+ * Who is who among a set of narrator rows: which rows are one person, and the identity they share. Two rows are one
+ * person when the curated name table ([NarratorAliases]) says so, or when an admin said so in the cloud catalog (a row's
+ * `sameAsId`) and both rows are among the ones asked about. Nothing is stored or changed in the database by this: the
+ * rows, the chains that point at them and the user's per-narrator history stay as they are, and everything that wants
+ * "this narrator" rather than "this row" asks here.
  */
 class NarratorDirectory private constructor(
     /** One entry per person, in order of their canonical id. */
@@ -55,9 +57,25 @@ class NarratorDirectory private constructor(
     companion object {
         fun of(narrators: Collection<NarratorEntity>): NarratorDirectory {
             val rows = narrators.distinctBy { it.id }.sortedBy { it.id }
-            val buckets = rows.groupBy { row -> aliasGroupOf(row)?.let { "g:${it.key}" } ?: "n:${row.id}" }
+            val parent = rows.associate { it.id to it.id }.toMutableMap()
+            fun find(id: Long): Long {
+                var root = id
+                while (parent.getValue(root) != root) root = parent.getValue(root)
+                return root
+            }
+            fun join(a: Long, b: Long) {
+                val ra = find(a)
+                val rb = find(b)
+                if (ra != rb) parent[maxOf(ra, rb)] = minOf(ra, rb)
+            }
+            rows.groupBy { aliasGroupOf(it)?.key }.forEach { (key, members) ->
+                if (key != null) members.drop(1).forEach { join(members.first().id, it.id) }
+            }
+            // A pointer to a row that is not among these, to itself, or in a loop can only group rows, never break anything.
+            rows.forEach { row -> row.sameAsId?.takeIf { it in parent }?.let { join(row.id, it) } }
+            val buckets = rows.groupBy { find(it.id) }
             return NarratorDirectory(
-                buckets.values.map { members -> canonical(members, aliasGroupOf(members.first())) }.sortedBy { it.id },
+                buckets.values.map { members -> canonical(members, members.firstNotNullOfOrNull { aliasGroupOf(it) }) }.sortedBy { it.id },
             )
         }
 
@@ -80,7 +98,9 @@ class NarratorDirectory private constructor(
 
         private fun canonical(members: List<NarratorEntity>, group: AliasGroup?): CanonicalNarrator {
             val written = group?.let { g -> members.firstOrNull { NarratorNormalizer.key(it.primaryName) == g.key } }
-            val head = written ?: members.first()
+            // The row an admin pointed the others at is the person; it is shown under its name and stands for him.
+            val pointedAt = members.firstOrNull { m -> m.sameAsId == null && members.any { it.sameAsId == m.id } }
+            val head = written ?: pointedAt ?: members.first()
             val name = group?.name ?: NarratorNormalizer.displayName(head.primaryName)
             val names = members.flatMap { listOf(it.primaryName, it.fullName) }.map(NarratorNormalizer::displayName).distinct()
             // The fullest name is a fuller form of the same name («أبو هريرة عبد الرحمن بن صخر»), not another name («ابن شهاب»).

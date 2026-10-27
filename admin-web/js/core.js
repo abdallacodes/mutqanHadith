@@ -14,7 +14,7 @@ export const FIELDS = Object.freeze({
     'id', 'matnWithTashkeel', 'sourceBook', 'hadithNumber', 'chapter', 'grade', 'collector', 'takhrij',
     'sahabi', 'groupId', 'position', 'sanadSource', 'sanad', 'deleted',
   ],
-  catalog_narrator: ['id', 'primaryName', 'fullName', 'tier', 'isPivot', 'deleted'],
+  catalog_narrator: ['id', 'primaryName', 'fullName', 'tier', 'isPivot', 'sameAs', 'deleted'],
   catalog_group: ['id', 'parentId', 'title', 'titleEn', 'position', 'deleted'],
 });
 
@@ -37,6 +37,7 @@ export const LABELS = Object.freeze({
   fullName: 'الاسم الكامل',
   tier: 'الطبقة',
   isPivot: 'راوٍ محوري',
+  sameAs: 'هو نفسه الراوي',
   parentId: 'المجموعة الأم',
   title: 'العنوان',
   titleEn: 'العنوان بالإنجليزية',
@@ -74,7 +75,7 @@ export function authored(collection, data) {
     let value = data[key];
     if (key === 'sanad') {
       value = (value ?? []).map((l) => ({ narratorId: l.narratorId, transmissionTerm: l.transmissionTerm ?? '' }));
-    } else if (key === 'groupId' || key === 'parentId') {
+    } else if (key === 'groupId' || key === 'parentId' || key === 'sameAs') {
       value = value ?? null;
     } else if (key === 'deleted' || key === 'isPivot') {
       value = value === true;
@@ -135,11 +136,30 @@ export function validateHadith(h, { narrators, groups }) {
   return errors;
 }
 
-export function validateNarrator(n) {
+/**
+ * @param narrators every narrator of the catalog, to check who this one may be said to be the same person as.
+ * A narrator is "the same as" one other, the one that stays; that one is not itself pointed elsewhere, and a narrator
+ * others point at cannot be pointed away, so the pointers never form chains or loops.
+ */
+export function validateNarrator(n, narrators = []) {
   const errors = [];
   if (isBlank(n.primaryName)) errors.push('الاسم فارغ.');
   if (!TIERS.includes(n.tier)) errors.push('اختر طبقة الراوي.');
+  if (n.sameAs !== null && n.sameAs !== undefined) {
+    const target = narrators.find((x) => x.id === n.sameAs);
+    if (n.sameAs === n.id) errors.push('لا يمكن أن يكون الراوي هو نفسه.');
+    else if (!target || target.deleted) errors.push('الراوي المختار غير موجود.');
+    else if (target.sameAs !== null && target.sameAs !== undefined) {
+      errors.push(`«${target.primaryName}» نفسه مدموج في راوٍ آخر؛ اختر الراوي الأصلي.`);
+    }
+    if (mergedInto(narrators, n.id).length > 0) errors.push('هناك رواة مدموجون في هذا الراوي؛ انقلهم إلى الراوي الأصلي أولاً.');
+  }
   return errors;
+}
+
+/** The live narrators an admin said are the same person as [narratorId]. */
+export function mergedInto(narrators, narratorId) {
+  return narrators.filter((x) => !x.deleted && x.sameAs === narratorId);
 }
 
 /** The ids of a group and of everything below it, so that a group is never made a child of its own descendant. */

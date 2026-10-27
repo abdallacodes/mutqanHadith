@@ -137,7 +137,7 @@ class ChainSourceMigrationTest {
         val db = open("v7.db")
         val raw = db.openHelper.writableDatabase
 
-        assertEquals(9, raw.version)
+        assertEquals(10, raw.version)
         assertEquals(before, userRows { raw.query(it) })
         val columns = raw.query("PRAGMA table_info(hadith)").rows().map { it[1]!! }
         assertEquals(versionSevenHadithColumns.split(", ") + "sanadSource" + "catalogUpdatedAt", columns)

@@ -22,8 +22,12 @@ signed-in Google account, which must carry the `admin` claim (`admin-tools/set-a
   library check, together with that phone's progress on it (the account copy stays, so a restore brings it back).
 - **History** lists the latest changes; every editor shows its own document's changes. **تراجع** writes the older
   version again as a new change (reverting a creation deletes the document).
-- New ids start at 10000. A narrator made here is its own person in the app (no alias entry) until merged by hand in
-  `NarratorAliases`.
+- New ids start at 10000.
+- **Same person under another name:** a narrator made here (or any narrator) can be marked «هو نفسه الراوي…» pointing at
+  the one that stays. The app (from v1.8.0) then reads the two as one person in drills, the narrator network and
+  the library, under the name of the one that stays; nobody's progress is rewritten, and clearing the field separates
+  them again. The one that stays cannot itself be pointed elsewhere, and a narrator others point at cannot be
+  deleted or pointed away; the page enforces both. Older apps ignore the field.
 - Phones pick changes up when the app opens (at most every 6 hours), on pull-down in Home, from Settings → المكتبة, and
   about every 12 hours in the background.
 

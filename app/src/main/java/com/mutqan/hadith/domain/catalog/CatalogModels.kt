@@ -32,6 +32,8 @@ data class CloudNarrator(
     val isPivot: Boolean,
     val updatedAt: Long,
     val deleted: Boolean,
+    /** The narrator this one is the same person as, if an admin said so. */
+    val sameAs: Long? = null,
 )
 
 data class CloudGroup(

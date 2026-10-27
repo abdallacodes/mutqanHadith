@@ -85,5 +85,15 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8, V8_TO_V9)
+    /**
+     * "Same person as": one nullable column on `narrator`, which the cloud catalog fills in when an admin says two rows
+     * are one narrator. Every row starts with nobody's duplicate, as it was; nothing the user owns is touched.
+     */
+    val V9_TO_V10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE narrator ADD COLUMN sameAsId INTEGER")
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8, V8_TO_V9, V9_TO_V10)
 }

@@ -84,6 +84,7 @@ class FirestoreRemoteCatalog(database: () -> FirebaseFirestore = FirebaseFiresto
             isPivot = getBoolean("isPivot") ?: return null,
             updatedAt = updatedAtMillis() ?: return null,
             deleted = getBoolean("deleted") ?: return null,
+            sameAs = getLong("sameAs"),
         )
     }
 

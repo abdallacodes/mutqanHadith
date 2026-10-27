@@ -51,6 +51,15 @@ const groupDoc = (id, extra = {}) => ({
   id, parentId: null, title: 'الأربعون النووية', titleEn: 'The Forty Hadith', position: 0, ...stamp(), ...extra,
 });
 
+test('a narrator may say whose duplicate it is, by number or by null, and may leave it out', async () => {
+  const db = adminDb();
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10000'), narratorDoc(10000, { sameAs: 73 })));
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10001'), narratorDoc(10001, { sameAs: null })));
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10002'), narratorDoc(10002)));
+  await assertFails(setDoc(doc(db, 'catalog_narrator/10003'), narratorDoc(10003, { sameAs: '73' })));
+  await assertFails(setDoc(doc(db, 'catalog_narrator/10004'), narratorDoc(10004, { sameAs: 73.5 })));
+});
+
 test('anyone reads the catalog, signed in or not', async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'catalog_hadith/11'), hadithDoc(11, { updatedAt: new Date() }));

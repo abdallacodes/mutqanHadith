@@ -132,6 +132,26 @@ class CloudCatalogDatabaseTest {
     }
 
     @Test
+    fun aNarratorSaidToBeTheSamePersonAsAnotherKeepsThePointerUntilTheAdminTakesItBack() = runBlocking {
+        val target = seed.narrators.first().id
+        fun duplicate(sameAs: Long?, at: Long) = CloudNarrator(10_000, "راوٍ مكرر", "راوٍ مكرر", "ثقة", false, at, false, sameAs)
+
+        store.apply(CatalogDelta(narrators = listOf(duplicate(target, 7_000))))
+        assertEquals(target, db.narratorDao().getById(10_000)!!.sameAsId)
+        assertNull("the row it points at is untouched", db.narratorDao().getById(target)!!.sameAsId)
+
+        store.apply(CatalogDelta(narrators = listOf(duplicate(null, 8_000))))
+        assertNull(db.narratorDao().getById(10_000)!!.sameAsId)
+    }
+
+    @Test
+    fun aNarratorPointingAtItselfIsStoredAsNobodysDuplicate() = runBlocking {
+        store.apply(CatalogDelta(narrators = listOf(CloudNarrator(10_000, "راوٍ", "راوٍ", "ثقة", false, 7_000, false, sameAs = 10_000))))
+
+        assertNull(db.narratorDao().getById(10_000)!!.sameAsId)
+    }
+
+    @Test
     fun aHadithWhoseChainNamesAnUnknownNarratorIsSkippedAndTheRestIsApplied() = runBlocking {
         val bad = cloud(second, at = 3_000) { it.copy(grade = "bad", sanad = listOf(CloudLink(99_999, "عن"))) }
         val good = cloud(first, at = 4_000) { it.copy(grade = "good") }

@@ -17,4 +17,10 @@ data class NarratorEntity(
      * overwrites it (see `SeedLoader.sync`).
      */
     @ColumnInfo(defaultValue = "0") val catalogUpdatedAt: Long = 0,
+    /**
+     * The row this one is the same person as, written by an admin in the cloud catalog; null for a row nobody has said
+     * is a duplicate. It changes nothing stored: the app only groups the two rows as one narrator when it reads them
+     * (see `NarratorDirectory`), so it can be set and cleared without touching anyone's progress.
+     */
+    val sameAsId: Long? = null,
 )

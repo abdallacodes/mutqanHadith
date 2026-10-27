@@ -179,6 +179,7 @@ function showValue(key, value) {
     return value.length === 0 ? '(فارغ)' : value.map((l) => `${narratorById(l.narratorId)?.primaryName ?? `#${l.narratorId}`}${l.transmissionTerm ? ` (${l.transmissionTerm})` : ''}`).join('، ');
   }
   if (key === 'groupId' || key === 'parentId') return value === null ? 'بلا مجموعة' : (groupById(value)?.title ?? `#${value}`);
+  if (key === 'sameAs') return value === null ? 'ليس مكرراً' : (narratorById(value)?.primaryName ?? `#${value}`);
   if (typeof value === 'boolean') return value ? 'نعم' : 'لا';
   if (value === '' || value == null) return '(فارغ)';
   return snippet(String(value), 160);
@@ -441,7 +442,10 @@ function narratorList() {
       .sort((a, b) => a.primaryName.localeCompare(b.primaryName, 'ar') || a.id - b.id);
     count.textContent = `${rows.length} من ${catalog.narrators.length}`;
     body.replaceChildren(...rows.map((n) => h('tr', { class: `clickable${n.deleted ? ' gone' : ''}`, onclick: () => { location.hash = `#/narrator/${n.id}`; } },
-      h('td', { class: 'num' }, String(n.id)), h('td', {}, n.primaryName), h('td', {}, n.tier),
+      h('td', { class: 'num' }, String(n.id)),
+      h('td', {}, n.primaryName,
+        n.sameAs != null ? h('span', { class: 'tag', style: 'margin-inline-start:8px' }, `= ${narratorById(n.sameAs)?.primaryName ?? n.sameAs}`) : null),
+      h('td', {}, n.tier),
       h('td', { class: 'num' }, String(core.hadithsUsing(catalog.hadiths, n.id).length)))));
   };
   const search = h('input', { type: 'text', class: 'grow', placeholder: 'ابحث بالاسم أو الرقم', value: f.q, oninput: (e) => { f.q = e.target.value; draw(); } });
@@ -469,14 +473,22 @@ function narratorEditor(arg) {
   const pivot = h('input', { type: 'checkbox', checked: base.isPivot });
   const problems = h('div');
   const using = existing ? core.hadithsUsing(catalog.hadiths, base.id) : [];
+  const mergedHere = existing ? core.mergedInto(catalog.narrators, base.id) : [];
+  // Only a narrator that is not itself pointed elsewhere can be the one that stays; the current choice is always listed.
+  const same = h('select', { disabled: mergedHere.length > 0 },
+    h('option', { value: '' }, 'ليس مكرراً (راوٍ مستقل)'),
+    catalog.narrators
+      .filter((x) => x.id !== base.id && ((!x.deleted && (x.sameAs ?? null) === null) || x.id === base.sameAs))
+      .sort((a, b) => a.primaryName.localeCompare(b.primaryName, 'ar') || a.id - b.id)
+      .map((x) => h('option', { value: String(x.id), selected: base.sameAs === x.id }, core.narratorLabel(x))));
 
   const save = h('button', { class: 'primary' }, isNew ? 'إضافة' : 'حفظ');
   save.addEventListener('click', () => {
     const data = {
       id: base.id, primaryName: name.value.trim(), fullName: full.value.trim() || name.value.trim(),
-      tier: tier.value, isPivot: pivot.checked, deleted: base.deleted === true,
+      tier: tier.value, isPivot: pivot.checked, sameAs: same.value === '' ? null : Number(same.value), deleted: base.deleted === true,
     };
-    const errors = core.validateNarrator(data);
+    const errors = core.validateNarrator(data, catalog.narrators);
     problems.replaceChildren(...(errors.length ? [errorBox(errors)] : []));
     if (errors.length) return;
     commit([save], () => store.save(C.narrator, data, { isNew }), '#/narrators');
@@ -484,7 +496,7 @@ function narratorEditor(arg) {
   const buttons = [save, h('a', { href: '#/narrators' }, h('button', {}, 'رجوع'))];
   if (existing) {
     const gone = existing.deleted;
-    const toggle = h('button', { class: gone ? '' : 'danger', disabled: !gone && using.length > 0 }, gone ? 'استرجاع الراوي' : 'حذف الراوي');
+    const toggle = h('button', { class: gone ? '' : 'danger', disabled: !gone && (using.length > 0 || mergedHere.length > 0) }, gone ? 'استرجاع الراوي' : 'حذف الراوي');
     toggle.addEventListener('click', () => commit([toggle], () => store.setDeleted(C.narrator, existing, !gone), '#/narrators', gone ? 'تم الاسترجاع' : 'تم الحذف'));
     buttons.push(toggle);
   }
@@ -495,13 +507,19 @@ function narratorEditor(arg) {
     h('div', { class: 'card' },
       h('div', { class: 'grid' },
         field(L.primaryName, name, 'الاسم الذي يظهر في السند.'), field(L.fullName, full, 'اتركه فارغاً ليساوي الاسم.'),
-        field(L.tier, tier), h('label', { class: 'check' }, pivot, L.isPivot))),
-    isNew ? notice('warn', 'الراوي الجديد يُعدّ في التطبيق شخصاً مستقلاً. إن كان هو نفسه راوياً موجوداً بكنية أخرى، فاستخدم الراوي الموجود في السند بدل إنشاء آخر.') : null,
+        field(L.tier, tier), h('label', { class: 'check' }, pivot, L.isPivot),
+        field(L.sameAs, same, mergedHere.length > 0
+          ? 'هناك رواة مدموجون في هذا الراوي، فهو الأصل ولا يُدمج في غيره.'
+          : 'إن كان هذا الاسم هو الراوي نفسه بصيغة أخرى فاختر الراوي الأصلي: يُعدّان شخصاً واحداً في التطبيق (في التدريب والمخطط)، ولا يتغير تقدّم أحد.'))),
+    isNew ? notice('warn', 'الراوي الجديد يُعدّ في التطبيق شخصاً مستقلاً، ما لم تختر أعلاه أنه هو نفسه راوٍ موجود.') : null,
     problems,
     h('div', { class: 'actions' }, buttons),
+    mergedHere.length ? h('div', {}, h('h3', {}, `أسماء مدموجة في هذا الراوي (${mergedHere.length})`),
+      h('ul', {}, mergedHere.map((x) => h('li', {}, h('a', { href: `#/narrator/${x.id}` }, core.narratorLabel(x)))))) : null,
     existing ? h('div', {}, h('h3', {}, `يرد في ${using.length} حديثاً`),
       using.length ? h('ul', {}, using.map((x) => h('li', {}, h('a', { href: `#/hadith/${x.id}` }, `${x.hadithNumber}: ${snippet(x.matnWithTashkeel, 50)}`)))) : null,
-      using.length ? h('p', { class: 'muted small' }, 'لا يُحذف راوٍ ما دام في سند حديث؛ أزِله من السند أولاً.') : null) : null,
+      using.length ? h('p', { class: 'muted small' }, 'لا يُحذف راوٍ ما دام في سند حديث؛ أزِله من السند أولاً.') : null,
+      mergedHere.length ? h('p', { class: 'muted small' }, 'ولا يُحذف راوٍ دُمجت فيه أسماء أخرى؛ فُكّ دمجها أولاً.') : null) : null,
   );
   if (existing) appendHistory(C.narrator, base.id);
 }

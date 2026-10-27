@@ -34,7 +34,7 @@ import com.mutqan.hadith.data.seed.SeedLoader
         HadithCollectionCrossRef::class,
         CatalogGroupEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 abstract class MutqanDatabase : RoomDatabase() {
