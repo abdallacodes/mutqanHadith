@@ -1,0 +1,11 @@
+{
+  "name": "mutqan-hadith-admin-tools",
+  "private": true,
+  "description": "Maintainer scripts for the Mutqan Hadith Firebase project: make an admin, upload the bundled catalog. See README.md.",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project mutqan-hadith --config ../firebase.json \"node --test\""
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}

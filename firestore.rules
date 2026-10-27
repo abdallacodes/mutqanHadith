@@ -1,12 +1,122 @@
 rules_version = '2';
 
-// Mutqan Hadith. Each signed-in learner reads and writes only their own progress under users/{uid}; everything else
-// is closed. The catalog rules (anyone signed in reads, only an admin writes) come with the cloud catalog.
+// Mutqan Hadith.
+// - Each signed-in learner reads and writes only their own progress under users/{uid}.
+// - The catalog (catalog_hadith, catalog_narrator, catalog_group, meta/catalog) is public to read, so that the app
+//   updates for everyone, signed in or not; only an admin (the custom claim `admin`, set by admin-tools/set-admin.js)
+//   writes it. Every admin write carries the server time and the admin's uid, and every change is kept in
+//   catalog_history, which an admin can add to and read but never edit.
+// - Everything else is closed.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isOwner(uid) {
       return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    // What every catalog document says about its own last change.
+    function stamped() {
+      let d = request.resource.data;
+      return d.origin == 'admin'
+        && d.updatedAt == request.time
+        && d.updatedBy == request.auth.uid
+        && d.deleted is bool;
+    }
+
+    function nullableInt(value) {
+      return value == null || value is int;
+    }
+
+    match /catalog_hadith/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && stamped()
+        && request.resource.data.keys().hasOnly([
+          'id', 'matnWithTashkeel', 'sourceBook', 'hadithNumber', 'chapter', 'grade', 'collector', 'takhrij',
+          'sahabi', 'groupId', 'position', 'sanadSource', 'sanad',
+          'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.keys().hasAll([
+          'id', 'matnWithTashkeel', 'sourceBook', 'hadithNumber', 'chapter', 'grade', 'collector', 'takhrij',
+          'sahabi', 'groupId', 'position', 'sanadSource', 'sanad',
+          'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.id is int
+        && string(request.resource.data.id) == id
+        && request.resource.data.matnWithTashkeel is string
+        && request.resource.data.matnWithTashkeel.size() > 0
+        && request.resource.data.matnWithTashkeel.size() <= 20000
+        && request.resource.data.sourceBook is string
+        && request.resource.data.hadithNumber is int
+        && request.resource.data.chapter is string
+        && request.resource.data.grade is string
+        && request.resource.data.collector is string
+        && request.resource.data.takhrij is string
+        && request.resource.data.sahabi is string
+        && nullableInt(request.resource.data.groupId)
+        && request.resource.data.position is int
+        && request.resource.data.sanadSource is string
+        && request.resource.data.sanad is list
+        && request.resource.data.sanad.size() <= 40;
+      // A hadith is never really deleted: the admin marks it deleted, so it can be brought back.
+      allow delete: if false;
+    }
+
+    match /catalog_narrator/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && stamped()
+        && request.resource.data.keys().hasOnly([
+          'id', 'primaryName', 'fullName', 'tier', 'isPivot', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.keys().hasAll([
+          'id', 'primaryName', 'fullName', 'tier', 'isPivot', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.id is int
+        && string(request.resource.data.id) == id
+        && request.resource.data.primaryName is string
+        && request.resource.data.primaryName.size() > 0
+        && request.resource.data.fullName is string
+        && request.resource.data.tier is string
+        && request.resource.data.isPivot is bool;
+      allow delete: if false;
+    }
+
+    match /catalog_group/{id} {
+      allow read: if true;
+      allow create, update: if isAdmin() && stamped()
+        && request.resource.data.keys().hasOnly([
+          'id', 'parentId', 'title', 'titleEn', 'position', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.keys().hasAll([
+          'id', 'parentId', 'title', 'titleEn', 'position', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
+        && request.resource.data.id is int
+        && string(request.resource.data.id) == id
+        && nullableInt(request.resource.data.parentId)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.titleEn is string
+        && request.resource.data.position is int;
+      allow delete: if false;
+    }
+
+    // The one document an app reads first: its revision changes on every admin save.
+    match /meta/catalog {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['revision', 'updatedAt'])
+        && request.resource.data.revision is int
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // Every admin change, before and after, to show what was done and to put it back.
+    match /catalog_history/{entry} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['collection', 'docId', 'before', 'after', 'at', 'by'])
+        && request.resource.data.collection in ['catalog_hadith', 'catalog_narrator', 'catalog_group']
+        && request.resource.data.docId is string
+        && request.resource.data.at == request.time
+        && request.resource.data.by == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // users/{uid}/mastery/{hadithId}: one memory record per hadith.
