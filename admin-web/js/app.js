@@ -43,6 +43,8 @@ function toast(message, isError = false) {
 const plain = (s) => (s ?? '').replace(/[ً-ٰٟـ]/g, '').replace(/[أإآ]/g, 'ا').toLowerCase();
 const toInt = (text) => (text.trim() === '' ? NaN : Number(text));
 const when = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('ar-u-nu-latn') : '');
+/** "راوٍ واحد", "راويان", "3 رواة"… the way Arabic counts a few things. */
+const narratorCount = (n) => (n === 1 ? 'راوٍ واحد' : n === 2 ? 'راويان' : n >= 3 && n <= 10 ? `${n} رواة` : `${n} راوياً`);
 const snippet = (s, n = 70) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
 function field(label, input, hint) {
@@ -255,7 +257,7 @@ function hadithList() {
     body.replaceChildren(...rows.map((x) => h('tr', { class: `clickable${x.deleted ? ' gone' : ''}`, onclick: () => { location.hash = `#/hadith/${x.id}`; } },
       h('td', { class: 'num' }, String(x.hadithNumber)),
       h('td', {}, snippet(x.matnWithTashkeel)),
-      h('td', { class: 'num' }, `${x.sanad.length} رواة`),
+      h('td', { class: 'num' }, narratorCount(x.sanad.length)),
       h('td', { class: 'num' }, x.origin === 'admin' ? h('span', { class: 'tag' }, 'عُدِّل هنا') : null))));
   };
   const search = h('input', { type: 'text', class: 'grow', placeholder: 'ابحث في المتن أو الرقم', value: f.q, oninput: (e) => { f.q = e.target.value; draw(); } });
