@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Mutqan Hadith. Each signed-in learner reads and writes only their own progress under users/{uid}; everything else
+// is closed. The catalog rules (anyone signed in reads, only an admin writes) come with the cloud catalog.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // users/{uid}/mastery/{hadithId}: one memory record per hadith.
+    match /users/{uid}/mastery/{hadithId} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'hadithId', 'matnStability', 'sanadStability', 'matnLastReviewedAt',
+          'sanadLastReviewedAt', 'nextReviewDue', 'repetitionCount'])
+        && request.resource.data.keys().hasAll([
+          'hadithId', 'matnStability', 'sanadStability', 'nextReviewDue', 'repetitionCount'])
+        && request.resource.data.hadithId is int
+        && string(request.resource.data.hadithId) == hadithId
+        && request.resource.data.matnStability is number
+        && request.resource.data.sanadStability is number
+        && (request.resource.data.get('matnLastReviewedAt', null) == null
+            || request.resource.data.matnLastReviewedAt is int)
+        && (request.resource.data.get('sanadLastReviewedAt', null) == null
+            || request.resource.data.sanadLastReviewedAt is int)
+        && request.resource.data.nextReviewDue is int
+        && request.resource.data.repetitionCount is int;
+    }
+
+    // users/{uid}/events/{hadithId}_{narratorId}_{reviewedAt}: one narrator review event; uploadedAt is the server's
+    // clock, which is what a phone asks for to get only what it has not seen.
+    match /users/{uid}/events/{eventId} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['hadithId', 'narratorId', 'reviewedAt', 'succeeded', 'uploadedAt'])
+        && request.resource.data.keys().hasAll(['hadithId', 'narratorId', 'reviewedAt', 'succeeded', 'uploadedAt'])
+        && request.resource.data.hadithId is int
+        && request.resource.data.narratorId is int
+        && request.resource.data.reviewedAt is int
+        && request.resource.data.succeeded is bool
+        && request.resource.data.uploadedAt == request.time
+        && eventId == string(request.resource.data.hadithId) + '_' + string(request.resource.data.narratorId)
+          + '_' + string(request.resource.data.reviewedAt);
+    }
+
+    // users/{uid}/profile/main: the learner's starting point.
+    match /users/{uid}/profile/main {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['startingPoint'])
+        && request.resource.data.startingPoint in ['BEGINNER', 'INTERMEDIATE', 'EXPERT'];
+    }
+  }
+}

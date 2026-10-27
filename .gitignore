@@ -35,3 +35,12 @@ keystore_base64.txt
 
 # Python bytecode from tools/
 __pycache__/
+
+# Firebase
+node_modules/
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+serviceAccount*.json
+*-service-account*.json

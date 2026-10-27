@@ -16,6 +16,10 @@ import com.mutqan.hadith.domain.backup.ResetProgressUseCase
 import com.mutqan.hadith.domain.model.StartingPoint
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.settings.StudyPreferences
+import com.mutqan.hadith.domain.sync.AccountSync
+import com.mutqan.hadith.domain.sync.FirstSyncChoice
+import com.mutqan.hadith.domain.sync.NoAccountSync
+import com.mutqan.hadith.domain.sync.SyncStatus
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -62,6 +66,10 @@ data class SettingsUi(
     val startingPoint: StartingPoint? = null,
     /** The Google account signed in, or null: the app works the same without one. */
     val account: AccountUser? = null,
+    /** Where the sync of the progress with that account stands. */
+    val syncStatus: SyncStatus = SyncStatus.Idle,
+    /** When the progress last reached the account (epoch millis); null if it never has. */
+    val lastSyncedAt: Long? = null,
 )
 
 class SettingsViewModel(
@@ -71,6 +79,7 @@ class SettingsViewModel(
     private val files: BackupFileStore,
     private val studyPreferences: StudyPreferences = InMemoryStudyPreferences(),
     private val auth: AuthRepository = SignedOutAuth(),
+    private val accountSync: AccountSync = NoAccountSync(),
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
@@ -78,6 +87,8 @@ class SettingsViewModel(
             unlockAllLayers = studyPreferences.unlockAllLayers.value,
             startingPoint = studyPreferences.startingPoint.value,
             account = auth.user.value,
+            syncStatus = accountSync.status.value,
+            lastSyncedAt = accountSync.lastSyncedAt.value,
         ),
     )
     val state: StateFlow<SettingsUi> = _state.asStateFlow()
@@ -86,7 +97,15 @@ class SettingsViewModel(
         // The starting point is changed on a screen of its own, above this one; coming back shows the new answer.
         studyPreferences.startingPoint.onEach { point -> _state.update { it.copy(startingPoint = point) } }.launchIn(viewModelScope)
         auth.user.onEach { account -> _state.update { it.copy(account = account) } }.launchIn(viewModelScope)
+        accountSync.status.onEach { status -> _state.update { it.copy(syncStatus = status) } }.launchIn(viewModelScope)
+        accountSync.lastSyncedAt.onEach { at -> _state.update { it.copy(lastSyncedAt = at) } }.launchIn(viewModelScope)
     }
+
+    /** Syncs the progress with the account now, instead of waiting for the next trigger. */
+    fun syncNow() = accountSync.syncNow()
+
+    /** The learner's answer when the phone and the account both hold progress. */
+    fun chooseSync(choice: FirstSyncChoice) = accountSync.choose(choice)
 
     /** The name the file picker offers for a new backup. */
     fun suggestedBackupName(): String = exportUserData.suggestedFileName()
@@ -135,6 +154,7 @@ class SettingsViewModel(
             _state.update { it.copy(pendingImport = null) }
             try {
                 importUserData.apply(prepared)
+                accountSync.replaceAccountWithThisPhone()
                 _state.update { it.copy(message = SettingsMessage.Imported) }
             } catch (e: CancellationException) {
                 throw e
@@ -147,6 +167,7 @@ class SettingsViewModel(
     fun reset() = runExclusively {
         val message = try {
             resetProgress()
+            accountSync.replaceAccountWithThisPhone()
             SettingsMessage.ProgressReset
         } catch (e: CancellationException) {
             throw e

@@ -17,6 +17,9 @@ import com.mutqan.hadith.domain.backup.LibraryIds
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
 import com.mutqan.hadith.domain.backup.UserData
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
+import com.mutqan.hadith.domain.sync.AccountSync
+import com.mutqan.hadith.domain.sync.FirstSyncChoice
+import com.mutqan.hadith.domain.sync.SyncStatus
 import com.mutqan.hadith.ui.settings.AppLanguage
 import com.mutqan.hadith.ui.settings.SettingsActions
 import com.mutqan.hadith.ui.settings.SettingsMessage
@@ -82,7 +85,30 @@ class AccountSettingsTest {
         override suspend fun read(source: String): String = ""
     }
 
+    private class FakeSync : AccountSync {
+        val currentStatus = MutableStateFlow<SyncStatus>(SyncStatus.Idle)
+        val syncedAt = MutableStateFlow<Long?>(null)
+        override val status: StateFlow<SyncStatus> = currentStatus
+        override val lastSyncedAt: StateFlow<Long?> = syncedAt
+        var syncNows = 0
+        var replaced = 0
+        val choices = mutableListOf<FirstSyncChoice>()
+
+        override fun syncNow() {
+            syncNows++
+        }
+
+        override fun choose(choice: FirstSyncChoice) {
+            choices += choice
+        }
+
+        override fun replaceAccountWithThisPhone() {
+            replaced++
+        }
+    }
+
     private val auth = FakeAuth()
+    private val sync = FakeSync()
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -94,7 +120,7 @@ class AccountSettingsTest {
         val backup = EmptyBackup()
         return SettingsViewModel(
             ExportUserDataUseCase(backup), ImportUserDataUseCase(backup), ResetProgressUseCase(backup), NoFiles(),
-            InMemoryStudyPreferences(), auth,
+            InMemoryStudyPreferences(), auth, sync,
         )
     }
 
@@ -159,6 +185,26 @@ class AccountSettingsTest {
         assertEquals(SettingsMessage.SignedOut, vm.state.value.message)
     }
 
+    @Test
+    fun aResetAsksTheAccountToFollowThePhone() {
+        val vm = viewModel()
+
+        vm.reset()
+
+        assertEquals(1, sync.replaced)
+    }
+
+    @Test
+    fun theSyncStatusReachesTheScreenState() {
+        val vm = viewModel()
+
+        sync.currentStatus.value = SyncStatus.Failed
+        sync.syncedAt.value = 1_700_000_000_000
+
+        assertEquals(SyncStatus.Failed, vm.state.value.syncStatus)
+        assertEquals(1_700_000_000_000, vm.state.value.lastSyncedAt)
+    }
+
     // -- The screen ------------------------------------------------------------------------------
 
     private fun showSettings(language: AppLanguage = AppLanguage.ARABIC, vm: SettingsViewModel = viewModel()) {
@@ -168,9 +214,11 @@ class AccountSettingsTest {
                 SettingsScreen(
                     ui, "1.0",
                     SettingsActions(
-                        {}, {}, {}, {}, {}, {}, vm::messageShown,
+                        {}, {}, {}, {}, {}, vm::reset, vm::messageShown,
                         onSignIn = { vm.signIn { "token" } },
                         onSignOut = vm::signOut,
+                        onSyncNow = vm::syncNow,
+                        onChooseSync = vm::chooseSync,
                     ),
                     language,
                 )
@@ -203,5 +251,100 @@ class AccountSettingsTest {
 
         compose.onNodeWithText("تسجيل الدخول بحساب Google").assertExists()
         compose.onNodeWithText("تم تسجيل الخروج. تبقى بياناتك على هذا الجهاز.").assertExists()
+    }
+
+    private fun signedInScreen(): SettingsViewModel {
+        val vm = viewModel()
+        vm.signIn { "token" }
+        showSettings(vm = vm)
+        return vm
+    }
+
+    @Test
+    fun noSyncRowWhileSignedOut() {
+        showSettings()
+
+        compose.onNodeWithText("مزامنة الآن").assertDoesNotExist()
+    }
+
+    @Test
+    fun signedInTheSyncRowSaysNothingWasSavedYetAndSyncsOnTap() {
+        signedInScreen()
+
+        compose.onNodeWithText("لم يُحفظ تقدّمك في الحساب بعد. اضغط للمزامنة.").assertExists()
+        compose.onNodeWithText("مزامنة الآن").performClick()
+
+        assertEquals(1, sync.syncNows)
+    }
+
+    @Test
+    fun theSyncRowShowsWhenTheProgressWasLastSaved() {
+        signedInScreen()
+
+        sync.syncedAt.value = 1_700_000_000_000
+        compose.waitForIdle()
+
+        compose.onNodeWithText("آخر مزامنة", substring = true).assertExists()
+    }
+
+    @Test
+    fun theSyncRowShowsWhileSyncingAndAfterAFailure() {
+        signedInScreen()
+
+        sync.currentStatus.value = SyncStatus.Syncing
+        compose.waitForIdle()
+        compose.onNodeWithText("جارٍ المزامنة…").assertExists()
+
+        sync.currentStatus.value = SyncStatus.Failed
+        compose.waitForIdle()
+        compose.onNodeWithText("تعذّرت المزامنة. سنعيد المحاولة لاحقًا، أو اضغط للمحاولة الآن.").assertExists()
+    }
+
+    @Test
+    fun whenPhoneAndAccountBothHoldProgressTheLearnerChoosesHowToCombineThem() {
+        signedInScreen()
+
+        sync.currentStatus.value = SyncStatus.NeedsChoice(onPhone = 12, inAccount = 30)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("تقدّم على الجهاز وفي الحساب").assertExists()
+        compose.onNodeWithText("على هذا الجهاز تقدّم في 12 حديثًا، وفي حسابك تقدّم في 30 حديثًا. كيف نجمعهما؟").assertExists()
+        compose.onNodeWithText("استخدام ما في الحساب").performClick()
+
+        assertEquals(listOf(FirstSyncChoice.USE_ACCOUNT), sync.choices)
+    }
+
+    @Test
+    fun theChoiceCanWaitAndTheSyncRowAsksItAgain() {
+        signedInScreen()
+        sync.currentStatus.value = SyncStatus.NeedsChoice(1, 2)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("لاحقًا").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("تقدّم على الجهاز وفي الحساب").assertDoesNotExist()
+
+        compose.onNodeWithText("مزامنة الآن").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("تقدّم على الجهاز وفي الحساب").assertExists()
+        assertEquals(0, sync.syncNows)
+    }
+
+    @Test
+    fun resettingWhileSignedInSaysTheAccountIsErasedToo() {
+        signedInScreen()
+
+        compose.onNodeWithText("إعادة تعيين التقدم").performClick()
+
+        compose.onNodeWithText("وبما أنك مسجَّل الدخول، يُمسح تقدّمك المحفوظ في حسابك أيضًا.").assertExists()
+    }
+
+    @Test
+    fun resettingWhileSignedOutSaysNothingAboutAnAccount() {
+        showSettings()
+
+        compose.onNodeWithText("إعادة تعيين التقدم").performClick()
+
+        compose.onNodeWithText("وبما أنك مسجَّل الدخول، يُمسح تقدّمك المحفوظ في حسابك أيضًا.").assertDoesNotExist()
     }
 }

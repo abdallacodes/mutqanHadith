@@ -56,6 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.data.auth.GoogleSignInHelper
 import com.mutqan.hadith.domain.backup.PreparedBackup
+import com.mutqan.hadith.domain.sync.FirstSyncChoice
+import com.mutqan.hadith.domain.sync.SyncStatus
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.contentWidth
 import com.mutqan.hadith.ui.common.labelRes
@@ -97,6 +99,8 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlace
             onLanguageSelected = languages::select,
             onUnlockAllLayersChanged = viewModel::setUnlockAllLayers,
             onOpenPlacement = onOpenPlacement,
+            onSyncNow = viewModel::syncNow,
+            onChooseSync = viewModel::chooseSync,
             onSignIn = { viewModel.signIn { googleSignIn.idToken(context) } },
             onSignOut = {
                 viewModel.signOut()
@@ -120,6 +124,8 @@ data class SettingsActions(
     val onOpenPlacement: () -> Unit = {},
     val onSignIn: () -> Unit = {},
     val onSignOut: () -> Unit = {},
+    val onSyncNow: () -> Unit = {},
+    val onChooseSync: (FirstSyncChoice) -> Unit = {},
 )
 
 @Composable
@@ -128,6 +134,9 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
     var confirmingReset by rememberSaveable { mutableStateOf(false) }
     var showingAbout by rememberSaveable { mutableStateOf(false) }
     var choosingLanguage by rememberSaveable { mutableStateOf(false) }
+    // "Later" hides the question; the account row asks it again.
+    var syncChoiceHidden by rememberSaveable { mutableStateOf(false) }
+    val syncChoice = ui.syncStatus as? SyncStatus.NeedsChoice
 
     val message = ui.message?.let { messageText(it) }
     LaunchedEffect(ui.message) {
@@ -166,6 +175,19 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                             supporting = stringResource(R.string.settings_signed_in_hint, account.email),
                             enabled = !ui.isBusy,
                             onClick = actions.onSignOut,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        SettingsRow(
+                            title = stringResource(R.string.settings_sync),
+                            supporting = when {
+                                syncChoice != null -> stringResource(R.string.settings_sync_choice_hint)
+                                ui.syncStatus == SyncStatus.Syncing -> stringResource(R.string.settings_sync_syncing)
+                                ui.syncStatus == SyncStatus.Failed -> stringResource(R.string.settings_sync_failed)
+                                ui.lastSyncedAt != null -> stringResource(R.string.settings_sync_last, formatDayTime(ui.lastSyncedAt))
+                                else -> stringResource(R.string.settings_sync_never)
+                            },
+                            enabled = !ui.isBusy && ui.syncStatus != SyncStatus.Syncing,
+                            onClick = if (syncChoice != null) ({ syncChoiceHidden = false }) else actions.onSyncNow,
                         )
                     }
                 }
@@ -228,12 +250,20 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
 
     if (confirmingReset) {
         ConfirmResetDialog(
+            signedIn = ui.account != null,
             onConfirm = { confirmingReset = false; actions.onConfirmReset() },
             onDismiss = { confirmingReset = false },
         )
     }
     ui.pendingImport?.let { prepared ->
-        ConfirmImportDialog(prepared, onConfirm = actions.onConfirmImport, onDismiss = actions.onCancelImport)
+        ConfirmImportDialog(prepared, signedIn = ui.account != null, onConfirm = actions.onConfirmImport, onDismiss = actions.onCancelImport)
+    }
+    if (syncChoice != null && !syncChoiceHidden) {
+        SyncChoiceDialog(
+            syncChoice,
+            onChoose = { choice -> syncChoiceHidden = false; actions.onChooseSync(choice) },
+            onDismiss = { syncChoiceHidden = true },
+        )
     }
     if (showingAbout) AboutDialog(appVersion, onDismiss = { showingAbout = false })
     if (choosingLanguage) {
@@ -353,11 +383,16 @@ private fun SettingsSwitchRow(title: String, supporting: String, checked: Boolea
 // -- Dialogs ---------------------------------------------------------------------------------
 
 @Composable
-private fun ConfirmResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun ConfirmResetDialog(signedIn: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_reset_title)) },
-        text = { Text(stringResource(R.string.settings_reset_body), style = MaterialTheme.typography.bodyLarge) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.settings_reset_body), style = MaterialTheme.typography.bodyLarge)
+                if (signedIn) Text(stringResource(R.string.settings_reset_account_note), style = MaterialTheme.typography.bodyLarge)
+            }
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.settings_reset_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
@@ -368,7 +403,7 @@ private fun ConfirmResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ConfirmImportDialog(prepared: PreparedBackup, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun ConfirmImportDialog(prepared: PreparedBackup, signedIn: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_import_title)) },
@@ -385,6 +420,7 @@ private fun ConfirmImportDialog(prepared: PreparedBackup, onConfirm: () -> Unit,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                if (signedIn) Text(stringResource(R.string.settings_import_account_note), style = MaterialTheme.typography.bodyLarge)
             }
         },
         confirmButton = {
@@ -394,6 +430,40 @@ private fun ConfirmImportDialog(prepared: PreparedBackup, onConfirm: () -> Unit,
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
     )
+}
+
+/** Asked once, when this phone and the account both hold progress: nothing moves until the learner answers. */
+@Composable
+private fun SyncChoiceDialog(choice: SyncStatus.NeedsChoice, onChoose: (FirstSyncChoice) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_sync_choice_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    stringResource(R.string.settings_sync_choice_body, choice.onPhone, choice.inAccount),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                SyncChoiceOption(R.string.settings_sync_merge, R.string.settings_sync_merge_hint) { onChoose(FirstSyncChoice.MERGE) }
+                SyncChoiceOption(R.string.settings_sync_use_account, R.string.settings_sync_use_account_hint) { onChoose(FirstSyncChoice.USE_ACCOUNT) }
+                SyncChoiceOption(R.string.settings_sync_use_phone, R.string.settings_sync_use_phone_hint) { onChoose(FirstSyncChoice.USE_THIS_PHONE) }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_sync_later)) } },
+    )
+}
+
+@Composable
+private fun SyncChoiceOption(title: Int, hint: Int, onClick: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(stringResource(title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(stringResource(hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 @Composable
@@ -487,6 +557,10 @@ private fun AboutSection(title: String, paragraphs: List<String>) {
 /** `2026-10-24`: fixed Latin digits like the rest of the app, whatever the device locale prints. */
 private fun formatDay(epochMillis: Long): String =
     DateTimeFormatter.ISO_LOCAL_DATE.withLocale(Locale.ROOT).format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
+
+/** `2026-10-24 14:05`: fixed Latin digits, in the device's time zone. */
+private fun formatDayTime(epochMillis: Long): String =
+    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT).format(Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()))
 
 /** The installed version name, or a dash where the package manager cannot say. */
 fun appVersionName(context: Context): String = try {

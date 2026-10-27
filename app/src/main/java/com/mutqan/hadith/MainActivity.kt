@@ -31,4 +31,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        // Coming back to the app: whatever was reviewed on another device is picked up, and what was reviewed here is sent.
+        // A no-op when nobody is signed in.
+        (application as MutqanApplication).container.progressSyncer.syncNow()
+    }
 }

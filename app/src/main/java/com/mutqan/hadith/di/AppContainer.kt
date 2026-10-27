@@ -16,7 +16,16 @@ import com.mutqan.hadith.domain.backup.BackupRepository
 import com.mutqan.hadith.domain.backup.ExportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ImportUserDataUseCase
 import com.mutqan.hadith.domain.backup.ResetProgressUseCase
+import com.mutqan.hadith.data.sync.FirestoreRemoteProgress
+import com.mutqan.hadith.data.sync.SharedPreferencesSyncState
 import com.mutqan.hadith.domain.pacing.DailyPacing
+import com.mutqan.hadith.domain.sync.ProgressMerge
+import com.mutqan.hadith.domain.sync.ProgressSyncer
+import com.mutqan.hadith.domain.sync.SyncProgressUseCase
+import com.mutqan.hadith.domain.sync.SyncStateStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import com.mutqan.hadith.domain.repository.CollectionRepository
 import com.mutqan.hadith.domain.repository.HadithRepository
 import com.mutqan.hadith.domain.repository.NarratorRepository
@@ -65,6 +74,19 @@ class AppContainer(
     val backupFiles: BackupFileStore by lazy { ContentResolverBackupFileStore(appContext.contentResolver) }
     val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
     val studyPreferences: StudyPreferences by lazy { SharedPreferencesStudyPreferences(appContext) }
+    private val syncState: SyncStateStore by lazy { SharedPreferencesSyncState(appContext) }
+    private val syncProgress by lazy {
+        SyncProgressUseCase(backupRepository, backupRepository as ProgressMerge, FirestoreRemoteProgress(), studyPreferences, syncState)
+    }
+
+    /** Keeps the progress of whoever is signed in together with their account; starts watching the sign-in when first used. */
+    val progressSyncer: ProgressSyncer by lazy {
+        ProgressSyncer(
+            authRepository, syncProgress, syncState,
+            CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            reviewRepository.observeAllMastery(),
+        )
+    }
     val dailyPacing: DailyPacing by lazy { DailyPacing(studyPreferences) }
     val scheduler: SpacedRepetitionScheduler by lazy { DualDecayScheduler(unlockAllLayers = studyPreferences.unlockAllLayers) }
     val readerSettings: ReaderSettings by lazy { SharedPreferencesReaderSettings(appContext) }

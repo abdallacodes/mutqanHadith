@@ -5,12 +5,15 @@ import com.mutqan.hadith.data.db.MutqanDatabase
 import com.mutqan.hadith.domain.backup.BackupRepository
 import com.mutqan.hadith.domain.backup.LibraryIds
 import com.mutqan.hadith.domain.backup.UserData
+import com.mutqan.hadith.domain.sync.ProgressMerge
+import com.mutqan.hadith.data.entity.MasteryRecordEntity
+import com.mutqan.hadith.data.entity.NarratorReviewEventEntity
 
 /**
  * User data lives in two tables, `mastery_record` and `narrator_review_event`; the library tables
  * are the app's own content and are never touched by a restore or a reset.
  */
-class RoomBackupRepository(private val db: MutqanDatabase) : BackupRepository {
+class RoomBackupRepository(private val db: MutqanDatabase) : BackupRepository, ProgressMerge {
 
     override suspend fun readUserData(): UserData = db.withTransaction {
         UserData(db.masteryDao().getAll(), db.reviewHistoryDao().getAll())
@@ -25,6 +28,13 @@ class RoomBackupRepository(private val db: MutqanDatabase) : BackupRepository {
             deleteUserData()
             db.masteryDao().upsertAll(data.mastery)
             db.reviewHistoryDao().insertAll(data.events)
+        }
+    }
+
+    override suspend fun merge(mastery: List<MasteryRecordEntity>, events: List<NarratorReviewEventEntity>) {
+        db.withTransaction {
+            db.masteryDao().upsertAll(mastery)
+            db.reviewHistoryDao().insertAll(events)
         }
     }
 

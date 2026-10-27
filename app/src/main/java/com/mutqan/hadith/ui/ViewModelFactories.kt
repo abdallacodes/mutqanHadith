@@ -82,7 +82,7 @@ fun AppContainer.insightsViewModelFactory(): ViewModelProvider.Factory = viewMod
 }
 
 fun AppContainer.settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-    initializer { SettingsViewModel(exportUserData, importUserData, resetProgress, backupFiles, studyPreferences, authRepository) }
+    initializer { SettingsViewModel(exportUserData, importUserData, resetProgress, backupFiles, studyPreferences, authRepository, progressSyncer) }
 }
 
 fun AppContainer.placementViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
