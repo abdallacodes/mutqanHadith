@@ -13,6 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.mutqan.hadith.ui.common.LocalOpenCompanion
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
@@ -32,6 +37,7 @@ import com.mutqan.hadith.di.AppContainer
 import com.mutqan.hadith.ui.analytics.AnalyticsRoute
 import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.analyticsViewModelFactory
+import com.mutqan.hadith.ui.narratorPageViewModelFactory
 import com.mutqan.hadith.ui.collectionDetailViewModelFactory
 import com.mutqan.hadith.ui.collectionPracticeViewModelFactory
 import com.mutqan.hadith.ui.booktest.BookTestRoute
@@ -83,6 +89,9 @@ import com.mutqan.hadith.ui.settings.SettingsViewModel
 import com.mutqan.hadith.ui.settingsViewModelFactory
 import com.mutqan.hadith.ui.study.HadithStudyRoute
 import com.mutqan.hadith.ui.study.HadithStudyViewModel
+import com.mutqan.hadith.ui.common.LocalOpenNarrator
+import com.mutqan.hadith.ui.narrator.NarratorPageRoute
+import com.mutqan.hadith.ui.narrator.NarratorPageViewModel
 
 object Routes {
     const val HOME = "home"
@@ -100,6 +109,7 @@ object Routes {
     const val MISSING_LINK = "missing_link/{$ARG_HADITH_ID}"
     const val ORDER_CHAIN = "order_chain/{$ARG_HADITH_ID}"
     const val NARRATOR_GRAPH = "narrator_graph"
+    const val NARRATOR = "narrator/{$ARG_ID}"
     const val ANALYTICS = "analytics"
     const val LIBRARY = "library"
     const val INSIGHTS = "insights"
@@ -123,6 +133,8 @@ object Routes {
     fun missingLink(hadithId: Long): String = "missing_link/$hadithId"
 
     fun orderChain(hadithId: Long): String = "order_chain/$hadithId"
+
+    fun narrator(narratorId: Long): String = "narrator/$narratorId"
 
     fun hadithDetails(hadithId: Long): String = "hadith_details/$hadithId"
 
@@ -192,6 +204,24 @@ fun MutqanNavHost(
 
 @Composable
 private fun MutqanDestinations(container: AppContainer, navController: NavHostController, askStartingPoint: Boolean, modifier: Modifier) {
+    val scope = rememberCoroutineScope()
+    val openNarrator = remember(navController) { { id: Long -> navController.navigate(Routes.narrator(id)) } }
+    // A card that knows only its hadith opens the page of the Companion: the last link of the chain.
+    val openCompanion = remember(navController, container) {
+        { hadithId: Long ->
+            scope.launch {
+                container.hadithRepository.getWithSanad(hadithId)?.sanad?.lastOrNull()?.narrator?.id?.let(openNarrator)
+            }
+            Unit
+        }
+    }
+    CompositionLocalProvider(LocalOpenNarrator provides openNarrator, LocalOpenCompanion provides openCompanion) {
+        MutqanNavGraph(container, navController, askStartingPoint, modifier)
+    }
+}
+
+@Composable
+private fun MutqanNavGraph(container: AppContainer, navController: NavHostController, askStartingPoint: Boolean, modifier: Modifier) {
     NavHost(
         navController = navController,
         startDestination = if (askStartingPoint) Routes.placement(firstRun = true) else Routes.HOME,
@@ -285,6 +315,20 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
             NarratorGraphRoute(
                 viewModel = viewModel,
                 onClose = { navController.popBackStack() },
+                onOpenNarrator = { navController.navigate(Routes.narrator(it)) },
+            )
+        }
+
+        // The page of a narrator: reached from any name in the app (see LocalOpenNarrator).
+        composable(
+            route = Routes.NARRATOR,
+            arguments = listOf(navArgument(Routes.ARG_ID) { type = NavType.LongType }),
+        ) { entry ->
+            val narratorId = entry.arguments?.getLong(Routes.ARG_ID) ?: return@composable
+            val viewModel: NarratorPageViewModel = viewModel(factory = container.narratorPageViewModelFactory(narratorId))
+            NarratorPageRoute(
+                viewModel = viewModel,
+                onClose = { navController.popBackStack() },
                 onReviewNarrator = { navController.navigate(Routes.review(ReviewMode.NARRATOR, it)) },
                 onOpenHadith = { navController.navigate(Routes.hadithDetails(it)) },
             )
@@ -295,7 +339,7 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
             AnalyticsRoute(
                 viewModel = viewModel,
                 onClose = { navController.popBackStack() },
-                onDrillNarrator = { navController.navigate(Routes.review(ReviewMode.NARRATOR, it)) },
+                onOpenNarrator = { navController.navigate(Routes.narrator(it)) },
             )
         }
 

@@ -87,7 +87,7 @@ class DiagnosticsViewModelsTest {
     private fun graphVm(
         hadithRepo: HadithRepository = hadiths,
         reviewRepo: ReviewRepository = reviews,
-    ) = NarratorGraphViewModel(GetNarratorGraphUseCase(hadithRepo, reviewRepo), GetHadithsByNarratorUseCase(hadithRepo, reviewRepo))
+    ) = NarratorGraphViewModel(GetNarratorGraphUseCase(hadithRepo, reviewRepo))
 
     private fun NarratorGraphViewModel.ui(): NarratorGraphUi = (state.value as UiState.Success).data
 
@@ -100,29 +100,15 @@ class DiagnosticsViewModelsTest {
         assertTrue(ui.layout.width > 0 && ui.layout.height > 0)
         assertFalse(ui.studiedOnly)
         assertNull(ui.selectedId)
-        assertNull(ui.profile)
     }
 
     @Test
-    fun graph_selectingANodeHighlightsItAndLoadsItsHadiths() = runTest {
-        reviews.events += listOf(event(1, 3, false), event(1, 3, true), event(2, 3, true))
-        studied(1)
+    fun graph_selectingANodeHighlightsIt() = runTest {
         val vm = graphVm()
 
         vm.onEvent(NarratorGraphEvent.SelectNode(3))
 
-        val ui = vm.ui()
-        assertEquals(3L, ui.selectedId)
-        val profile = ui.profile!!
-        assertFalse(profile.isLoading)
-        assertEquals("الزهري", profile.node.name)
-        assertTrue(profile.node.isPivot)
-        assertEquals(listOf(1L, 2L), profile.hadiths.map { it.hadithId }) // h3 does not pass through n3
-        val first = profile.hadiths.first()
-        assertEquals(1, first.errorCount)
-        assertEquals(1, first.successCount)
-        assertTrue(first.isStudied)
-        assertFalse(profile.hadiths.last().isStudied)
+        assertEquals(3L, vm.ui().selectedId)
     }
 
     @Test
@@ -130,23 +116,18 @@ class DiagnosticsViewModelsTest {
         val vm = graphVm()
         vm.onEvent(NarratorGraphEvent.SelectNode(999))
         assertNull(vm.ui().selectedId)
-        assertNull(vm.ui().profile)
     }
 
     @Test
-    fun graph_dismissingTheSheetKeepsTheHighlight_clearingDropsBoth() = runTest {
+    fun graph_clearingTheSelectionDropsTheHighlight() = runTest {
         val vm = graphVm()
         vm.onEvent(NarratorGraphEvent.SelectNode(2))
-
-        vm.onEvent(NarratorGraphEvent.DismissSheet)
-        assertEquals(2L, vm.ui().selectedId)
-        assertNull(vm.ui().profile)
-
         vm.onEvent(NarratorGraphEvent.SelectNode(4))
-        assertNotNull(vm.ui().profile)
+        assertEquals(4L, vm.ui().selectedId)
+
         vm.onEvent(NarratorGraphEvent.ClearSelection)
+
         assertNull(vm.ui().selectedId)
-        assertNull(vm.ui().profile)
     }
 
     @Test
@@ -175,13 +156,11 @@ class DiagnosticsViewModelsTest {
         vm.onEvent(NarratorGraphEvent.SelectNode(4))
         vm.onEvent(NarratorGraphEvent.SetStudiedOnly(true))
         assertEquals(4L, vm.ui().selectedId)
-        assertEquals(4L, vm.ui().profile!!.node.id)
 
         vm.onEvent(NarratorGraphEvent.SetStudiedOnly(false))
         vm.onEvent(NarratorGraphEvent.SelectNode(1))
         vm.onEvent(NarratorGraphEvent.SetStudiedOnly(true))
         assertNull(vm.ui().selectedId)
-        assertNull(vm.ui().profile)
     }
 
     @Test
@@ -195,7 +174,6 @@ class DiagnosticsViewModelsTest {
 
         assertEquals(2, vm.ui().graph.node(3)!!.attempts)
         assertEquals(3L, vm.ui().selectedId)
-        assertEquals(1, vm.ui().profile!!.node.errorCount) // the open profile shows the fresh counts
     }
 
     @Test
@@ -211,46 +189,6 @@ class DiagnosticsViewModelsTest {
         vm.load()
         assertTrue(vm.state.value is UiState.Success)
         assertEquals(5, vm.ui().graph.nodes.size)
-    }
-
-    @Test
-    fun graph_aFailingHadithListLeavesAnEmptyProfileInsteadOfSpinningForever() = runTest {
-        // The graph loads the library once; the man's hadith list reads it again, and that read fails.
-        var reads = 0
-        val flaky = object : HadithRepository by hadiths {
-            override suspend fun getAll(): List<HadithWithFullSanad> = if (reads++ == 0) hadiths.getAll() else error("no disk")
-        }
-        val vm = graphVm(hadithRepo = flaky)
-
-        vm.onEvent(NarratorGraphEvent.SelectNode(3))
-
-        val profile = vm.ui().profile!!
-        assertFalse(profile.isLoading)
-        assertTrue(profile.hadiths.isEmpty())
-    }
-
-    @Test
-    fun graph_aSlowHadithListDoesNotOverwriteTheNarratorTappedNext() = runTest {
-        val gate = CompletableDeferred<Unit>()
-        // Read 0 is the graph; read 1 is the list for the first narrator tapped, which hangs on the gate.
-        var reads = 0
-        val slowForTwo = object : HadithRepository by hadiths {
-            override suspend fun getAll(): List<HadithWithFullSanad> {
-                if (reads++ == 1) gate.await()
-                return hadiths.getAll()
-            }
-        }
-        val vm = graphVm(hadithRepo = slowForTwo)
-
-        vm.onEvent(NarratorGraphEvent.SelectNode(2)) // suspends on the gate
-        assertTrue(vm.ui().profile!!.isLoading)
-        vm.onEvent(NarratorGraphEvent.SelectNode(4))
-        assertFalse(vm.ui().profile!!.isLoading)
-
-        gate.complete(Unit)
-
-        assertEquals(4L, vm.ui().profile!!.node.id)
-        assertEquals(4L, vm.ui().selectedId)
     }
 
     // -- Hadith details --------------------------------------------------------------------

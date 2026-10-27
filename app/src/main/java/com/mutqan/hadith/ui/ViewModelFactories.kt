@@ -11,6 +11,7 @@ import com.mutqan.hadith.ui.collections.CollectionsViewModel
 import com.mutqan.hadith.ui.analytics.AnalyticsViewModel
 import com.mutqan.hadith.ui.details.HadithDetailsViewModel
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
+import com.mutqan.hadith.ui.narrator.NarratorPageViewModel
 import com.mutqan.hadith.ui.home.HomeViewModel
 import com.mutqan.hadith.ui.insights.InsightsViewModel
 import com.mutqan.hadith.ui.library.LibraryViewModel
@@ -46,7 +47,11 @@ fun AppContainer.missingLinkViewModelFactory(hadithId: Long): ViewModelProvider.
 }
 
 fun AppContainer.narratorGraphViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
-    initializer { NarratorGraphViewModel(getNarratorGraph, getHadithsByNarrator) }
+    initializer { NarratorGraphViewModel(getNarratorGraph) }
+}
+
+fun AppContainer.narratorPageViewModelFactory(narratorId: Long): ViewModelProvider.Factory = viewModelFactory {
+    initializer { NarratorPageViewModel(narratorId, getNarratorPage) }
 }
 
 fun AppContainer.hadithDetailsViewModelFactory(hadithId: Long): ViewModelProvider.Factory = viewModelFactory {

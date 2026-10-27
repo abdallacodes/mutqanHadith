@@ -184,7 +184,8 @@
     <string name="narrator_stat_errors">الأخطاء</string>
     <string name="narrator_stat_error_rate">نسبة الخطأ</string>
     <string name="narrator_hadiths_title">أحاديثك عبر هذا الراوي</string>
-    <string name="narrator_hadiths_loading">جارٍ تحميل الأحاديث…</string>
+    <string name="narrator_page_title">الراوي</string>
+    <string name="narrator_bio_title">نبذة عن الراوي</string>
     <string name="narrator_hadiths_empty">لا توجد أحاديث تمر بهذا الراوي</string>
     <string name="narrator_review_pivot">راجع أحاديث هذا المدار</string>
     <string name="narrator_review_normal">راجع أحاديث هذا الراوي</string>

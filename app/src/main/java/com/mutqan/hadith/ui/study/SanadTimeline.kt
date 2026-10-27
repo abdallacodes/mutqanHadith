@@ -8,10 +8,11 @@ import com.mutqan.hadith.R
 import com.mutqan.hadith.data.relation.SanadLink
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
+import com.mutqan.hadith.ui.common.narratorOpener
 
 /**
  * The chain as a read-only timeline: the compiler at the head, then each narrator down to the Companion with
- * the term he used to transmit. Pivot narrators (the مدار) are set apart. Nothing here reacts to a tap.
+ * the term he used to transmit. Pivot narrators (the مدار) are set apart. A tap on a narrator's name opens his page.
  */
 @Composable
 fun SanadTimeline(collector: String, links: List<SanadLink>, modifier: Modifier = Modifier) {
@@ -41,6 +42,7 @@ fun SanadTimeline(collector: String, links: List<SanadLink>, modifier: Modifier 
                 isLast = i == links.lastIndex,
                 state = if (link.narrator.isPivot) ChainNodeState.Highlighted else ChainNodeState.Normal,
                 badge = if (link.narrator.isPivot) pivot else null,
+                onOpenNarrator = narratorOpener(link.narrator.id),
             )
         }
     }

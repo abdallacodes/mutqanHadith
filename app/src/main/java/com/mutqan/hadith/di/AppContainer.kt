@@ -45,6 +45,7 @@ import com.mutqan.hadith.domain.usecase.DeleteCollectionUseCase
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import com.mutqan.hadith.domain.usecase.GetNarratorPageUseCase
 import com.mutqan.hadith.domain.usecase.GetLibraryPageUseCase
 import com.mutqan.hadith.domain.usecase.GetMasteryAnalyticsUseCase
 import com.mutqan.hadith.domain.usecase.CheckSanadDrillAccessUseCase
@@ -120,6 +121,7 @@ class AppContainer(
     val getLayerStatuses by lazy { GetLayerStatusesUseCase(reviewRepository, scheduler) }
     val getNarratorGraph by lazy { GetNarratorGraphUseCase(hadithRepository, reviewRepository) }
     val getHadithsByNarrator by lazy { GetHadithsByNarratorUseCase(hadithRepository, reviewRepository) }
+    val getNarratorPage by lazy { GetNarratorPageUseCase(narratorRepository, reviewRepository, getHadithsByNarrator) }
     val getMasteryAnalytics by lazy { GetMasteryAnalyticsUseCase(hadithRepository, narratorRepository, reviewRepository, scheduler) }
     val createCollection by lazy { CreateCollectionUseCase(collectionRepository) }
     val renameCollection by lazy { RenameCollectionUseCase(collectionRepository) }

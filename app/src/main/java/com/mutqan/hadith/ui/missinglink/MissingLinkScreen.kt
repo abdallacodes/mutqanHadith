@@ -49,6 +49,7 @@ import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.drill.DrillChoice
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
+import com.mutqan.hadith.ui.common.narratorOpener
 import com.mutqan.hadith.ui.common.MatnAnchorCard
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.UiState
@@ -140,6 +141,8 @@ fun MissingLinkContent(ui: MissingLinkUi, onEvent: (MissingLinkEvent) -> Unit, m
                         else -> ChainNodeState.Masked
                     },
                     modifier = if (masked) Modifier.bringIntoViewRequester(maskedNode) else Modifier,
+                    // The hidden narrator is the answer: his page opens only once the question has been answered.
+                    onOpenNarrator = narratorOpener(link.narrator.id.takeIf { !masked || revealed }),
                 )
             }
         }

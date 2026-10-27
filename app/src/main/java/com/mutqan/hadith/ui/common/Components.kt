@@ -220,6 +220,8 @@ fun ChainNode(
     modifier: Modifier = Modifier,
     badge: String? = null,
     onClick: (() -> Unit)? = null,
+    /** Opens the page of the narrator the node shows; the name is underlined and tappable. */
+    onOpenNarrator: (() -> Unit)? = null,
 ) {
     val colors = MutqanTheme.colors
     val scheme = MaterialTheme.colorScheme
@@ -280,7 +282,7 @@ fun ChainNode(
                         textAlign = TextAlign.Center,
                     )
                 } else {
-                    Text(name, style = NarratorTextStyle, color = scheme.onSurface)
+                    NarratorNameText(name, NarratorTextStyle, scheme.onSurface, onOpen = onOpenNarrator)
                     if (!fullName.isNullOrBlank() && fullName != name) {
                         Text(fullName, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                     }

@@ -30,6 +30,12 @@ import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.details.HadithDetailsContent
 import com.mutqan.hadith.ui.details.HadithDetailsUi
 import com.mutqan.hadith.ui.graph.NarratorGraphScreen
+import com.mutqan.hadith.ui.narrator.NarratorPageRoute
+import com.mutqan.hadith.ui.narrator.NarratorPageViewModel
+import com.mutqan.hadith.domain.repository.NarratorRepository
+import com.mutqan.hadith.domain.usecase.GetNarratorPageUseCase
+import com.mutqan.hadith.data.entity.NarratorEntity
+import androidx.compose.runtime.remember
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
 import com.mutqan.hadith.ui.review.ReviewMode
@@ -161,17 +167,16 @@ class DiagnosticsScreensTest {
 
     // -- Narrator graph --------------------------------------------------------------------
 
-    private fun graphVm() = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews), GetHadithsByNarratorUseCase(hadiths, reviews))
+    private fun graphVm() = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews))
 
     private fun setGraph(
         vm: NarratorGraphViewModel,
-        onReview: (Long) -> Unit = {},
-        onOpen: (Long) -> Unit = {},
+        onOpenNarrator: (Long) -> Unit = {},
         onClose: () -> Unit = {},
     ) = compose.setContent {
         MutqanHadithTheme {
             val state by vm.state.collectAsState()
-            NarratorGraphScreen(state, vm::onEvent, vm::load, onClose, onReview, onOpen)
+            NarratorGraphScreen(state, vm::onEvent, vm::load, onClose, onOpenNarrator)
         }
     }
 
@@ -189,31 +194,59 @@ class DiagnosticsScreensTest {
     }
 
     @Test
-    fun graph_tappingAPivotOpensItsProfileAndOffersToReviewIt() {
-        record(1, 3, errors = 1, successes = 3)
-        var reviewed: Long? = null
-        setGraph(graphVm(), onReview = { reviewed = it })
+    fun graph_tappingANarratorOpensHisPage() {
+        var opened: Long? = null
+        setGraph(graphVm(), onOpenNarrator = { opened = it })
 
-        compose.onNodeWithText("راجع أحاديث هذا المدار").assertDoesNotExist()
         compose.onNodeWithText("الزهري").performClick()
         compose.waitForIdle()
 
+        assertEquals(3L, opened)
+    }
+
+    // -- A narrator's page -----------------------------------------------------------------
+
+    private fun narrators(bioOf: Map<Long, String> = emptyMap()) = object : NarratorRepository {
+        override suspend fun getAll(): List<NarratorEntity> =
+            hadiths.getAll().flatMap { h -> h.edges.map { it.narrator } }.distinctBy { it.id }
+                .map { it.copy(bio = bioOf[it.id].orEmpty()) }
+    }
+
+    private fun setPage(
+        id: Long,
+        bioOf: Map<Long, String> = emptyMap(),
+        onReview: (Long) -> Unit = {},
+        onOpen: (Long) -> Unit = {},
+    ) = compose.setContent {
+        MutqanHadithTheme {
+            val vm = remember { NarratorPageViewModel(id, GetNarratorPageUseCase(narrators(bioOf), reviews, GetHadithsByNarratorUseCase(hadiths, reviews))) }
+            NarratorPageRoute(vm, onClose = {}, onReviewNarrator = onReview, onOpenHadith = onOpen)
+        }
+    }
+
+    @Test
+    fun narratorPage_showsThePivotWithHisRecordHadithsAndAReviewShortcut() {
+        record(1, 3, errors = 1, successes = 3)
+        var reviewed: Long? = null
+        setPage(3, onReview = { reviewed = it })
+        compose.waitForIdle()
+
+        compose.onNodeWithText("الزهري").assertExists()
         compose.onNodeWithText("أحاديثك عبر هذا الراوي").assertExists()
         compose.onNodeWithText("حديث رقم 1").assertExists()
         compose.onNodeWithText("حديث رقم 2").assertExists()
         compose.onNodeWithText("حديث رقم 3").assertDoesNotExist() // h3 does not pass through the Zuhri
         compose.onNodeWithText("نسبة الخطأ").assertExists()
         compose.onNodeWithText("25٪").assertExists() // 1 miss in 4 attempts
+        compose.onNodeWithText("نبذة عن الراوي").assertDoesNotExist() // nobody wrote about him
 
         compose.onNodeWithText("راجع أحاديث هذا المدار").assertIsEnabled().performClick()
         assertEquals(3L, reviewed)
     }
 
     @Test
-    fun graph_aPlainNarratorGetsThePlainReviewLabel() {
-        setGraph(graphVm())
-
-        compose.onNodeWithText("مسدد").performClick()
+    fun narratorPage_aPlainNarratorGetsThePlainReviewLabel() {
+        setPage(5)
         compose.waitForIdle()
 
         compose.onNodeWithText("راجع أحاديث هذا الراوي").assertIsEnabled()
@@ -221,15 +254,32 @@ class DiagnosticsScreensTest {
     }
 
     @Test
-    fun graph_aHadithInTheProfileOpensItsDetails() {
+    fun narratorPage_aHadithOnItOpensItsDetails() {
         var opened: Long? = null
-        setGraph(graphVm(), onOpen = { opened = it })
-
-        compose.onNodeWithText("الزهري").performClick()
+        setPage(3, onOpen = { opened = it })
         compose.waitForIdle()
+
         compose.onNodeWithText("متن 2").performClick()
 
         assertEquals(2L, opened)
+    }
+
+    @Test
+    fun narratorPage_showsWhatAnAdminWroteInParagraphs() {
+        setPage(3, bioOf = mapOf(3L to "الفقرة الأولى.\n\nالفقرة الثانية."))
+        compose.waitForIdle()
+
+        compose.onNodeWithText("نبذة عن الراوي").assertExists()
+        compose.onNodeWithText("الفقرة الأولى.").assertExists()
+        compose.onNodeWithText("الفقرة الثانية.").assertExists()
+    }
+
+    @Test
+    fun narratorPage_anUnknownNarratorIsAnErrorWithARetry() {
+        setPage(999)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("إعادة المحاولة").assertExists()
     }
 
     @Test
@@ -268,7 +318,7 @@ class DiagnosticsScreensTest {
         val flaky = object : HadithRepository by hadiths {
             override suspend fun getAll() = if (offline) error("db closed") else hadiths.getAll()
         }
-        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(flaky, reviews), GetHadithsByNarratorUseCase(flaky, reviews))
+        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(flaky, reviews))
         setGraph(vm)
 
         compose.onNodeWithText("الزهري").assertDoesNotExist()

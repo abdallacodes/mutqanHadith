@@ -196,7 +196,7 @@ class BottomNavigationTest {
 
         tab("الورد اليومي").assertIsSelected()
         compose.onNodeWithText("سلسلة الحفظ").assertDoesNotExist()
-        compose.onNodeWithText("ابدأ سلسلة الحفظ اليوم").assertExists()
+        compose.onNodeWithText("ابدأ سلسلة الحفظ اليوم").assertDoesNotExist()
         // A fresh install has nothing to review and no day to claim as done.
         compose.onNodeWithText("لا مراجعات بعد؛ تبدأ مراجعاتك حين تحفظ أول حديث").assertExists()
         compose.onNodeWithText("المحطة التالية في الحفظ").assertExists()

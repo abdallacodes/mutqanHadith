@@ -268,10 +268,10 @@ class DailyDashboardScreensTest {
     }
 
     @Test
-    fun home_streakHeader_invitesANewcomerToStartOne() {
+    fun home_streakHeader_isNotShownUntilThereIsAStreak() {
         showHome(dashboard())
 
-        compose.onNodeWithText("ابدأ سلسلة الحفظ اليوم").assertExists()
+        compose.onNodeWithText("ابدأ سلسلة الحفظ اليوم").assertDoesNotExist()
     }
 
     @Test

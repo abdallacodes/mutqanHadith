@@ -51,6 +51,8 @@ import com.mutqan.hadith.ui.common.StatTile
 import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.theme.MutqanTheme
 import com.mutqan.hadith.ui.theme.NarratorTextStyle
+import com.mutqan.hadith.ui.common.NarratorNameText
+import com.mutqan.hadith.ui.common.narratorOpener
 import kotlin.math.roundToInt
 
 /** The colour that stands for a [ChainHealth]; an untested narrator gets the neutral outline colour. */
@@ -189,7 +191,10 @@ private fun HeatNodeCard(position: Int, node: NarratorHeat, onClick: () -> Unit)
         ) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(node.performance.narratorName, style = NarratorTextStyle, color = scheme.onSurface, modifier = Modifier.weight(1f))
+                    NarratorNameText(
+                        node.performance.narratorName, NarratorTextStyle, scheme.onSurface, Modifier.weight(1f, fill = false),
+                        onOpen = narratorOpener(node.performance.narratorId),
+                    )
                     if (node.isWeakestLink) WeakestBadge()
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -281,7 +286,10 @@ private fun HeatChip(node: NarratorHeat, onClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(accent))
-            Text(node.performance.narratorName, style = NarratorTextStyle.copy(fontSize = 16.sp, lineHeight = 24.sp), color = scheme.onSurface)
+            NarratorNameText(
+                node.performance.narratorName, NarratorTextStyle.copy(fontSize = 16.sp, lineHeight = 24.sp), scheme.onSurface,
+                onOpen = narratorOpener(node.performance.narratorId),
+            )
             if (node.isWeakestLink) {
                 Text(stringResource(R.string.heatmap_weakest), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = scheme.onSurface)
             }

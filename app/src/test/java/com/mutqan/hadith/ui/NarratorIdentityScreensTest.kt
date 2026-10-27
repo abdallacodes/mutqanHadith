@@ -16,6 +16,12 @@ import com.mutqan.hadith.domain.narrator
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetDueHadithsUseCase
 import com.mutqan.hadith.domain.usecase.GetHadithsByNarratorUseCase
+import androidx.compose.runtime.remember
+import com.mutqan.hadith.data.entity.NarratorEntity
+import com.mutqan.hadith.domain.repository.NarratorRepository
+import com.mutqan.hadith.domain.usecase.GetNarratorPageUseCase
+import com.mutqan.hadith.ui.narrator.NarratorPageRoute
+import com.mutqan.hadith.ui.narrator.NarratorPageViewModel
 import com.mutqan.hadith.domain.usecase.GetLayerStatusesUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorChainHeatmapUseCase
 import com.mutqan.hadith.domain.usecase.GetNarratorGraphUseCase
@@ -107,13 +113,27 @@ class NarratorIdentityScreensTest {
     }
 
     private fun showGraph() {
-        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews), GetHadithsByNarratorUseCase(hadiths, reviews))
+        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews))
         compose.setContent {
             MutqanHadithTheme {
                 val state by vm.state.collectAsState()
-                NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {}, {})
+                NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {})
             }
         }
+    }
+
+    private fun showPage(id: Long) {
+        val narrators = object : NarratorRepository {
+            override suspend fun getAll(): List<NarratorEntity> =
+                hadiths.getAll().flatMap { h -> h.edges.map { it.narrator } }.distinctBy { it.id }
+        }
+        compose.setContent {
+            MutqanHadithTheme {
+                val vm = remember { NarratorPageViewModel(id, GetNarratorPageUseCase(narrators, reviews, GetHadithsByNarratorUseCase(hadiths, reviews))) }
+                NarratorPageRoute(vm, onClose = {}, onReviewNarrator = {}, onOpenHadith = {})
+            }
+        }
+        compose.waitForIdle()
     }
 
     @Test
@@ -125,11 +145,8 @@ class NarratorIdentityScreensTest {
     }
 
     @Test
-    fun network_theProfileListsTheHadithsOfBothSpellingsAndTheOtherName() {
-        showGraph()
-
-        compose.onNodeWithText("عبد الله بن عباس").performClick()
-        compose.waitForIdle()
+    fun page_listsTheHadithsOfBothSpellingsAndTheOtherName() {
+        showPage(58)
 
         compose.onNodeWithText("يُعرف أيضًا بـ: ابن عباس").assertExists()
         compose.onNodeWithText("حديث رقم 4").assertExists()
@@ -138,11 +155,8 @@ class NarratorIdentityScreensTest {
     }
 
     @Test
-    fun network_aManWithOneNameHasNoAlsoKnownAsLine() {
-        showGraph()
-
-        compose.onNodeWithText("نافع").performClick()
-        compose.waitForIdle()
+    fun page_aManWithOneNameHasNoAlsoKnownAsLine() {
+        showPage(5)
 
         compose.onAllNodesWithText("يُعرف أيضًا بـ", substring = true).assertCountEquals(0)
     }

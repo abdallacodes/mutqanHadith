@@ -27,7 +27,7 @@ import com.mutqan.hadith.domain.usecase.CompanionBio
 
 /** The Companion who narrates the hadith, in large type: the first thing the reader and the review card say about it. */
 @Composable
-fun SahabiCard(name: String) {
+fun SahabiCard(name: String, onOpen: (() -> Unit)? = null) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -39,7 +39,7 @@ fun SahabiCard(name: String) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            Text(name, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            NarratorNameText(name, MaterialTheme.typography.headlineMedium, MaterialTheme.colorScheme.onPrimaryContainer, onOpen = onOpen)
         }
     }
 }

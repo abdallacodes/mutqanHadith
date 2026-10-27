@@ -176,7 +176,8 @@
     <string name="narrator_stat_errors">Errors</string>
     <string name="narrator_stat_error_rate">Error rate</string>
     <string name="narrator_hadiths_title">Your hadiths through this narrator</string>
-    <string name="narrator_hadiths_loading">Loading hadiths…</string>
+    <string name="narrator_page_title">Narrator</string>
+    <string name="narrator_bio_title">About this narrator</string>
     <string name="narrator_hadiths_empty">No hadiths pass through this narrator</string>
     <string name="narrator_review_pivot">Review this pivot narrator\'s hadiths</string>
     <string name="narrator_review_normal">Review this narrator\'s hadiths</string>

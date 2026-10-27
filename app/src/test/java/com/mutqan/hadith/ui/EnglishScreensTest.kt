@@ -44,6 +44,12 @@ import com.mutqan.hadith.ui.common.tierLabel
 import com.mutqan.hadith.ui.graph.NarratorGraphScreen
 import com.mutqan.hadith.ui.graph.NarratorGraphViewModel
 import com.mutqan.hadith.ui.heatmap.ChainHeatmapView
+import androidx.compose.runtime.remember
+import com.mutqan.hadith.data.entity.NarratorEntity
+import com.mutqan.hadith.domain.repository.NarratorRepository
+import com.mutqan.hadith.domain.usecase.GetNarratorPageUseCase
+import com.mutqan.hadith.ui.narrator.NarratorPageRoute
+import com.mutqan.hadith.ui.narrator.NarratorPageViewModel
 import com.mutqan.hadith.ui.home.HomeActions
 import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.insights.InsightsActions
@@ -211,7 +217,7 @@ class EnglishScreensTest {
     fun home_beforeAnythingIsStudied_invitesTheFirstMemorization() {
         compose.setContent { MutqanHadithTheme { HomeScreen(UiState.Success(dashboard(learning = 0).copy(masteredCount = 0)), noActions) {} } }
 
-        compose.onNodeWithText("Start your memorization streak today").assertExists()
+        compose.onNodeWithText("Start your memorization streak today").assertDoesNotExist()
         compose.onNodeWithText("No reviews yet; they begin once you memorize your first hadith").assertExists()
         compose.onNodeWithText("You completed today\'s review").assertDoesNotExist()
     }
@@ -280,12 +286,12 @@ class EnglishScreensTest {
 
     // -- Narrator graph --------------------------------------------------------------------
 
-    private fun graphVm() = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews), GetHadithsByNarratorUseCase(hadiths, reviews))
+    private fun graphVm() = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews))
 
     private fun setGraph(vm: NarratorGraphViewModel) = compose.setContent {
         MutqanHadithTheme {
             val state by vm.state.collectAsState()
-            NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {}, {})
+            NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {})
         }
     }
 
@@ -304,18 +310,30 @@ class EnglishScreensTest {
     }
 
     @Test
-    fun graph_aPivotProfileIsEnglish() {
+    fun narratorPage_isEnglish() {
         record(1, 3, errors = 1, successes = 3)
-        setGraph(graphVm())
+        showPage(3)
 
-        compose.onNodeWithText("الزهري").performClick()
-        compose.waitForIdle()
-
+        compose.onNodeWithText("Narrator").assertExists()
         compose.onNodeWithText("Your hadiths through this narrator").assertExists()
         compose.onNodeWithText("Hadith no. 1").assertExists()
         compose.onNodeWithText("Error rate").assertExists()
         compose.onNodeWithText("25%").assertExists()
         compose.onNodeWithText("Review this pivot narrator\'s hadiths").assertExists()
+    }
+
+    private fun showPage(id: Long) {
+        val narrators = object : NarratorRepository {
+            override suspend fun getAll(): List<NarratorEntity> =
+                hadiths.getAll().flatMap { h -> h.edges.map { it.narrator } }.distinctBy { it.id }
+        }
+        compose.setContent {
+            MutqanHadithTheme {
+                val vm = remember { NarratorPageViewModel(id, GetNarratorPageUseCase(narrators, reviews, GetHadithsByNarratorUseCase(hadiths, reviews))) }
+                NarratorPageRoute(vm, onClose = {}, onReviewNarrator = {}, onOpenHadith = {})
+            }
+        }
+        compose.waitForIdle()
     }
 
     // -- Library and reader ----------------------------------------------------------------

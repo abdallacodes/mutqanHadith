@@ -46,6 +46,8 @@ import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.usecase.ChainHeatmap
 import com.mutqan.hadith.ui.common.ChainNode
 import com.mutqan.hadith.ui.common.ChainNodeState
+import com.mutqan.hadith.ui.common.companionOpener
+import com.mutqan.hadith.ui.common.narratorOpener
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.LayerBadge
 import com.mutqan.hadith.ui.common.LockedHint
@@ -113,7 +115,7 @@ internal fun CardPane(
             CoreCues(card, stage, frame.hints, frame.canHint, onHint)
         } else if (stage != CardStage.RECALL && card.sahabi.isNotBlank()) {
             // As in the reader: the Companion first. Held back while the matn is recalled.
-            SahabiCard(card.sahabi)
+            SahabiCard(card.sahabi, onOpen = companionOpener(card.hadithId))
         }
 
         Card(
@@ -192,7 +194,7 @@ internal fun CoreCues(card: ReviewCard, stage: CardStage, hints: List<HintKind>,
         HintPanel(card, hints, canHint, onHint)
         return
     }
-    if (card.sahabi.isNotBlank()) SahabiCard(card.sahabi)
+    if (card.sahabi.isNotBlank()) SahabiCard(card.sahabi, onOpen = companionOpener(card.hadithId))
 }
 
 /** The hint button of a layer 1 card and the hints it has given so far. */
@@ -331,6 +333,7 @@ internal fun SanadBlock(card: ReviewCard, frame: CardFrame, onToggleMissed: (Lon
                 isFirst = i == 0,
                 isLast = i == card.links.lastIndex,
                 state = if (link.narrator.id in frame.missed) ChainNodeState.Missed else ChainNodeState.Normal,
+                onOpenNarrator = narratorOpener(link.narrator.id),
                 onClick = if (frame.practice) null else ({ onToggleMissed(link.narrator.id) }),
             )
         }

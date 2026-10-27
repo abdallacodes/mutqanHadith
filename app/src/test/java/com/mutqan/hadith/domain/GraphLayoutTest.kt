@@ -153,4 +153,31 @@ class GraphLayoutTest {
         assertEquals(3, TierRank.of("شيخ المصنف"))
         assertNull(TierRank.of("غير معروف"))
     }
+
+    @Test
+    fun aPlainNarratorOfNoKnownTierGetsABandOfHisOwnBelowTheCompanionNotInHisBand() {
+        // The shape of the bundled catalog: the compiler's teacher, a few plain «راوٍ», and the Companion.
+        val plain = graph(
+            listOf(node(1, "صحابي"), node(2, "راوٍ"), node(3, "راوٍ"), node(4, "شيخ المصنف")),
+            1L to 2L, 2L to 3L, 3L to 4L,
+        )
+
+        val layout = engine.layout(plain)
+
+        assertEquals(listOf("صحابي", "راوٍ", "شيخ المصنف"), layout.bands.map { it.tier })
+        assertTrue(layout.p(1).y < layout.p(2).y)
+        assertTrue(layout.p(3).y < layout.p(4).y)
+    }
+
+    @Test
+    fun plainNarratorsBetweenTwoKnownTiersSitBetweenThem() {
+        val mixed = graph(
+            listOf(node(1, "صحابي"), node(2, "راوٍ"), node(3, "تابعي"), node(4, "شيخ المصنف")),
+            1L to 2L, 2L to 3L, 3L to 4L,
+        )
+
+        val layout = engine.layout(mixed)
+
+        assertEquals(listOf("صحابي", "راوٍ", "تابعي", "شيخ المصنف"), layout.bands.map { it.tier })
+    }
 }

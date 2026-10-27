@@ -56,6 +56,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.ui.common.NarratorNameText
+import com.mutqan.hadith.ui.common.companionOpener
 import com.mutqan.hadith.data.entity.CatalogGroupEntity
 import com.mutqan.hadith.domain.model.CollectionAccent
 import com.mutqan.hadith.domain.narrator.NarratorAliases
@@ -465,10 +467,11 @@ fun LibraryHadithCard(
                 Column(Modifier.weight(1f)) {
                     Text(hadith.sourceBook, style = MaterialTheme.typography.titleMedium)
                     if (hadith.sahabi.isNotBlank()) {
-                        Text(
+                        NarratorNameText(
                             stringResource(R.string.sahabi_label, NarratorAliases.canonicalName(hadith.sahabi)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            MaterialTheme.typography.bodyMedium,
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                            onOpen = companionOpener(hadith.id),
                         )
                     }
                 }

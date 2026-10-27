@@ -67,12 +67,12 @@ class GraphDirectionTest {
     fun tearDown() = Dispatchers.resetMain()
 
     private fun showGraph() {
-        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews), GetHadithsByNarratorUseCase(hadiths, reviews))
+        val vm = NarratorGraphViewModel(GetNarratorGraphUseCase(hadiths, reviews))
         compose.setContent {
             MutqanHadithTheme {
                 CompositionLocalProvider(LocalLayoutDirection provides direction) {
                     val state by vm.state.collectAsState()
-                    NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {}, {})
+                    NarratorGraphScreen(state, vm::onEvent, vm::load, {}, {})
                 }
             }
         }

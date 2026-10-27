@@ -141,7 +141,7 @@ class GraphLayoutEngine(
             val end = (if (bi + 1 < bandRanks.size) bandStart.getValue(bandRanks[bi + 1]) else levelCount) - 1
             val members = graph.nodes.filter { rank.getValue(it.id) == r }
             // A band is named after the narrators whose tier says they belong to it, not after the ones that only follow.
-            val named = members.filter { TierRank.of(it.tier) == r }.ifEmpty { members }
+            val named = members.filter { TierRank.of(it.tier)?.times(2) == r }.ifEmpty { members }
             TierBand(
                 tier = named.groupingBy { it.tier }.eachCount().entries
                     .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
@@ -153,16 +153,22 @@ class GraphLayoutEngine(
         return GraphLayout(placements, width, levelY.last() + maxHeight / 2 + margin, bands)
     }
 
-    /** Generation per narrator: from the tier when known, otherwise that of the latest-generation teacher. */
+    /**
+     * Generation per narrator. A narrator of a known tier sits in that tier's band; one of no known tier (the catalog's
+     * plain «راوٍ») sits in a band of his own just below the latest-generation teacher whose tier is known, and shares
+     * the band of an unknown-tier teacher. Known tiers are doubled so that such a band fits between two of them.
+     */
     private fun ranks(graph: NarratorGraph, teachersOf: Map<Long, List<Long>>): Map<Long, Int> {
         val known = graph.nodes.associate { it.id to TierRank.of(it.tier) }
-        val rank = known.mapValues { it.value ?: 0 }.toMutableMap()
+        val rank = known.mapValues { (it.value ?: 0) * 2 }.toMutableMap()
         // Bounded relaxation so a malformed cycle of unknown tiers cannot loop forever.
         repeat(graph.nodes.size) {
             var changed = false
             for (n in graph.nodes) {
                 if (known.getValue(n.id) != null) continue
-                val inherited = teachersOf[n.id].orEmpty().maxOfOrNull { rank.getValue(it) } ?: 0
+                val inherited = teachersOf[n.id].orEmpty().maxOfOrNull { teacher ->
+                    if (known.getValue(teacher) != null) rank.getValue(teacher) + 1 else rank.getValue(teacher)
+                } ?: 0
                 if (inherited != rank.getValue(n.id)) {
                     rank[n.id] = inherited
                     changed = true

@@ -82,7 +82,7 @@ class SettingsAnalyticsScreensTest {
         state: UiState<MasteryAnalytics> = UiState.Success(analytics),
         onDrill: (Long) -> Unit = {},
         onRetry: () -> Unit = {},
-    ) = compose.setContent { MutqanHadithTheme { AnalyticsScreen(state, onRetry, onClose = {}, onDrillNarrator = onDrill) } }
+    ) = compose.setContent { MutqanHadithTheme { AnalyticsScreen(state, onRetry, onClose = {}, onOpenNarrator = onDrill) } }
 
     @Test
     fun analytics_showsEveryCardWithItsFigures() {

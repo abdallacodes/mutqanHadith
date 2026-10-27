@@ -4,6 +4,7 @@ import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.domain.model.LayerStatus
 import com.mutqan.hadith.domain.narrator.NarratorDirectory
+import com.mutqan.hadith.domain.narrator.bioParagraphs
 import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.StabilityMetrics
@@ -77,12 +78,8 @@ class GetHadithStudyUseCase(
         val companion = hadith.sanad.maxByOrNull { it.orderIndex }?.narrator ?: return null
         val person = NarratorDirectory.of(listOf(companion) + all).canonicalOf(companion.id) ?: return null
         val written = (listOf(companion) + all).firstOrNull { it.id in person.memberIds && it.bio.isNotBlank() }?.bio ?: return null
-        val paragraphs = written.split(PARAGRAPH_BREAK).map { it.trim() }.filter { it.isNotEmpty() }
+        val paragraphs = bioParagraphs(written)
         return paragraphs.takeIf { it.isNotEmpty() }?.let { CompanionBio(person.name, it) }
     }
 
-    private companion object {
-        /** A blank line between paragraphs, however the line ends were written. */
-        val PARAGRAPH_BREAK = Regex("\\r?\\n\\s*\\r?\\n")
-    }
 }

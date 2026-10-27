@@ -53,6 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.ui.common.NarratorNameText
+import com.mutqan.hadith.ui.common.narratorOpener
 import com.mutqan.hadith.domain.drill.OrderChip
 import com.mutqan.hadith.domain.model.ReviewRating
 import com.mutqan.hadith.ui.common.MatnAnchorCard
@@ -227,7 +229,11 @@ private fun OrderRow(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(chip.narrator.primaryName, style = NarratorTextStyle)
+                    // The order was the question; once it is judged the names may be read about.
+                    NarratorNameText(
+                        chip.narrator.primaryName, NarratorTextStyle, scheme.onSurface,
+                        onOpen = narratorOpener(chip.narrator.id.takeIf { judged != null }),
+                    )
                     if (qualifier != null) {
                         Text(qualifier, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
                     }

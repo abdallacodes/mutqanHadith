@@ -1,10 +1,11 @@
-package com.mutqan.hadith.ui.graph
+package com.mutqan.hadith.ui.narrator
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -14,21 +15,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
 import com.mutqan.hadith.domain.usecase.ChainHealth
 import com.mutqan.hadith.domain.usecase.NarratorHadith
+import com.mutqan.hadith.domain.usecase.NarratorPage
+import com.mutqan.hadith.ui.common.MutqanTopBar
+import com.mutqan.hadith.ui.common.UiState
+import com.mutqan.hadith.ui.common.UiStateHost
 import com.mutqan.hadith.ui.common.InfoChip
 import com.mutqan.hadith.ui.common.StatTile
 import com.mutqan.hadith.ui.common.tierLabel
@@ -36,31 +41,47 @@ import com.mutqan.hadith.ui.heatmap.color
 import com.mutqan.hadith.ui.theme.MatnCompactTextStyle
 import kotlin.math.roundToInt
 
-/**
- * A narrator's profile: tier, how often the user fails to place him, and every Hadith in the
- * library whose chain runs through him, with a shortcut to review all of them.
- */
-@OptIn(ExperimentalMaterial3Api::class)
+/** A narrator's own page, opened from any place his name is shown. */
 @Composable
-fun NarratorDetailSheet(
-    profile: NarratorProfile,
-    onDismiss: () -> Unit,
-    onReviewHadiths: () -> Unit,
+fun NarratorPageRoute(
+    viewModel: NarratorPageViewModel,
+    onClose: () -> Unit,
+    onReviewNarrator: (Long) -> Unit,
     onOpenHadith: (Long) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        NarratorDetailBody(profile, onReviewHadiths, onOpenHadith)
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    NarratorPageScreen(state, viewModel::load, onClose, onReviewNarrator, onOpenHadith)
+}
+
+/**
+ * Who he is (name, other names, tier), what an admin wrote about him, how often the user fails to place him and every
+ * hadith in the library whose chain runs through him, with a shortcut to review all of them.
+ */
+@Composable
+fun NarratorPageScreen(
+    state: UiState<NarratorPage>,
+    onRetry: () -> Unit,
+    onClose: () -> Unit,
+    onReviewNarrator: (Long) -> Unit,
+    onOpenHadith: (Long) -> Unit,
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = { MutqanTopBar(stringResource(R.string.narrator_page_title), onBack = onClose) },
+    ) { padding ->
+        UiStateHost(state, onRetry, Modifier.padding(padding).fillMaxSize()) { page ->
+            NarratorPageBody(page, onReviewHadiths = { onReviewNarrator(page.node.id) }, onOpenHadith = onOpenHadith)
+        }
     }
 }
 
-/** The sheet's content without its window, so it can be rendered on its own. */
 @Composable
-internal fun NarratorDetailBody(
-    profile: NarratorProfile,
+internal fun NarratorPageBody(
+    page: NarratorPage,
     onReviewHadiths: () -> Unit,
     onOpenHadith: (Long) -> Unit,
 ) {
-    val node = profile.node
+    val node = page.node
     val scheme = MaterialTheme.colorScheme
     val health = ChainHealth.of(node.errorCount, node.successCount)
 
@@ -90,6 +111,14 @@ internal fun NarratorDetailBody(
                         }
                     }
                 }
+                if (page.bio.isNotEmpty()) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.narrator_bio_title), style = MaterialTheme.typography.titleMedium)
+                            page.bio.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+                        }
+                    }
+                }
                 item {
                     Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         StatTile(node.hadithCount.toString(), stringResource(R.string.narrator_stat_hadiths), Modifier.weight(1f))
@@ -111,23 +140,17 @@ internal fun NarratorDetailBody(
                     )
                 }
                 when {
-                    profile.isLoading -> item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.padding(4.dp), strokeWidth = 2.dp)
-                            Text(stringResource(R.string.narrator_hadiths_loading), style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                    profile.hadiths.isEmpty() -> item {
+                    page.hadiths.isEmpty() -> item {
                         Text(stringResource(R.string.narrator_hadiths_empty), style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
                     }
-                    else -> items(profile.hadiths, key = { it.hadithId }) { hadith ->
+                    else -> items(page.hadiths, key = { it.hadithId }) { hadith ->
                         HadithRow(hadith, onClick = { onOpenHadith(hadith.hadithId) })
                     }
                 }
             }
             Button(
                 onClick = onReviewHadiths,
-                enabled = !profile.isLoading && profile.hadiths.isNotEmpty(),
+                enabled = page.hadiths.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
                 Text(stringResource(if (node.isPivot) R.string.narrator_review_pivot else R.string.narrator_review_normal))

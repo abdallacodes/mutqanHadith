@@ -23,6 +23,8 @@ data class CanonicalNarrator(
     val aliases: List<String>,
     /** Honorific titles that stood before his name («أمير المؤمنين»), kept for display and out of the name. */
     val titles: List<String>,
+    /** What an admin wrote about him, from his head row first and then any other row of his; empty when nothing was. */
+    val bio: String = "",
 ) {
     /**
      * Whether the name says who he is. A bare «سفيان», «يحيى» or «عبد الله» (see [NarratorAliases.isAmbiguous]) does
@@ -118,6 +120,7 @@ class NarratorDirectory private constructor(
                 aliases = names.filter { it != name && it != fullName },
                 titles = members.flatMap { listOf(it.primaryName, it.fullName) }
                     .flatMap { NarratorNormalizer.parse(it).titles }.distinct(),
+                bio = (listOf(head) + members.filter { it !== head }).map { it.bio }.firstOrNull { it.isNotBlank() }.orEmpty(),
             )
         }
     }

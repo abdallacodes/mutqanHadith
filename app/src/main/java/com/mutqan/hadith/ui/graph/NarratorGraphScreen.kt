@@ -40,11 +40,10 @@ import com.mutqan.hadith.ui.common.UiStateHost
 fun NarratorGraphRoute(
     viewModel: NarratorGraphViewModel,
     onClose: () -> Unit,
-    onReviewNarrator: (Long) -> Unit,
-    onOpenHadith: (Long) -> Unit,
+    onOpenNarrator: (Long) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    NarratorGraphScreen(state, viewModel::onEvent, viewModel::load, onClose, onReviewNarrator, onOpenHadith)
+    NarratorGraphScreen(state, viewModel::onEvent, viewModel::load, onClose, onOpenNarrator)
 }
 
 @Composable
@@ -53,8 +52,8 @@ fun NarratorGraphScreen(
     onEvent: (NarratorGraphEvent) -> Unit,
     onRetry: () -> Unit,
     onClose: () -> Unit,
-    onReviewNarrator: (Long) -> Unit,
-    onOpenHadith: (Long) -> Unit,
+    /** A tap on a narrator opens his page; the network keeps him highlighted for when the user comes back. */
+    onOpenNarrator: (Long) -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -62,22 +61,14 @@ fun NarratorGraphScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             UiStateHost(state, onRetry) { ui ->
-                GraphContent(ui, onEvent)
-                ui.profile?.let { profile ->
-                    NarratorDetailSheet(
-                        profile = profile,
-                        onDismiss = { onEvent(NarratorGraphEvent.DismissSheet) },
-                        onReviewHadiths = { onReviewNarrator(profile.node.id) },
-                        onOpenHadith = onOpenHadith,
-                    )
-                }
+                GraphContent(ui, onEvent, onOpenNarrator)
             }
         }
     }
 }
 
 @Composable
-private fun GraphContent(ui: NarratorGraphUi, onEvent: (NarratorGraphEvent) -> Unit) {
+private fun GraphContent(ui: NarratorGraphUi, onEvent: (NarratorGraphEvent) -> Unit, onOpenNarrator: (Long) -> Unit) {
     var fitRequest by remember { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -110,7 +101,7 @@ private fun GraphContent(ui: NarratorGraphUi, onEvent: (NarratorGraphEvent) -> U
                     graph = ui.graph,
                     layout = ui.layout,
                     selectedId = ui.selectedId,
-                    onNodeClick = { onEvent(NarratorGraphEvent.SelectNode(it)) },
+                    onNodeClick = { onEvent(NarratorGraphEvent.SelectNode(it)); onOpenNarrator(it) },
                     onBackgroundClick = { onEvent(NarratorGraphEvent.ClearSelection) },
                     modifier = Modifier.fillMaxSize(),
                     fitRequest = fitRequest,

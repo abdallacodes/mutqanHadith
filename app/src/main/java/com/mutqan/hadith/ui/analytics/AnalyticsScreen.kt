@@ -72,12 +72,12 @@ import kotlin.math.roundToInt
 fun AnalyticsRoute(
     viewModel: AnalyticsViewModel,
     onClose: () -> Unit,
-    onDrillNarrator: (Long) -> Unit,
+    onOpenNarrator: (Long) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     // Reviews made elsewhere change every figure here; recompute whenever the screen returns.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
-    AnalyticsScreen(state, viewModel::retry, onClose, onDrillNarrator)
+    AnalyticsScreen(state, viewModel::retry, onClose, onOpenNarrator)
 }
 
 @Composable
@@ -85,7 +85,7 @@ fun AnalyticsScreen(
     state: UiState<MasteryAnalytics>,
     onRetry: () -> Unit,
     onClose: () -> Unit,
-    onDrillNarrator: (Long) -> Unit,
+    onOpenNarrator: (Long) -> Unit,
 ) {
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -93,7 +93,7 @@ fun AnalyticsScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             UiStateHost(state, onRetry, Modifier.contentWidth()) { analytics ->
-                AnalyticsContent(analytics, onDrillNarrator, Modifier.contentWidth())
+                AnalyticsContent(analytics, onOpenNarrator, Modifier.contentWidth())
             }
         }
     }
@@ -102,7 +102,7 @@ fun AnalyticsScreen(
 @Composable
 fun AnalyticsContent(
     analytics: MasteryAnalytics,
-    onDrillNarrator: (Long) -> Unit,
+    onOpenNarrator: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -124,7 +124,7 @@ fun AnalyticsContent(
         item { StreakCard(analytics.streak) }
         item { DualMasteryCard(analytics.retention) }
         item { StatusCard(analytics.status) }
-        item { WeakestNarratorsCard(analytics.weakestNarrators, onDrillNarrator) }
+        item { WeakestNarratorsCard(analytics.weakestNarrators, onOpenNarrator) }
         item { Box(Modifier.size(16.dp)) }
     }
 }

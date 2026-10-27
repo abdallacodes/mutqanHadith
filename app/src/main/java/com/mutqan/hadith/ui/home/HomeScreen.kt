@@ -47,6 +47,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mutqan.hadith.R
+import com.mutqan.hadith.ui.common.NarratorNameText
+import com.mutqan.hadith.ui.common.companionOpener
 import com.mutqan.hadith.domain.analytics.StudyStreak
 import com.mutqan.hadith.domain.model.ReviewBatching
 import com.mutqan.hadith.domain.usecase.NextToLearn
@@ -139,7 +141,8 @@ fun HomeContent(dashboard: StudyDashboard, actions: HomeActions, modifier: Modif
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { StreakHeader(dashboard.streak) }
+        // Only a running streak is worth a card; an invitation to start one is noise on a screen that already says what to do.
+        if (dashboard.streak.current > 0) item { StreakHeader(dashboard.streak) }
         item { DailyReviewSection(dashboard, actions.onStartDueReview, actions.onStartAheadReview) }
         item { NextStepSection(dashboard.nextToLearn, primary = dashboard.dueCount == 0, onStudy = actions.onStudyHadith) }
         item { QuickStatsRow(dashboard) }
@@ -342,11 +345,12 @@ private fun NextStepSection(next: NextToLearn?, primary: Boolean, onStudy: (Long
                         Text(stringResource(R.string.home_next_number, next.hadithNumber), style = MaterialTheme.typography.titleMedium)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             if (next.sahabiName.isNotBlank()) {
-                                Text(
+                                NarratorNameText(
                                     stringResource(R.string.sahabi_label, next.sahabiName),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f, fill = false),
+                                    MaterialTheme.typography.bodyMedium,
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                    Modifier.weight(1f, fill = false),
+                                    onOpen = companionOpener(next.hadithId),
                                 )
                             }
                         }

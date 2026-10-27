@@ -33,6 +33,9 @@ import com.mutqan.hadith.ui.common.UiState
 import com.mutqan.hadith.ui.home.HomeActions
 import com.mutqan.hadith.ui.home.HomeScreen
 import com.mutqan.hadith.ui.missinglink.MissingLinkRoute
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.onFirst
+import com.mutqan.hadith.ui.common.LocalOpenNarrator
 import com.mutqan.hadith.ui.missinglink.MissingLinkViewModel
 import com.mutqan.hadith.ui.orderchain.OrderChainRoute
 import com.mutqan.hadith.ui.orderchain.OrderChainUi
@@ -421,5 +424,29 @@ class SanadDrillScreensTest {
 
         compose.onNodeWithText("الصحيح: ${round.answer.name}").assertExists()
         compose.onNodeWithText("إجابة صحيحة، أحسنت").assertDoesNotExist()
+    }
+
+    @Test
+    fun missingNarrator_aNameInTheChainOpensHisPage_theHiddenOneOnlyOnceAnswered() {
+        tree(1)
+        val vm = MissingLinkViewModel(1, hadiths, narrators, SubmitLinkDrillUseCase(hadiths, reviews, scheduler) { now }, access, Random(3))
+        val opened = mutableListOf<Long>()
+        compose.setContent {
+            MutqanHadithTheme { CompositionLocalProvider(LocalOpenNarrator provides { opened += it }) { MissingLinkRoute(vm, onClose = {}) } }
+        }
+        val round = (vm.state.value as UiState.Success).data.round
+        val shown = chain4.first { it.primaryName != round.answer.name }
+
+        compose.onAllNodesWithText(shown.primaryName).onFirst().performClick()
+        assertEquals(listOf(shown.id), opened)
+        // The hidden narrator has no name on screen to tap while the question is open.
+        compose.onNodeWithText("[ ؟ ]").assertExists()
+
+        compose.onNodeWithText(round.answer.name).performClick()
+        compose.waitForIdle()
+        opened.clear()
+        compose.onAllNodesWithText(round.answer.name).onFirst().performClick()
+
+        assertEquals(listOf(round.answer.id), opened)
     }
 }
