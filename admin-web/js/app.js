@@ -173,6 +173,27 @@ function describe(entry) {
   return `تعديل: ${fields.map((k) => core.LABELS[k]).join('، ')}`;
 }
 
+/** A stored value as a reader wants to see it: names for ids, a word for yes and no, and "(فارغ)" for nothing. */
+function showValue(key, value) {
+  if (key === 'sanad') {
+    return value.length === 0 ? '(فارغ)' : value.map((l) => `${narratorById(l.narratorId)?.primaryName ?? `#${l.narratorId}`}${l.transmissionTerm ? ` (${l.transmissionTerm})` : ''}`).join('، ');
+  }
+  if (key === 'groupId' || key === 'parentId') return value === null ? 'بلا مجموعة' : (groupById(value)?.title ?? `#${value}`);
+  if (typeof value === 'boolean') return value ? 'نعم' : 'لا';
+  if (value === '' || value == null) return '(فارغ)';
+  return snippet(String(value), 160);
+}
+
+/** What a change did, field by field: the value before and the value after. */
+function changeDetails(entry) {
+  if (!entry.before) return null;
+  const fields = core.changedFields(entry.collection, entry.before, entry.after);
+  if (fields.length === 0) return null;
+  return h('details', {}, h('summary', { class: 'muted small' }, 'التفاصيل'),
+    h('ul', { class: 'small' }, fields.map((k) => h('li', {}, h('strong', {}, `${core.LABELS[k]}: `),
+      h('span', { class: 'muted' }, showValue(k, entry.before[k])), ' ← ', h('span', {}, showValue(k, entry.after[k]))))));
+}
+
 const routeOf = { catalog_hadith: 'hadith', catalog_narrator: 'narrator', catalog_group: 'group' };
 const listOf = { catalog_hadith: () => catalog.hadiths, catalog_narrator: () => catalog.narrators, catalog_group: () => catalog.groups };
 
@@ -198,7 +219,7 @@ function historyTable(entries, { withDoc }) {
       h('td', { class: 'num' }, when(e.at)),
       h('td', { class: 'num' }, e.by === user.uid ? 'أنت' : e.by.slice(0, 6)),
       withDoc ? h('td', {}, h('a', { href: `#/${routeOf[e.collection]}/${e.docId}` }, `${core.COLLECTION_LABELS[e.collection]} ${e.docId}`)) : null,
-      h('td', {}, describe(e)),
+      h('td', {}, describe(e), changeDetails(e)),
       h('td', {}, h('button', { class: 'link', onclick: () => revertEntry(e) }, 'تراجع'))))));
 }
 
