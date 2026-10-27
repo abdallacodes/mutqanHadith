@@ -148,7 +148,8 @@ The library itself can also be updated from the cloud without an app release: an
 Firestore, and every app, signed in or not, reads them at start (one small read when nothing changed) and applies them to
 Room in one transaction. The bundled catalog stays as the offline start and is uploaded once with
 `admin-tools/upload-seed.js`; a row the cloud has written is never overwritten by a bundled catalog update, and an edit
-never touches a learner's progress.
+never touches a learner's progress. The edits are made on a small web page (`admin-web/`, Firebase Hosting, Google sign-in,
+with a history of every change and a revert; see `admin-web/README.md`).
 
 ### Non-destructive catalog migrations
 
@@ -221,7 +222,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **1084 tests** (plus 22 rules tests in `firebase-tests/` and 8 upload tests in `admin-tools/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **1084 tests** (plus 37 rules and admin-page tests in `firebase-tests/` and 8 upload tests in `admin-tools/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.

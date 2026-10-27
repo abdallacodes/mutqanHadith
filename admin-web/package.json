@@ -1,0 +1,6 @@
+{
+  "name": "mutqan-hadith-admin-web",
+  "private": true,
+  "type": "module",
+  "description": "Static admin page for the catalog; deployed with Firebase Hosting. This file only tells node the scripts are modules (the tests import them) and is not published."
+}
