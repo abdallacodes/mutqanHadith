@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Where the sync with the account stands, for the screen that shows it. */
 sealed interface SyncStatus {
@@ -29,6 +30,16 @@ sealed interface SyncStatus {
 
     /** The phone and the account both hold progress and the learner has to say how to combine them. */
     data class NeedsChoice(val onPhone: Int, val inAccount: Int) : SyncStatus
+}
+
+/** How deleting the learner's account and the data it holds ended. */
+sealed interface DeleteAccountResult {
+    data object Deleted : DeleteAccountResult
+
+    data object NotSignedIn : DeleteAccountResult
+
+    /** Something failed; [dataRemoved] says whether the progress in the account had already been removed by then. */
+    data class Failed(val dataRemoved: Boolean) : DeleteAccountResult
 }
 
 /** What a screen can ask of the sync and read from it. */
@@ -45,6 +56,12 @@ interface AccountSync {
 
     /** A reset or a restore just changed this phone's progress: the account's copy has to follow. */
     fun replaceAccountWithThisPhone()
+
+    /**
+     * Removes the progress held in the account and then the account itself, after proving with [idToken] (a fresh
+     * Google ID token) that it is theirs. The progress on the phone stays.
+     */
+    suspend fun deleteAccount(idToken: String): DeleteAccountResult
 }
 
 /** An [AccountSync] that never does anything; the default for code that is not given the real one. */
@@ -57,6 +74,8 @@ class NoAccountSync : AccountSync {
     override fun choose(choice: FirstSyncChoice) = Unit
 
     override fun replaceAccountWithThisPhone() = Unit
+
+    override suspend fun deleteAccount(idToken: String): DeleteAccountResult = DeleteAccountResult.NotSignedIn
 }
 
 /**
@@ -115,6 +134,32 @@ class ProgressSyncer(
         val uid = auth.user.value?.uid ?: return
         sync.replaceAccountWithThisPhone()
         scope.launch { run(uid, null) }
+    }
+
+    /**
+     * Waits for a sync in progress, then does the deleting while no other sync can start, so that nothing is uploaded
+     * again behind it. If it fails once the progress is gone, the learner is signed out, so that the phone does not
+     * upload its copy to the account again the moment the next sync fires.
+     */
+    override suspend fun deleteAccount(idToken: String): DeleteAccountResult {
+        val uid = auth.user.value?.uid ?: return DeleteAccountResult.NotSignedIn
+        mutex.withLock {
+            var dataRemoved = false
+            return try {
+                auth.reauthenticate(idToken)
+                sync.deleteCloudData(uid)
+                dataRemoved = true
+                auth.deleteAccount()
+                _status.value = SyncStatus.Idle
+                _lastSyncedAt.value = null
+                DeleteAccountResult.Deleted
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (dataRemoved) auth.signOut()
+                DeleteAccountResult.Failed(dataRemoved)
+            }
+        }
     }
 
     private suspend fun run(uid: String, choice: FirstSyncChoice?, force: Boolean = false) {

@@ -13,6 +13,7 @@ import com.mutqan.hadith.domain.catalog.InMemoryCatalogSyncState
 import com.mutqan.hadith.domain.catalog.RemoteCatalog
 import com.mutqan.hadith.domain.catalog.SyncCatalogUseCase
 import com.mutqan.hadith.domain.sync.AccountSync
+import com.mutqan.hadith.domain.sync.DeleteAccountResult
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
 import com.mutqan.hadith.domain.sync.SyncCoordinator
 import com.mutqan.hadith.domain.sync.SyncStatus
@@ -258,6 +259,8 @@ class CloudCatalogSyncTest {
         override fun choose(choice: FirstSyncChoice) = Unit
 
         override fun replaceAccountWithThisPhone() = Unit
+
+        override suspend fun deleteAccount(idToken: String) = DeleteAccountResult.NotSignedIn
     }
 
     @Test

@@ -108,6 +108,7 @@ fun SettingsRoute(viewModel: SettingsViewModel, onClose: () -> Unit, onOpenPlace
                 viewModel.signOut()
                 scope.launch { googleSignIn.forget(context) }
             },
+            onDeleteAccount = { viewModel.deleteAccount { googleSignIn.idToken(context) } },
         ),
     )
 }
@@ -126,6 +127,7 @@ data class SettingsActions(
     val onOpenPlacement: () -> Unit = {},
     val onSignIn: () -> Unit = {},
     val onSignOut: () -> Unit = {},
+    val onDeleteAccount: () -> Unit = {},
     val onSyncNow: () -> Unit = {},
     val onChooseSync: (FirstSyncChoice) -> Unit = {},
     val onCheckLibrary: () -> Unit = {},
@@ -135,6 +137,7 @@ data class SettingsActions(
 fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions, language: AppLanguage = AppLanguage.ARABIC) {
     val snackbar = remember { SnackbarHostState() }
     var confirmingReset by rememberSaveable { mutableStateOf(false) }
+    var confirmingDeleteAccount by rememberSaveable { mutableStateOf(false) }
     var showingAbout by rememberSaveable { mutableStateOf(false) }
     var choosingLanguage by rememberSaveable { mutableStateOf(false) }
     // "Later" hides the question; the account row asks it again.
@@ -191,6 +194,13 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
                             },
                             enabled = !ui.isBusy && ui.syncStatus != SyncStatus.Syncing,
                             onClick = if (syncChoice != null) ({ syncChoiceHidden = false }) else actions.onSyncNow,
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        SettingsRow(
+                            title = stringResource(R.string.settings_delete_account),
+                            supporting = stringResource(R.string.settings_delete_account_hint),
+                            enabled = !ui.isBusy,
+                            onClick = { confirmingDeleteAccount = true },
                         )
                     }
                 }
@@ -272,6 +282,12 @@ fun SettingsScreen(ui: SettingsUi, appVersion: String, actions: SettingsActions,
             onDismiss = { confirmingReset = false },
         )
     }
+    if (confirmingDeleteAccount) {
+        ConfirmDeleteAccountDialog(
+            onConfirm = { confirmingDeleteAccount = false; actions.onDeleteAccount() },
+            onDismiss = { confirmingDeleteAccount = false },
+        )
+    }
     ui.pendingImport?.let { prepared ->
         ConfirmImportDialog(prepared, signedIn = ui.account != null, onConfirm = actions.onConfirmImport, onDismiss = actions.onCancelImport)
     }
@@ -305,6 +321,9 @@ private fun messageText(message: SettingsMessage): String = when (message) {
     SettingsMessage.SignInFailed -> stringResource(R.string.settings_msg_sign_in_failed)
     SettingsMessage.NoGoogleAccountOnDevice -> stringResource(R.string.settings_msg_no_google_account)
     SettingsMessage.SignedOut -> stringResource(R.string.settings_msg_signed_out)
+    SettingsMessage.AccountDeleted -> stringResource(R.string.settings_msg_account_deleted)
+    SettingsMessage.AccountDeleteFailed -> stringResource(R.string.settings_msg_account_delete_failed)
+    SettingsMessage.AccountDeletedPartly -> stringResource(R.string.settings_msg_account_deleted_partly)
     is SettingsMessage.ImportRejected -> when (val problem = message.problem) {
         ImportProblem.NotABackup -> stringResource(R.string.settings_err_not_backup)
         ImportProblem.Corrupt -> stringResource(R.string.settings_err_corrupt)
@@ -443,6 +462,22 @@ private fun ConfirmImportDialog(prepared: PreparedBackup, signedIn: Boolean, onC
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.settings_import_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },
+    )
+}
+
+/** Deleting the account is final, so it is said plainly what goes and what stays. */
+@Composable
+private fun ConfirmDeleteAccountDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_delete_account_title)) },
+        text = { Text(stringResource(R.string.settings_delete_account_body), style = MaterialTheme.typography.bodyLarge) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.settings_delete_account_confirm), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.settings_cancel)) } },

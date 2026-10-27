@@ -97,6 +97,15 @@ class SyncProgressUseCase(
         return SyncOutcome.Done(pulled = toPhone.size, pushed = toCloud.size)
     }
 
+    /**
+     * Removes everything the account holds for [uid] and forgets what was agreed with it, so that a later sign-in is a
+     * first meeting again. The progress on the phone is not touched.
+     */
+    suspend fun deleteCloudData(uid: String) {
+        remote.clear(uid)
+        states.write(SyncState())
+    }
+
     /** Marks this phone's progress as the one the account has to hold; the next sync does it, now or when it can. */
     fun replaceAccountWithThisPhone() {
         states.write(states.read().copy(replacePending = true))

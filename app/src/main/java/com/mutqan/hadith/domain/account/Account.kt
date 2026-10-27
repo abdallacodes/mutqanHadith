@@ -25,6 +25,15 @@ interface AuthRepository {
     suspend fun signInWithGoogle(idToken: String)
 
     fun signOut()
+
+    /**
+     * Proves again, with a fresh ID token, that the person holding the phone owns the signed-in account. Deleting an
+     * account needs this; it fails when the token belongs to another account.
+     */
+    suspend fun reauthenticate(idToken: String)
+
+    /** Deletes the signed-in account itself (not the Google account behind it); nobody is signed in afterwards. */
+    suspend fun deleteAccount()
 }
 
 /** An [AuthRepository] with nobody in it and no way in; the default for code that is not given the real one. */
@@ -34,4 +43,8 @@ class SignedOutAuth : AuthRepository {
     override suspend fun signInWithGoogle(idToken: String) = throw UnsupportedOperationException("No account service")
 
     override fun signOut() = Unit
+
+    override suspend fun reauthenticate(idToken: String) = throw UnsupportedOperationException("No account service")
+
+    override suspend fun deleteAccount() = throw UnsupportedOperationException("No account service")
 }

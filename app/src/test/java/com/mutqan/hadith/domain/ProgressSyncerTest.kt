@@ -5,10 +5,12 @@ import com.mutqan.hadith.domain.account.AccountUser
 import com.mutqan.hadith.domain.account.AuthRepository
 import com.mutqan.hadith.domain.backup.UserData
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
+import com.mutqan.hadith.domain.sync.DeleteAccountResult
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
 import com.mutqan.hadith.domain.sync.InMemorySyncState
 import com.mutqan.hadith.domain.sync.ProgressSyncer
 import com.mutqan.hadith.domain.sync.SyncProgressUseCase
+import com.mutqan.hadith.domain.sync.SyncState
 import com.mutqan.hadith.domain.sync.SyncStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,22 @@ class ProgressSyncerTest {
         override suspend fun signInWithGoogle(idToken: String) = Unit
 
         override fun signOut() {
+            current.value = null
+        }
+
+        var reauthFails = false
+        var deleteFails = false
+        var deleted = 0
+        val reauths = mutableListOf<String>()
+
+        override suspend fun reauthenticate(idToken: String) {
+            if (reauthFails) throw IllegalStateException("another account")
+            reauths += idToken
+        }
+
+        override suspend fun deleteAccount() {
+            if (deleteFails) throw IllegalStateException("could not delete")
+            deleted++
             current.value = null
         }
     }
@@ -204,5 +222,89 @@ class ProgressSyncerTest {
 
         assertEquals(setOf(1L), account.mastery.keys)
         assertEquals(false, state.read().replacePending)
+    }
+
+    // -- Deleting the account ----------------------------------------------------------------------
+
+    @Test
+    fun deletingTheAccountErasesItsProgressAndTheAccountAndLeavesThePhoneAlone() = runTest {
+        phone.data = UserData(listOf(record(1, 100)), emptyList())
+        val syncer = syncer()
+        auth.current.value = sara
+        runCurrent()
+        assertEquals(setOf(1L), account.mastery.keys)
+
+        val result = syncer.deleteAccount("fresh-token")
+        runCurrent()
+
+        assertEquals(DeleteAccountResult.Deleted, result)
+        assertEquals(listOf("fresh-token"), auth.reauths)
+        assertTrue(account.mastery.isEmpty())
+        assertEquals(1, auth.deleted)
+        assertEquals(setOf(1L), phone.data.mastery.map { it.hadithId }.toSet())
+        assertEquals(SyncState(), state.read())
+        assertNull(syncer.lastSyncedAt.value)
+        assertEquals(SyncStatus.Idle, syncer.status.value)
+    }
+
+    @Test
+    fun anotherAccountsTokenChangesNothing() = runTest {
+        phone.data = UserData(listOf(record(1, 100)), emptyList())
+        val syncer = syncer()
+        auth.current.value = sara
+        runCurrent()
+        auth.reauthFails = true
+
+        val result = syncer.deleteAccount("someone-else")
+
+        assertEquals(DeleteAccountResult.Failed(dataRemoved = false), result)
+        assertEquals(setOf(1L), account.mastery.keys)
+        assertEquals(0, auth.deleted)
+        assertEquals(sara, auth.current.value)
+    }
+
+    @Test
+    fun anUnreachableAccountServiceChangesNothing() = runTest {
+        phone.data = UserData(listOf(record(1, 100)), emptyList())
+        val syncer = syncer()
+        auth.current.value = sara
+        runCurrent()
+        account.failing = true
+
+        val result = syncer.deleteAccount("fresh-token")
+
+        assertEquals(DeleteAccountResult.Failed(dataRemoved = false), result)
+        assertEquals(0, auth.deleted)
+        assertEquals(sara, auth.current.value)
+    }
+
+    @Test
+    fun ifTheAccountCannotBeDeletedAfterTheProgressIsGoneTheLearnerIsSignedOutSoNothingIsUploadedAgain() = runTest {
+        phone.data = UserData(listOf(record(1, 100)), emptyList())
+        val syncer = syncer()
+        auth.current.value = sara
+        runCurrent()
+        auth.deleteFails = true
+        val pushes = account.pushes
+
+        val result = syncer.deleteAccount("fresh-token")
+        runCurrent()
+        changes.value = 1
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        assertEquals(DeleteAccountResult.Failed(dataRemoved = true), result)
+        assertTrue(account.mastery.isEmpty())
+        assertNull(auth.current.value)
+        assertEquals("the phone's copy was not sent back", pushes, account.pushes)
+    }
+
+    @Test
+    fun nobodySignedInHasNothingToDelete() = runTest {
+        val syncer = syncer()
+        runCurrent()
+
+        assertEquals(DeleteAccountResult.NotSignedIn, syncer.deleteAccount("token"))
+        assertEquals(0, auth.deleted)
     }
 }

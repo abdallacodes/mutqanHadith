@@ -151,6 +151,19 @@ Room in one transaction. The bundled catalog stays as the offline start and is u
 never touches a learner's progress. The edits are made on a small web page (`admin-web/`, Firebase Hosting, Google sign-in,
 with a history of every change and a revert; see `admin-web/README.md`).
 
+### Privacy
+
+- **Without an account** nothing leaves the phone: the app has no analytics and no tracking, and your progress and your
+  backups (JSON files you hold) stay on the device.
+- **Signing in is optional.** If you sign in with Google, Firebase Authentication keeps your name, email and an account
+  id, and Cloud Firestore keeps your progress under that id (how well you know each hadith, your narrator review history
+  and your starting point). Only your own account can read or write it (`firestore.rules`); nothing else is collected.
+  Personal collections, the language and the other settings are not uploaded.
+- **Delete it any time** from Settings → Account → *Delete my data from the account*: it erases that progress and
+  deletes the account (your Google account itself is untouched), and your progress on the phone stays. It asks you to
+  pick your account again to confirm it is yours.
+- **The library is public.** Anyone can read the catalog the app downloads; only an admin account can change it.
+
 ### Non-destructive catalog migrations
 
 The shipped catalog carries a `catalogVersion`, mirrored by `SeedLoader.CATALOG_VERSION`. When the app opens with a
@@ -222,7 +235,7 @@ history stay as the catalog wrote them (no migration):
 
 ### Testing
 
-The suite holds **1084 tests** (plus 37 rules and admin-page tests in `firebase-tests/` and 8 upload tests in `admin-tools/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
+The suite holds **1096 tests** (plus 37 rules and admin-page tests in `firebase-tests/` and 8 upload tests in `admin-tools/`): JUnit 4 unit tests for the scheduler, use cases, repositories and the data layer
 (Room against an in-memory database under Robolectric), Compose UI tests via `compose-ui-test-junit4`, localization
 parity tests that keep the Arabic and English string tables in step, and the data-integrity tests above. UI tests
 are pinned to the Arabic locale so they are deterministic.

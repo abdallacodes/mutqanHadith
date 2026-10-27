@@ -26,5 +26,14 @@ class FirebaseAuthRepository(private val auth: FirebaseAuth = FirebaseAuth.getIn
 
     override fun signOut() = auth.signOut()
 
+    override suspend fun reauthenticate(idToken: String) {
+        val user = checkNotNull(auth.currentUser) { "Nobody is signed in" }
+        user.reauthenticate(GoogleAuthProvider.getCredential(idToken, null)).await()
+    }
+
+    override suspend fun deleteAccount() {
+        checkNotNull(auth.currentUser) { "Nobody is signed in" }.delete().await()
+    }
+
     private fun FirebaseUser.toAccount() = AccountUser(uid, displayName.orEmpty(), email.orEmpty())
 }

@@ -44,3 +44,6 @@ firestore-debug.log
 ui-debug.log
 serviceAccount*.json
 *-service-account*.json
+
+# A Firebase Admin SDK key as downloaded from the console (kept outside the repository, never committed)
+*-firebase-adminsdk-*.json

@@ -20,6 +20,7 @@ import com.mutqan.hadith.domain.catalog.CatalogStatus
 import com.mutqan.hadith.domain.catalog.LibraryUpdates
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.sync.AccountSync
+import com.mutqan.hadith.domain.sync.DeleteAccountResult
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
 import com.mutqan.hadith.domain.sync.SyncStatus
 import com.mutqan.hadith.ui.settings.AppLanguage
@@ -73,6 +74,12 @@ class AccountSettingsTest {
         override fun signOut() {
             current.value = null
         }
+
+        override suspend fun reauthenticate(idToken: String) = Unit
+
+        override suspend fun deleteAccount() {
+            current.value = null
+        }
     }
 
     private class EmptyBackup : BackupRepository {
@@ -106,6 +113,14 @@ class AccountSettingsTest {
 
         override fun replaceAccountWithThisPhone() {
             replaced++
+        }
+
+        var deleteResult: DeleteAccountResult = DeleteAccountResult.Deleted
+        val deleteTokens = mutableListOf<String>()
+
+        override suspend fun deleteAccount(idToken: String): DeleteAccountResult {
+            deleteTokens += idToken
+            return deleteResult
         }
     }
 
@@ -203,6 +218,50 @@ class AccountSettingsTest {
     }
 
     @Test
+    fun deletingTheAccountPassesTheFreshTokenOnAndSaysItWasDone() {
+        val vm = viewModel()
+
+        vm.deleteAccount { "fresh-token" }
+
+        assertEquals(listOf("fresh-token"), sync.deleteTokens)
+        assertEquals(SettingsMessage.AccountDeleted, vm.state.value.message)
+        assertEquals(false, vm.state.value.isBusy)
+    }
+
+    @Test
+    fun aFailedDeleteIsReportedAccordingToWhetherTheProgressWasAlreadyGone() {
+        val vm = viewModel()
+
+        sync.deleteResult = DeleteAccountResult.Failed(dataRemoved = false)
+        vm.deleteAccount { "token" }
+        assertEquals(SettingsMessage.AccountDeleteFailed, vm.state.value.message)
+
+        sync.deleteResult = DeleteAccountResult.Failed(dataRemoved = true)
+        vm.deleteAccount { "token" }
+        assertEquals(SettingsMessage.AccountDeletedPartly, vm.state.value.message)
+    }
+
+    @Test
+    fun leavingTheChooserWhenDeletingTheAccountDeletesNothingAndSaysNothing() {
+        val vm = viewModel()
+
+        vm.deleteAccount { throw SignInCancelled() }
+
+        assertEquals(emptyList<String>(), sync.deleteTokens)
+        assertNull(vm.state.value.message)
+    }
+
+    @Test
+    fun noGoogleAccountOnTheDeviceMeansNothingIsDeleted() {
+        val vm = viewModel()
+
+        vm.deleteAccount { throw NoGoogleAccount() }
+
+        assertEquals(emptyList<String>(), sync.deleteTokens)
+        assertEquals(SettingsMessage.NoGoogleAccountOnDevice, vm.state.value.message)
+    }
+
+    @Test
     fun aResetAsksTheAccountToFollowThePhone() {
         val vm = viewModel()
 
@@ -234,6 +293,7 @@ class AccountSettingsTest {
                         {}, {}, {}, {}, {}, vm::reset, vm::messageShown,
                         onSignIn = { vm.signIn { "token" } },
                         onSignOut = vm::signOut,
+                        onDeleteAccount = { vm.deleteAccount { "fresh-token" } },
                         onSyncNow = vm::syncNow,
                         onChooseSync = vm::chooseSync,
                         onCheckLibrary = vm::checkLibrary,
@@ -313,6 +373,44 @@ class AccountSettingsTest {
         library.currentStatus.value = CatalogStatus.Failed
         compose.waitForIdle()
         compose.onNodeWithText("تعذّر الاتصال. سنعيد المحاولة لاحقًا، أو اضغط للمحاولة الآن.").assertExists()
+    }
+
+    @Test
+    fun theDeleteRowAsksFirstAndSaysWhatGoesAndWhatStays() {
+        signedInScreen()
+
+        compose.onNodeWithText("حذف بياناتي من الحساب").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("حذف بياناتك من الحساب؟").assertExists()
+        compose.onNodeWithText("تقدّمك على هذا الهاتف يبقى كما هو", substring = true).assertExists()
+        assertEquals(emptyList<String>(), sync.deleteTokens)
+
+        compose.onNodeWithText("إلغاء").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("حذف بياناتك من الحساب؟").assertDoesNotExist()
+        assertEquals(emptyList<String>(), sync.deleteTokens)
+    }
+
+    @Test
+    fun confirmingTheDeleteRunsItAndShowsTheOutcome() {
+        signedInScreen()
+
+        compose.onNodeWithText("حذف بياناتي من الحساب").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("حذف").performClick()
+        compose.waitForIdle()
+
+        assertEquals(listOf("fresh-token"), sync.deleteTokens)
+        compose.onNodeWithText("حُذف تقدّمك المحفوظ وحسابك. تقدّمك على هذا الهاتف باقٍ.").assertExists()
+    }
+
+    @Test
+    fun noDeleteRowWhileSignedOut() {
+        showSettings()
+
+        compose.onNodeWithText("حذف بياناتي من الحساب").assertDoesNotExist()
     }
 
     @Test

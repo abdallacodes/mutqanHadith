@@ -20,6 +20,7 @@ import com.mutqan.hadith.domain.model.StartingPoint
 import com.mutqan.hadith.domain.settings.InMemoryStudyPreferences
 import com.mutqan.hadith.domain.settings.StudyPreferences
 import com.mutqan.hadith.domain.sync.AccountSync
+import com.mutqan.hadith.domain.sync.DeleteAccountResult
 import com.mutqan.hadith.domain.sync.FirstSyncChoice
 import com.mutqan.hadith.domain.sync.NoAccountSync
 import com.mutqan.hadith.domain.sync.SyncStatus
@@ -56,6 +57,11 @@ sealed interface SettingsMessage {
     data object SignInFailed : SettingsMessage
     data object NoGoogleAccountOnDevice : SettingsMessage
     data object SignedOut : SettingsMessage
+    data object AccountDeleted : SettingsMessage
+    data object AccountDeleteFailed : SettingsMessage
+
+    /** The progress in the account is gone but the account itself could not be deleted; the learner was signed out. */
+    data object AccountDeletedPartly : SettingsMessage
 }
 
 data class SettingsUi(
@@ -217,6 +223,30 @@ class SettingsViewModel(
             SettingsMessage.NoGoogleAccountOnDevice
         } catch (e: Exception) {
             SettingsMessage.SignInFailed
+        }
+        if (message != null) _state.update { it.copy(message = message) }
+    }
+
+    /**
+     * Deletes the progress held in the account and then the account, after the person picks their Google account again
+     * with [chooseToken] to prove it is theirs. The progress on the phone stays where it is.
+     */
+    fun deleteAccount(chooseToken: suspend () -> String) = runExclusively {
+        val message = try {
+            when (val result = accountSync.deleteAccount(chooseToken())) {
+                DeleteAccountResult.Deleted -> SettingsMessage.AccountDeleted
+                DeleteAccountResult.NotSignedIn -> null
+                is DeleteAccountResult.Failed ->
+                    if (result.dataRemoved) SettingsMessage.AccountDeletedPartly else SettingsMessage.AccountDeleteFailed
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: SignInCancelled) {
+            null
+        } catch (e: NoGoogleAccount) {
+            SettingsMessage.NoGoogleAccountOnDevice
+        } catch (e: Exception) {
+            SettingsMessage.AccountDeleteFailed
         }
         if (message != null) _state.update { it.copy(message = message) }
     }

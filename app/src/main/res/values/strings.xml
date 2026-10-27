@@ -333,7 +333,7 @@
     <string name="about_method_recall">• المذاكرة: استحضر من ذاكرتك قبل أن ترى الجواب، فالتذكّر النشط أبلغ أثرًا من إعادة القراءة.</string>
     <string name="about_method_decay">• تكرار متباعد بمنحنيين: يُحسب نسيان المتن والسند كلٌّ على حدة، والسند أسرع تفلّتًا، وخطأ في راوٍ واحد يُضعف السند كله.</string>
     <string name="about_method_pivots">• المدارات والرواة: شبكة الأسانيد وقائمة أكثر الرواة تفلّتًا توجّه مراجعتك إلى مواضع الضعف.</string>
-    <string name="about_method_privacy">• بياناتك لك: كل شيء يعمل دون إنترنت، ونسخك الاحتياطية ملف JSON بيدك.</string>
+    <string name="about_method_privacy">• بياناتك لك: كل شيء يعمل دون إنترنت ودون حساب، ونسخك الاحتياطية ملف JSON بيدك. وإن سجّلت الدخول بحساب Google حُفظ تقدّمك في حسابك مع اسمك وبريدك، ويمكنك حذفه من الإعدادات في أي وقت. أما المكتبة فعامة وتتجدد من الإنترنت.</string>
     <string name="about_sources_title">المصادر</string>
     <string name="about_sources_lk">• أسانيد الأحاديث: مدوّنة LK للحديث. منها تُقرأ سلسلة الرواة لكل حديث وُجدت روايته في كتب الحديث الستة، ويُذكر مع السند الكتاب الذي أُخذت منه.</string>
     <string name="about_sources_text">• نصوص الأربعين النووية وتخريجها: مجموعة بيانات مفتوحة بلا قيد من الترخيص.</string>
@@ -568,6 +568,14 @@
     <string name="settings_msg_sign_in_failed">تعذّر تسجيل الدخول. تحقق من الاتصال وحاول مرة أخرى.</string>
     <string name="settings_msg_no_google_account">لا يوجد حساب Google على هذا الجهاز. أضف حسابًا من إعدادات الجهاز ثم حاول مرة أخرى.</string>
     <string name="settings_msg_signed_out">تم تسجيل الخروج. تبقى بياناتك على هذا الجهاز.</string>
+    <string name="settings_delete_account">حذف بياناتي من الحساب</string>
+    <string name="settings_delete_account_hint">يمسح تقدّمك المحفوظ في الحساب ويحذف حسابك في التطبيق. تقدّمك على هذا الهاتف يبقى.</string>
+    <string name="settings_delete_account_title">حذف بياناتك من الحساب؟</string>
+    <string name="settings_delete_account_body">سيُمسح تقدّمك المحفوظ في الحساب (مستوى حفظك في الأحاديث، وسجل مراجعة الرواة، ونقطة البداية)، ويُحذف حسابك في متقن الحديث. حساب Google نفسه لا يتأثر، وتقدّمك على هذا الهاتف يبقى كما هو. سنطلب منك اختيار حسابك مرة أخرى للتأكيد.</string>
+    <string name="settings_delete_account_confirm">حذف</string>
+    <string name="settings_msg_account_deleted">حُذف تقدّمك المحفوظ وحسابك. تقدّمك على هذا الهاتف باقٍ.</string>
+    <string name="settings_msg_account_delete_failed">تعذّر الحذف. اختر الحساب نفسه وتأكد من الاتصال بالإنترنت ثم أعد المحاولة.</string>
+    <string name="settings_msg_account_deleted_partly">حُذف تقدّمك من الحساب، لكن تعذّر حذف الحساب نفسه، فخرجتَ منه. ادخل وأعد المحاولة.</string>
     <string name="settings_section_library">المكتبة</string>
     <string name="settings_library_update">تحديث المكتبة</string>
     <string name="settings_library_never">لم يُبحث عن جديد الأحاديث بعد. اضغط للتحقق الآن.</string>

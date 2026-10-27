@@ -315,7 +315,7 @@
     <string name="about_method_recall">• Active recall: retrieve from memory before you see the answer; it works better than re-reading.</string>
     <string name="about_method_decay">• Spaced repetition on two curves: forgetting is modelled separately for the matn and the sanad, the sanad fades faster, and a mistake on a single narrator weakens the whole sanad.</string>
     <string name="about_method_pivots">• Pivots and narrators: the isnad network and the list of most slippery narrators point your review at your weak spots.</string>
-    <string name="about_method_privacy">• Your data is yours: everything works offline, and your backups are JSON files you hold yourself.</string>
+    <string name="about_method_privacy">• Your data is yours: everything works offline and without an account, and your backups are JSON files you hold yourself. If you sign in with Google, your progress is saved in your account along with your name and email, and you can delete it from Settings at any time. The library itself is public and updates from the internet.</string>
     <string name="about_sources_title">Sources</string>
     <string name="about_sources_lk">• The chains of the hadiths: the LK corpus of hadith. Each hadith\'s chain of narrators is read from it, from the narration found in the six books, and the book it comes from is shown with the chain.</string>
     <string name="about_sources_text">• The text and takhrij of the Forty Hadith: an open dataset released without a licence restriction.</string>
@@ -533,6 +533,14 @@
     <string name="settings_msg_sign_in_failed">Could not sign in. Check your connection and try again.</string>
     <string name="settings_msg_no_google_account">There is no Google account on this device. Add one in the device settings and try again.</string>
     <string name="settings_msg_signed_out">Signed out. Your data stays on this device.</string>
+    <string name="settings_delete_account">Delete my data from the account</string>
+    <string name="settings_delete_account_hint">Erases the progress saved in the account and deletes your account in the app. Your progress on this phone stays.</string>
+    <string name="settings_delete_account_title">Delete your data from the account?</string>
+    <string name="settings_delete_account_body">The progress saved in the account (how well you know each hadith, your narrator review history and your starting point) will be erased, and your Mutqan Hadith account deleted. Your Google account itself is not affected, and your progress on this phone stays as it is. You will be asked to choose your account again to confirm.</string>
+    <string name="settings_delete_account_confirm">Delete</string>
+    <string name="settings_msg_account_deleted">Your saved progress and your account were deleted. Your progress on this phone is still here.</string>
+    <string name="settings_msg_account_delete_failed">Could not delete. Choose the same account, check your connection and try again.</string>
+    <string name="settings_msg_account_deleted_partly">Your progress was deleted from the account, but the account itself could not be, so you were signed out. Sign in and try again.</string>
     <string name="settings_section_library">Library</string>
     <string name="settings_library_update">Update the library</string>
     <string name="settings_library_never">Not checked for new hadiths yet. Tap to check now.</string>
