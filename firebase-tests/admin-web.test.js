@@ -212,6 +212,13 @@ test('the recent changes list newest first', async () => {
   assert.deepEqual(recent.map((e) => e.collection), ['catalog_group', 'catalog_narrator']);
 });
 
+test('what is written about a narrator is part of the narrator: too long is refused, a change is a change', () => {
+  assert.deepEqual(core.validateNarrator(narrator(1, { bio: 'فقرة\n\nفقرة' })), []);
+  assert.equal(core.validateNarrator(narrator(1, { bio: 'ا'.repeat(core.MAX_BIO + 1) })).length, 1);
+  assert.deepEqual(core.changedFields('catalog_narrator', narrator(1), narrator(1, { bio: 'نبذة' })), ['bio']);
+  assert.equal(core.authored('catalog_narrator', narrator(1)).bio, '', 'a narrator without it has an empty one');
+});
+
 test('someone who is not an admin cannot save, and nothing is written', async () => {
   const reader = storeAs('sara', {});
   await assert.rejects(reader.save('catalog_hadith', hadith(10000), { isNew: true }));
@@ -236,6 +243,20 @@ test('a narrator marked as the same person as another is saved under the rules, 
   assert.equal(creation.before, null);
   await store.save('catalog_narrator', narrator(10001, { sameAs: null, primaryName: 'اسم آخر' }));
   assert.equal((await store.loadAll()).narrators.find((n) => n.id === 10001).sameAs, null);
+});
+
+test('a narrator\'s bio is saved under the rules, shows in the history, and the revert clears it', async () => {
+  const store = admin();
+  await store.save('catalog_narrator', narrator(10020), { isNew: true });
+  assert.equal((await store.loadAll()).narrators.find((n) => n.id === 10020).bio, '');
+
+  await store.save('catalog_narrator', narrator(10020, { bio: 'الفقرة الأولى\n\nالفقرة الثانية' }));
+  assert.equal((await store.loadAll()).narrators.find((n) => n.id === 10020).bio, 'الفقرة الأولى\n\nالفقرة الثانية');
+  const [latest] = await store.historyOf('catalog_narrator', 10020);
+  assert.deepEqual(core.changedFields('catalog_narrator', latest.before, latest.after), ['bio']);
+
+  await store.revert(latest);
+  assert.equal((await store.loadAll()).narrators.find((n) => n.id === 10020).bio, '');
 });
 
 test('a narrator document from the seed upload, which has no sameAs, can still be edited', async () => {

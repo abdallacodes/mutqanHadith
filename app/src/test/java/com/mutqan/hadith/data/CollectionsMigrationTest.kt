@@ -154,7 +154,7 @@ class CollectionsMigrationTest {
         val db = open("v5.db")
         val after = dump { db.openHelper.writableDatabase.query(it) }
 
-        assertEquals("the migrated database is the current version", 10, db.openHelper.writableDatabase.version)
+        assertEquals("the migrated database is the current version", 11, db.openHelper.writableDatabase.version)
         assertEquals(SeedLoader.CATALOG_VERSION, SeedLoader.appliedVersion(db.openHelper.writableDatabase))
         versionFiveTables.forEach { table -> assertEquals("rows of $table", before.getValue(table), after.getValue(table)) }
         db.close()

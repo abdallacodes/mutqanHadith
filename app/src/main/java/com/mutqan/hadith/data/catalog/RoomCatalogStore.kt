@@ -42,7 +42,7 @@ class RoomCatalogStore(private val db: MutqanDatabase) : CatalogStore {
 
         for (n in delta.narrators.filter { !it.deleted }) {
             dao.upsertNarrator(
-                NarratorEntity(n.id, n.primaryName, n.fullName, n.tier, n.isPivot, n.updatedAt, sameAsId = n.sameAs?.takeIf { it != n.id }),
+                NarratorEntity(n.id, n.primaryName, n.fullName, n.tier, n.isPivot, n.updatedAt, sameAsId = n.sameAs?.takeIf { it != n.id }, bio = n.bio),
             )
             applied++
         }

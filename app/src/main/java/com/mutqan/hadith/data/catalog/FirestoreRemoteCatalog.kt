@@ -85,6 +85,7 @@ class FirestoreRemoteCatalog(database: () -> FirebaseFirestore = FirebaseFiresto
             updatedAt = updatedAtMillis() ?: return null,
             deleted = getBoolean("deleted") ?: return null,
             sameAs = getLong("sameAs"),
+            bio = getString("bio").orEmpty(),
         )
     }
 

@@ -1,15 +1,22 @@
 package com.mutqan.hadith.domain.usecase
 
+import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.data.relation.HadithWithFullSanad
 import com.mutqan.hadith.domain.model.LayerStatus
+import com.mutqan.hadith.domain.narrator.NarratorDirectory
 import com.mutqan.hadith.domain.model.RecallBand
 import com.mutqan.hadith.domain.model.Retrievability
 import com.mutqan.hadith.domain.model.StabilityMetrics
 import com.mutqan.hadith.domain.repository.HadithRepository
+import com.mutqan.hadith.domain.repository.NarratorRepository
+import com.mutqan.hadith.domain.repository.NoNarrators
 import com.mutqan.hadith.domain.repository.ReviewRepository
 import com.mutqan.hadith.domain.scheduler.SpacedRepetitionScheduler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+
+/** What an admin wrote about the Companion of a hadith: [paragraphs] are in reading order, none of them blank. */
+data class CompanionBio(val name: String, val paragraphs: List<String>)
 
 /**
  * One hadith with everything the study screen shows besides its text: how far the user has come with it.
@@ -24,6 +31,8 @@ data class HadithStudy(
     val isDue: Boolean,
     /** The memorization layer the hadith is in; null for one that was never taken into study. */
     val layer: LayerStatus? = null,
+    /** About the Companion who narrates it; null when nobody has written about him. */
+    val companionBio: CompanionBio? = null,
 ) {
     val isInStudy: Boolean get() = metrics != null
 
@@ -41,6 +50,7 @@ class GetHadithStudyUseCase(
     private val hadiths: HadithRepository,
     private val reviews: ReviewRepository,
     private val scheduler: SpacedRepetitionScheduler,
+    private val narrators: NarratorRepository = NoNarrators(),
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     operator fun invoke(hadithId: Long): Flow<HadithStudy?> =
@@ -55,6 +65,24 @@ class GetHadithStudyUseCase(
                 nextReviewDue = record?.nextReviewDue,
                 isDue = record != null && record.nextReviewDue <= at,
                 layer = record?.let(scheduler::layerStatus),
+                companionBio = companionBioOf(hadith, narrators.getAll()),
             )
         }
+
+    /**
+     * The Companion is the last link of the chain. What was written about him is read from any row that is the same
+     * person (an admin can say two rows are one), the Companion's own row first.
+     */
+    private fun companionBioOf(hadith: HadithWithFullSanad, all: List<NarratorEntity>): CompanionBio? {
+        val companion = hadith.sanad.maxByOrNull { it.orderIndex }?.narrator ?: return null
+        val person = NarratorDirectory.of(listOf(companion) + all).canonicalOf(companion.id) ?: return null
+        val written = (listOf(companion) + all).firstOrNull { it.id in person.memberIds && it.bio.isNotBlank() }?.bio ?: return null
+        val paragraphs = written.split(PARAGRAPH_BREAK).map { it.trim() }.filter { it.isNotEmpty() }
+        return paragraphs.takeIf { it.isNotEmpty() }?.let { CompanionBio(person.name, it) }
+    }
+
+    private companion object {
+        /** A blank line between paragraphs, however the line ends were written. */
+        val PARAGRAPH_BREAK = Regex("\\r?\\n\\s*\\r?\\n")
+    }
 }

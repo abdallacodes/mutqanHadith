@@ -471,6 +471,7 @@ function narratorEditor(arg) {
   const full = h('input', { type: 'text', value: base.fullName });
   const tier = h('select', {}, core.TIERS.map((t) => h('option', { value: t, selected: base.tier === t }, t)));
   const pivot = h('input', { type: 'checkbox', checked: base.isPivot });
+  const bio = h('textarea', { dir: 'rtl', rows: 10 }, base.bio ?? '');
   const problems = h('div');
   const using = existing ? core.hadithsUsing(catalog.hadiths, base.id) : [];
   const mergedHere = existing ? core.mergedInto(catalog.narrators, base.id) : [];
@@ -486,7 +487,8 @@ function narratorEditor(arg) {
   save.addEventListener('click', () => {
     const data = {
       id: base.id, primaryName: name.value.trim(), fullName: full.value.trim() || name.value.trim(),
-      tier: tier.value, isPivot: pivot.checked, sameAs: same.value === '' ? null : Number(same.value), deleted: base.deleted === true,
+      tier: tier.value, isPivot: pivot.checked, sameAs: same.value === '' ? null : Number(same.value), bio: bio.value.trim(),
+      deleted: base.deleted === true,
     };
     const errors = core.validateNarrator(data, catalog.narrators);
     problems.replaceChildren(...(errors.length ? [errorBox(errors)] : []));
@@ -511,6 +513,8 @@ function narratorEditor(arg) {
         field(L.sameAs, same, mergedHere.length > 0
           ? 'هناك رواة مدموجون في هذا الراوي، فهو الأصل ولا يُدمج في غيره.'
           : 'إن كان هذا الاسم هو الراوي نفسه بصيغة أخرى فاختر الراوي الأصلي: يُعدّان شخصاً واحداً في التطبيق (في التدريب والمخطط)، ولا يتغير تقدّم أحد.'))),
+    h('div', { class: 'card' },
+      field(L.bio, bio, 'تظهر في التطبيق بطاقةً «نبذة عن الصحابي» تحت أحاديثه، حين يكون هو الصحابي الراوي للحديث. افصل بين الفقرات بسطر فارغ. اتركها فارغة فلا تظهر البطاقة.')),
     isNew ? notice('warn', 'الراوي الجديد يُعدّ في التطبيق شخصاً مستقلاً، ما لم تختر أعلاه أنه هو نفسه راوٍ موجود.') : null,
     problems,
     h('div', { class: 'actions' }, buttons),

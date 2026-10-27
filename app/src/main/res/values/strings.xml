@@ -255,6 +255,9 @@
     <string name="study_sanad_source">السند من: %1$s</string>
     <string name="study_sanad_short_note">يُعرض هذا الحديث بالصحابي وحده، إذ لم نجد في مصدر الأسانيد روايةً يمكن تتبّع سندها كاملًا إلى الصحابي.</string>
     <string name="study_sahabi_title">الصحابي الراوي</string>
+    <string name="study_bio_title">نبذة عن الصحابي</string>
+    <string name="study_bio_show">اقرأ</string>
+    <string name="study_bio_hide">إخفاء</string>
     <string name="study_takhrij">التخريج: %1$s</string>
     <string name="study_grade">الدرجة: %1$s</string>
     <string name="study_chapter">الباب: %1$s</string>

@@ -67,7 +67,7 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if isAdmin() && stamped()
         && request.resource.data.keys().hasOnly([
-          'id', 'primaryName', 'fullName', 'tier', 'isPivot', 'sameAs', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
+          'id', 'primaryName', 'fullName', 'tier', 'isPivot', 'sameAs', 'bio', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
         && request.resource.data.keys().hasAll([
           'id', 'primaryName', 'fullName', 'tier', 'isPivot', 'origin', 'updatedAt', 'updatedBy', 'deleted'])
         && request.resource.data.id is int
@@ -78,7 +78,10 @@ service cloud.firestore {
         && request.resource.data.tier is string
         && request.resource.data.isPivot is bool
         // The narrator this one is the same person as; optional, so documents without it stay valid.
-        && nullableInt(request.resource.data.get('sameAs', null));
+        && nullableInt(request.resource.data.get('sameAs', null))
+        // What is written about the narrator, shown under the Companion's hadiths; optional, empty when nothing is.
+        && request.resource.data.get('bio', '') is string
+        && request.resource.data.get('bio', '').size() <= 20000;
       allow delete: if false;
     }
 

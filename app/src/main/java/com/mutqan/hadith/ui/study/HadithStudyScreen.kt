@@ -72,6 +72,7 @@ import com.mutqan.hadith.ui.common.LockedHint
 import com.mutqan.hadith.ui.common.MukhrijCard
 import com.mutqan.hadith.ui.common.MutqanTopBar
 import com.mutqan.hadith.ui.common.PacingDialog
+import com.mutqan.hadith.ui.common.CompanionBioCard
 import com.mutqan.hadith.ui.common.SahabiCard
 import com.mutqan.hadith.ui.common.SanadDrillButtons
 import com.mutqan.hadith.ui.common.UiState
@@ -219,6 +220,7 @@ private fun StudyContent(
     ) {
         StudyHeader(hadith, ui.study.band)
         if (hadith.sahabi.isNotBlank()) SahabiCard(NarratorAliases.canonicalName(hadith.sahabi))
+        ui.study.companionBio?.let { CompanionBioCard(it) }
         ui.study.layer?.let { LayerCard(hadith.id, it, ui.study.hadith.sanad, onSanadBuilder, onMissingLink, onOrderChain) }
         MatnCard(hadith, ui.textScale, ui.showTashkeel, onSmaller, onLarger)
         if (hadith.takhrij.isNotBlank()) MukhrijCard(hadith.takhrij)

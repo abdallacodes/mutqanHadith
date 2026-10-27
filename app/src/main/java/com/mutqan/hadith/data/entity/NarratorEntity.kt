@@ -23,4 +23,10 @@ data class NarratorEntity(
      * (see `NarratorDirectory`), so it can be set and cleared without touching anyone's progress.
      */
     val sameAsId: Long? = null,
+    /**
+     * What an admin wrote about this narrator in the cloud catalog, shown on the study screen when the narrator is the
+     * Companion of the hadith: paragraphs separated by a blank line. Empty for a narrator nobody has written about, which
+     * is every narrator in the bundled catalog.
+     */
+    @ColumnInfo(defaultValue = "''") val bio: String = "",
 )

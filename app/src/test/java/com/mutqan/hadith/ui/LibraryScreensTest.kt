@@ -9,6 +9,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.mutqan.hadith.data.entity.CatalogGroupEntity
@@ -85,9 +88,13 @@ class LibraryScreensTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun libraryRoute(onOpenHadith: (Long) -> Unit = {}) {
+    private fun libraryRoute(refreshing: Boolean = false, onRefresh: () -> Unit = {}, onOpenHadith: (Long) -> Unit = {}) {
         val vm = LibraryViewModel(GetLibraryPageUseCase(hadiths, reviews, scheduler) { now })
-        compose.setContent { MutqanHadithTheme { LibraryRoute(vm, onClose = {}, onOpenHadith = onOpenHadith) } }
+        compose.setContent {
+            MutqanHadithTheme {
+                LibraryRoute(vm, onClose = {}, onOpenHadith = onOpenHadith, refreshing = refreshing, onRefresh = onRefresh)
+            }
+        }
     }
 
     private val FULL_MATN = "إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ"
@@ -484,5 +491,40 @@ class LibraryScreensTest {
         compose.waitForIdle()
 
         assertTrue(compose.onAllNodesWithText("حديث رقم", substring = true).fetchSemanticsNodes().isEmpty())
+    }
+
+    // -- Pulling down to refresh --------------------------------------------------------------
+
+    @Test
+    fun library_pullingDownTheShelfAsksForARefresh() {
+        var refreshes = 0
+        libraryRoute(onRefresh = { refreshes++ })
+
+        compose.onRoot().performTouchInput { swipeDown(startY = top + 200f, endY = top + 1_400f, durationMillis = 400) }
+        compose.waitForIdle()
+
+        assertEquals(1, refreshes)
+    }
+
+    @Test
+    fun library_pullingDownInsideABookAsksForARefreshToo() {
+        var refreshes = 0
+        libraryRoute(onRefresh = { refreshes++ })
+        compose.onNodeWithText("الكتاب الأول").performClick()
+        compose.waitForIdle()
+
+        compose.onRoot().performTouchInput { swipeDown(startY = top + 700f, endY = top + 1_800f, durationMillis = 400) }
+        compose.waitForIdle()
+
+        assertEquals(1, refreshes)
+    }
+
+    @Test
+    fun library_whileRefreshingTheRefreshIsNotAskedAgain() {
+        var refreshes = 0
+        libraryRoute(refreshing = true, onRefresh = { refreshes++ })
+        compose.waitForIdle()
+
+        assertEquals(0, refreshes)
     }
 }

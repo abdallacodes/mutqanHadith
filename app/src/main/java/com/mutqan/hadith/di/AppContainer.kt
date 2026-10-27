@@ -110,7 +110,7 @@ class AppContainer(
     val getDueHadiths by lazy { GetDueHadithsUseCase(hadithRepository, reviewRepository, scheduler) }
     val getUnseenHadiths by lazy { GetUnseenHadithsUseCase(hadithRepository) }
     val getLibraryPage by lazy { GetLibraryPageUseCase(hadithRepository, reviewRepository, scheduler) }
-    val getHadithStudy by lazy { GetHadithStudyUseCase(hadithRepository, reviewRepository, scheduler) }
+    val getHadithStudy by lazy { GetHadithStudyUseCase(hadithRepository, reviewRepository, scheduler, narratorRepository) }
     val startMemorizing by lazy { StartMemorizingUseCase(hadithRepository, reviewRepository, dailyPacing) }
     val placement by lazy { PlacementUseCase(hadithRepository, reviewRepository, scheduler, studyPreferences) }
     val submitReview by lazy { SubmitReviewUseCase(hadithRepository, reviewRepository, scheduler) }

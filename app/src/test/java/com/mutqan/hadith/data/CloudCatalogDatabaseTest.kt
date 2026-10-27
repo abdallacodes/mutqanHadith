@@ -145,6 +145,21 @@ class CloudCatalogDatabaseTest {
     }
 
     @Test
+    fun whatTheAdminWroteAboutANarratorIsStoredAndClearedWithIt() = runBlocking {
+        val id = seed.narrators.first().id
+        val existing = seed.narrators.first()
+        fun written(bio: String, at: Long) = CloudNarrator(id, existing.primaryName, existing.fullName, existing.tier, existing.isPivot, at, false, bio = bio)
+
+        assertEquals("nothing is written in the bundled catalog", "", db.narratorDao().getById(id)!!.bio)
+
+        store.apply(CatalogDelta(narrators = listOf(written("فقرة\n\nفقرة", 7_000))))
+        assertEquals("فقرة\n\nفقرة", db.narratorDao().getById(id)!!.bio)
+
+        store.apply(CatalogDelta(narrators = listOf(written("", 8_000))))
+        assertEquals("", db.narratorDao().getById(id)!!.bio)
+    }
+
+    @Test
     fun aNarratorPointingAtItselfIsStoredAsNobodysDuplicate() = runBlocking {
         store.apply(CatalogDelta(narrators = listOf(CloudNarrator(10_000, "راوٍ", "راوٍ", "ثقة", false, 7_000, false, sameAs = 10_000))))
 

@@ -34,6 +34,8 @@ data class CloudNarrator(
     val deleted: Boolean,
     /** The narrator this one is the same person as, if an admin said so. */
     val sameAs: Long? = null,
+    /** What the admin wrote about the narrator; empty when nothing was. */
+    val bio: String = "",
 )
 
 data class CloudGroup(

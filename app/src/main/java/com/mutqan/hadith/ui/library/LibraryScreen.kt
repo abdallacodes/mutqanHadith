@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -104,6 +105,10 @@ fun LibraryRoute(
     /** Personal collections; a library given none shows only the books. */
     collectionsViewModel: CollectionsViewModel? = null,
     onOpenCollection: (Long) -> Unit = {},
+    /** The library and the progress are being brought up to date, so the pull-down shows its spinner. */
+    refreshing: Boolean = false,
+    /** The user pulled the list down: look for a newer library and sync the progress now. */
+    onRefresh: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
@@ -149,6 +154,8 @@ fun LibraryRoute(
         collections = collections,
         section = section,
         onSelectSection = viewModel::onSelectSection,
+        refreshing = refreshing,
+        onRefresh = onRefresh,
     )
 }
 
@@ -172,6 +179,8 @@ fun LibraryScreen(
     collections: LibraryCollections? = null,
     section: LibrarySection = LibrarySection.HADITHS,
     onSelectSection: (LibrarySection) -> Unit = {},
+    refreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
 ) {
     val open = (state as? UiState.Success)?.data?.open
     val inBooks = collections == null || section == LibrarySection.HADITHS
@@ -187,7 +196,12 @@ fun LibraryScreen(
             )
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentAlignment = Alignment.TopCenter,
+        ) {
             Column(Modifier.contentWidth().fillMaxSize()) {
                 if (collections != null) LibrarySectionChips(section, collections.count, onSelectSection)
                 if (collections != null && !inBooks) {

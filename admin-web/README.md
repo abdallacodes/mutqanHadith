@@ -28,6 +28,10 @@ signed-in Google account, which must carry the `admin` claim (`admin-tools/set-a
   the library, under the name of the one that stays; nobody's progress is rewritten, and clearing the field separates
   them again. The one that stays cannot itself be pointed elsewhere, and a narrator others point at cannot be
   deleted or pointed away; the page enforces both. Older apps ignore the field.
+- **About the Companion:** a narrator has a «نبذة عن الراوي» box. Paragraphs are separated by a blank line. In the app
+  (from v1.8.0) a hadith whose Companion has a bio shows a folded «نبذة عن الصحابي» card on its study screen; empty means
+  no card. Nothing is filled in by default. The text is read from the Companion's row, or from a row marked as the same
+  person (above). At most 20000 characters; the rules enforce it. Older apps ignore the field.
 - Phones pick changes up when the app opens (at most every 6 hours), on pull-down in Home, from Settings → المكتبة, and
   about every 12 hours in the background.
 

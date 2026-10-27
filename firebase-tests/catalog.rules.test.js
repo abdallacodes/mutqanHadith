@@ -60,6 +60,17 @@ test('a narrator may say whose duplicate it is, by number or by null, and may le
   await assertFails(setDoc(doc(db, 'catalog_narrator/10004'), narratorDoc(10004, { sameAs: 73.5 })));
 });
 
+test('a narrator may carry text about him, up to a limit, and may leave it out', async () => {
+  const db = adminDb();
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10010'), narratorDoc(10010, { bio: 'فقرة\n\nفقرة' })));
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10011'), narratorDoc(10011, { bio: '' })));
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10012'), narratorDoc(10012)));
+  await assertSucceeds(setDoc(doc(db, 'catalog_narrator/10013'), narratorDoc(10013, { bio: 'ا'.repeat(20000) })));
+  await assertFails(setDoc(doc(db, 'catalog_narrator/10014'), narratorDoc(10014, { bio: 'ا'.repeat(20001) })));
+  await assertFails(setDoc(doc(db, 'catalog_narrator/10015'), narratorDoc(10015, { bio: 5 })));
+  await assertFails(setDoc(doc(db, 'catalog_narrator/10016'), narratorDoc(10016, { bio: null })));
+});
+
 test('anyone reads the catalog, signed in or not', async () => {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'catalog_hadith/11'), hadithDoc(11, { updatedAt: new Date() }));

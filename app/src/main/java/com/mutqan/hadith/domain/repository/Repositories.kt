@@ -48,6 +48,11 @@ interface NarratorRepository {
     suspend fun getAll(): List<NarratorEntity>
 }
 
+/** A [NarratorRepository] with nobody in it; the default for code that is not given the real one. */
+class NoNarrators : NarratorRepository {
+    override suspend fun getAll(): List<NarratorEntity> = emptyList()
+}
+
 /**
  * The user's personal collections of hadiths. A collection only ever refers to hadiths: nothing here creates, changes
  * or removes a hadith, a mastery record or any other study data.

@@ -95,5 +95,15 @@ object Migrations {
         }
     }
 
-    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8, V8_TO_V9, V9_TO_V10)
+    /**
+     * What the cloud catalog says about a narrator: one text column on `narrator`, empty for every row, as the bundled
+     * catalog writes nothing there. Nothing the user owns is touched.
+     */
+    val V10_TO_V11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE narrator ADD COLUMN bio TEXT NOT NULL DEFAULT ''")
+        }
+    }
+
+    val ALL = arrayOf(V4_TO_V5, V5_TO_V6, V6_TO_V7, V7_TO_V8, V8_TO_V9, V9_TO_V10, V10_TO_V11)
 }

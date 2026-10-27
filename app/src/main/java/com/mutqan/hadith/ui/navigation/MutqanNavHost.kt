@@ -302,8 +302,11 @@ private fun MutqanDestinations(container: AppContainer, navController: NavHostCo
         composable(Routes.LIBRARY) {
             val viewModel: LibraryViewModel = viewModel(factory = container.libraryViewModelFactory())
             val collections: CollectionsViewModel = viewModel(factory = container.collectionsViewModelFactory())
+            val refreshing by container.syncCoordinator.refreshing.collectAsStateWithLifecycle()
             LibraryRoute(
                 viewModel = viewModel,
+                refreshing = refreshing,
+                onRefresh = container.syncCoordinator::refreshNow,
                 // A tab, not a page above another: there is nowhere to go back to.
                 onClose = null,
                 onOpenHadith = { navController.navigate(Routes.hadithStudy(it)) },

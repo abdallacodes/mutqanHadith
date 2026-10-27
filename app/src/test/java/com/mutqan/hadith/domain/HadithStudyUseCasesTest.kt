@@ -1,6 +1,7 @@
 package com.mutqan.hadith.domain
 
 import com.mutqan.hadith.domain.model.ReviewRating
+import com.mutqan.hadith.data.entity.NarratorEntity
 import com.mutqan.hadith.domain.scheduler.DualDecayScheduler
 import com.mutqan.hadith.domain.usecase.GetHadithStudyUseCase
 import com.mutqan.hadith.domain.usecase.HadithProgress
@@ -169,5 +170,60 @@ class HadithStudyUseCasesTest {
         val after = flow.first()!!.isInStudy
 
         assertEquals(listOf(false, true), listOf(before, after))
+    }
+
+    // -- What an admin wrote about the Companion -------------------------------------------------
+
+    private fun studyOf(repo: FakeHadithRepository, vararg roster: NarratorEntity) =
+        GetHadithStudyUseCase(repo, reviews, scheduler, FakeNarratorRepository(roster.toList())) { now }
+
+    @Test
+    fun aCompanionNobodyWroteAboutHasNoBio() = runBlocking {
+        assertNull(study(1).first()!!.companionBio)
+        assertNull(studyOf(hadiths, companion, teacher).invoke(1).first()!!.companionBio)
+    }
+
+    @Test
+    fun whatWasWrittenAboutTheCompanionComesInParagraphsSplitAtBlankLines() = runBlocking {
+        val written = companion.copy(bio = "  الفقرة الأولى.  \n\nالفقرة الثانية.\r\n \r\nالثالثة.\n\n\n")
+
+        val bio = studyOf(hadiths, written, teacher).invoke(1).first()!!.companionBio!!
+
+        assertEquals(listOf("الفقرة الأولى.", "الفقرة الثانية.", "الثالثة."), bio.paragraphs)
+        assertEquals("عمر بن الخطاب", bio.name)
+    }
+
+    @Test
+    fun aBioOfNothingButBlankLinesIsNoBio() = runBlocking {
+        val blank = companion.copy(bio = "\n\n  \n")
+
+        assertNull(studyOf(hadiths, blank, teacher).invoke(1).first()!!.companionBio)
+    }
+
+    @Test
+    fun theCompanionIsTheLastLinkSoATeachersBioIsNotHis() = runBlocking {
+        val writtenTeacher = teacher.copy(bio = "عن الشيخ")
+
+        assertNull(studyOf(hadiths, companion, writtenTeacher).invoke(2).first()!!.companionBio)
+    }
+
+    @Test
+    fun aRowTheAdminSaidIsTheSamePersonLendsItsBio() = runBlocking {
+        val duplicate = companion.copy(sameAsId = 60)
+        val kept = narrator(60, "عمر بن الخطاب", tier = "صحابي").copy(bio = "نبذة الأصل")
+        val repo = FakeHadithRepository(listOf(hadith(5, listOf(duplicate))))
+
+        val bio = studyOf(repo, duplicate, kept).invoke(5).first()!!.companionBio!!
+
+        assertEquals(listOf("نبذة الأصل"), bio.paragraphs)
+    }
+
+    @Test
+    fun theCompanionsOwnBioComesBeforeAMergedRows() = runBlocking {
+        val own = companion.copy(sameAsId = 60, bio = "نبذتي")
+        val kept = narrator(60, "عمر بن الخطاب", tier = "صحابي").copy(bio = "نبذة الأصل")
+        val repo = FakeHadithRepository(listOf(hadith(5, listOf(own))))
+
+        assertEquals(listOf("نبذتي"), studyOf(repo, own, kept).invoke(5).first()!!.companionBio!!.paragraphs)
     }
 }

@@ -114,7 +114,7 @@ class CloudCatalogMigrationTest {
         val db = open("v8.db")
         val raw = db.openHelper.writableDatabase
 
-        assertEquals(10, raw.version)
+        assertEquals(11, raw.version)
         assertEquals(before, userRows { raw.query(it) })
         listOf("hadith", "narrator", "catalog_group").forEach { table ->
             val columns = raw.query("PRAGMA table_info($table)").rows().map { it[1]!! }
@@ -123,6 +123,9 @@ class CloudCatalogMigrationTest {
         // And the narrator table has its "same person as" column, empty for every row.
         assertEquals(1, raw.query("PRAGMA table_info(narrator)").rows().count { it[1] == "sameAsId" })
         assertEquals(seed.narrators.size, raw.query("SELECT COUNT(*) FROM narrator WHERE sameAsId IS NULL").rows().single().single()!!.toInt())
+        // And the text about a narrator, empty for every row.
+        assertEquals(1, raw.query("PRAGMA table_info(narrator)").rows().count { it[1] == "bio" })
+        assertEquals(seed.narrators.size, raw.query("SELECT COUNT(*) FROM narrator WHERE bio = ''").rows().single().single()!!.toInt())
         db.close()
     }
 

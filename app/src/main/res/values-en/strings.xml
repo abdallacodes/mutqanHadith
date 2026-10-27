@@ -247,6 +247,9 @@
     <string name="study_sanad_source">Chain from: %1$s</string>
     <string name="study_sanad_short_note">This hadith is shown with the Companion alone: no narration in the chains\' source could be followed all the way to him.</string>
     <string name="study_sahabi_title">Narrating Companion</string>
+    <string name="study_bio_title">About the Companion</string>
+    <string name="study_bio_show">Read</string>
+    <string name="study_bio_hide">Hide</string>
     <string name="study_takhrij">Takhrij: %1$s</string>
     <string name="study_grade">Grade: %1$s</string>
     <string name="study_chapter">Chapter: %1$s</string>

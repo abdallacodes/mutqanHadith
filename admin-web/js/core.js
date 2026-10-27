@@ -14,7 +14,7 @@ export const FIELDS = Object.freeze({
     'id', 'matnWithTashkeel', 'sourceBook', 'hadithNumber', 'chapter', 'grade', 'collector', 'takhrij',
     'sahabi', 'groupId', 'position', 'sanadSource', 'sanad', 'deleted',
   ],
-  catalog_narrator: ['id', 'primaryName', 'fullName', 'tier', 'isPivot', 'sameAs', 'deleted'],
+  catalog_narrator: ['id', 'primaryName', 'fullName', 'tier', 'isPivot', 'sameAs', 'bio', 'deleted'],
   catalog_group: ['id', 'parentId', 'title', 'titleEn', 'position', 'deleted'],
 });
 
@@ -38,6 +38,7 @@ export const LABELS = Object.freeze({
   tier: 'الطبقة',
   isPivot: 'راوٍ محوري',
   sameAs: 'هو نفسه الراوي',
+  bio: 'نبذة عن الراوي',
   parentId: 'المجموعة الأم',
   title: 'العنوان',
   titleEn: 'العنوان بالإنجليزية',
@@ -58,6 +59,7 @@ export const TRANSMISSION_TERMS = Object.freeze([
 
 export const MAX_CHAIN = 40;
 export const MAX_MATN = 20000;
+export const MAX_BIO = 20000;
 
 /** Ids made here start well above the bundled catalog and the retired ranges (1-10 and 1001-1413). */
 export const ID_FLOOR = 10000;
@@ -145,6 +147,7 @@ export function validateNarrator(n, narrators = []) {
   const errors = [];
   if (isBlank(n.primaryName)) errors.push('الاسم فارغ.');
   if (!TIERS.includes(n.tier)) errors.push('اختر طبقة الراوي.');
+  if ((n.bio ?? '').length > MAX_BIO) errors.push(`النبذة أطول من ${MAX_BIO} حرفاً.`);
   if (n.sameAs !== null && n.sameAs !== undefined) {
     const target = narrators.find((x) => x.id === n.sameAs);
     if (n.sameAs === n.id) errors.push('لا يمكن أن يكون الراوي هو نفسه.');
